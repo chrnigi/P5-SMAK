@@ -1,5 +1,5 @@
 // Digital Hall sensors: ACTIVE = magnet detected
-// We poll every 5 ms with millis().
+// We poll every 10 ms with millis().
 
 const int SCAN_EVERY_MS = 10;    // scan every 10 ms
 const int HITS_NEEDED   = 5;    // how many repeated reads to accept a change
