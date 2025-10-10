@@ -1,8 +1,8 @@
 // Digital Hall sensors: ACTIVE = magnet detected
 // We poll every 5 ms with millis().
 
-const int SCAN_EVERY_MS = 5;    // scan every 5 ms
-const int HITS_NEEDED   = 2;    // how many repeated reads to accept a change
+const int SCAN_EVERY_MS = 10;    // scan every 10 ms
+const int HITS_NEEDED   = 5;    // how many repeated reads to accept a change
 
 const bool ACTIVE_LEVEL = LOW;   
 const bool USE_PULLUPS  = true;
@@ -50,12 +50,12 @@ void loop() {
   lastScan = now;
   scans++;
 
-  // Read all 16 sensors
+  // Read all sensors
   for (int i = 0; i < 16; i++) {
     int raw = digitalRead(inputPins[i]);
     int proposed = (raw == ACTIVE_LEVEL) ? 1 : 0;
 
-    // Require the same proposal HITS_NEEDED times to accept (anti-flicker)
+    // Require the same proposal HITS_NEEDED times to accept change
     if (proposed != state[i]) {
       changeStreak[i]++;
       if (changeStreak[i] >= HITS_NEEDED) {
@@ -71,7 +71,7 @@ void loop() {
     }
   }
 
-  // Heartbeat about once per second (200 scans * 5 ms ≈ 1 s)
+  // Heartbeat about once per second (200 scans * 10 ms)
   if (scans % 200 == 0) {
     Serial.println("Working");
   }
