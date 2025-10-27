@@ -9,14 +9,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import dk.aau.chrinigin.Smak.model.Game;
-import dk.aau.chrinigin.Smak.repository.GameRepository;
+import dk.aau.chrinigin.Smak.service.GameService;
 
 @RestController
 public class GameController {
-    private final GameRepository gameRepository;
+    private final GameService gameService;
 
-    public GameController(GameRepository gameRepository) {
-        this.gameRepository = gameRepository;
+    public GameController(GameService gameService) {
+        this.gameService = gameService;
     }
 
 
@@ -28,18 +28,18 @@ public class GameController {
 
     @GetMapping("/games")
     List<Game> getAllGames() {
-        return gameRepository.findAll();
+        return gameService.getAll();
     }
 
     @GetMapping("/games/{id}")
     Game getGameById(@PathVariable Long id) {
-        return gameRepository.findById(id).orElseThrow(() -> new GameNotFoundException(id));
+        return gameService.get(id).orElseThrow(() -> new GameNotFoundException(id));
     }
 
 
     @PostMapping("games")
     Game addGame(@RequestBody Game game) {
-        return gameRepository.save(game);
+        return gameService.save(game);
     }
 
 }

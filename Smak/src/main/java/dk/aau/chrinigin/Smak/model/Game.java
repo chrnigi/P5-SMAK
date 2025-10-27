@@ -1,17 +1,14 @@
 package dk.aau.chrinigin.Smak.model;
 
 import java.sql.Timestamp;
-import java.util.List;
 import java.util.Objects;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 
@@ -30,14 +27,37 @@ public class Game {
     @Column(name = "gamestart")
     Timestamp gamestart;
 
-    @OneToMany(fetch = FetchType.LAZY)
-    private List<Boardstate> boardstates;
-
     public Game() {}
 
     public Game(ResultEnum result, Timestamp gamestart) {
         this.result = result;
         this.gamestart = gamestart;
+    }
+
+    @Override
+    public String toString() {
+        return "Game [id=" + id + ", result=" + result + ", gamestart=" + gamestart + "]";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        
+        if (!(o instanceof Game))
+            return false;
+
+        Game game = (Game) o;
+
+        return 
+        Objects.equals(this.id, game.id) && 
+        Objects.equals(this.result, game.result) && 
+        Objects.equals(this.gamestart, game.gamestart);
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.id, this.result, this.gamestart);
     }
 
     public Long getId() {
@@ -62,27 +82,6 @@ public class Game {
 
     public void setGamestart(Timestamp gamestart) {
         this.gamestart = gamestart;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        
-        if (!(o instanceof Game))
-            return false;
-
-        Game game = (Game) o;
-
-        return 
-        Objects.equals(this.id, game.id) && 
-        Objects.equals(this.result, game.result) && 
-        Objects.equals(this.gamestart, game.gamestart);
-    }
-    
-    @Override
-    public int hashCode() {
-        return Objects.hash(this.id, this.result, this.gamestart);
     }
 
 }

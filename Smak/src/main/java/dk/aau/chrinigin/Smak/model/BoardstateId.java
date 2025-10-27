@@ -7,6 +7,11 @@ public class BoardstateId implements Serializable {
     private Long id;
     private Integer moveno;
 
+    @Override
+    public String toString() {
+        return "BoardstateId [id=" + id + ", moveno=" + moveno + "]";
+    }
+
     public BoardstateId() {}
 
     public BoardstateId(Long id, Integer moveno) {
@@ -28,5 +33,21 @@ public class BoardstateId implements Serializable {
         }
         BoardstateId b = (BoardstateId) o;
         return Objects.equals(this.id, b.id) && Objects.equals(this.moveno, b.moveno);
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Integer getMoveno() {
+        return moveno;
+    }
+
+    public void setMoveno(Integer moveno) {
+        this.moveno = moveno;
     }
 }
