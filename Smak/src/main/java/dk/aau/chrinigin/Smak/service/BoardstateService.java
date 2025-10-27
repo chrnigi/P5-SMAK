@@ -31,4 +31,7 @@ public class BoardstateService {
     
     }
    
+    public Boardstate saveBoardstate(Boardstate boardstate) {
+        return boardstateRepository.save(boardstate);
+    }
 }
