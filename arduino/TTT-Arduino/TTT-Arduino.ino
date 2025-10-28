@@ -48,6 +48,11 @@ int changeStreak[16];         // counts repeated confirmations of a proposed cha
 unsigned long scans = 0;      // how many scans we've done
 unsigned long lastScan = 0;
 
+bool gameHasStarted = 0;
+long gameID = 0;
+
+enum{NO_WINNER_YET, X_WON, Y_WON, DRAW} result = 0;
+
 bool is_player_x = true;
 int x_board = 0b000000000,
 	y_board = 0b000000000;
@@ -134,6 +139,7 @@ void turn(int sensor_nr){
 	{
 		serial_print_board();
 		serial_print_victory();
+    if(is_player_x) result = X_WON; else result = Y_WON;
 		turn_counter = 10;
 		return;
 	}
@@ -142,16 +148,19 @@ void turn(int sensor_nr){
 	{
 		serial_print_board();
 		serial_print_draw();
+    result = DRAW;
 		return;
 	}
 	
 	is_player_x = !is_player_x;
 	serial_print_board();
+  sendGameState();
 }
 
 void command(String command){
   if (command == "reset\n"){
     Serial.println("Resetting!");
+    Serial1.println("Arduino is Resetting");
     delay(500);
     resetFunc();
   }
@@ -176,6 +185,27 @@ void readSoftwareSerial(){
   }
 }
 
+void sendGameState(){
+
+if (!gameHasStarted){ // generate game ID at the first turn, using the time since reset as a random seed
+  randomSeed(millis());
+  gameID = random(2147483647); // this is NOT a UID however is should be good enough
+  gameHasStarted = true;
+}
+
+  Serial1.print("Gamestate: ");
+  Serial1.print(gameID);
+  Serial1.print(" ");
+  Serial1.print(is_player_x);
+  Serial1.print(" ");
+  Serial1.print(x_board);
+  Serial1.print(" ");
+  Serial1.print(y_board);
+  Serial1.print(" ");
+  Serial1.println(result);
+  Serial1.println("------");
+}
+
 void setup() {
   Serial.begin(9600);
   Serial1.begin(9600); 
@@ -187,9 +217,11 @@ void setup() {
     changeStreak[i] = 0;
   }
 
+
   Serial.println("Digital Hall scan started");
   Serial.print("ACTIVE_LEVEL = ");
   Serial.println(ACTIVE_LEVEL == LOW ? "LOW" : "HIGH");
+  Serial1.println("Arduino has finished setup.");
 }
 
 
