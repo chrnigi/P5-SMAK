@@ -3,8 +3,13 @@ package dk.aau.chrinigin.Smak.model;
 import java.io.Serializable;
 import java.util.Objects;
 
+import jakarta.persistence.Column;
+
 public class BoardstateId implements Serializable {
+    @Column(name = "id")
     private Long id;
+
+    @Column(name = "moveno")
     private Integer moveno;
 
     @Override

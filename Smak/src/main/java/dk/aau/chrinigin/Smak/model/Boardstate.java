@@ -1,5 +1,6 @@
 package dk.aau.chrinigin.Smak.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Column;
@@ -15,6 +16,7 @@ import jakarta.persistence.Table;
 @Table(name = "boardstates")
 @Entity
 public class Boardstate {
+    
     @Id
     @Column(name = "id", nullable = false)
     private Long id;
@@ -75,11 +77,13 @@ public class Boardstate {
     public void setMoveno(Integer moveno) {
         this.moveno = moveno;
     }
-
+    
+    @JsonIgnore
     public Game getGame() {
         return game;
     }
 
+    @JsonIgnore
     public void setGame(Game game) {
         this.game = game;
     }
