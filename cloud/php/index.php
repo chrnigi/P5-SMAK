@@ -11,12 +11,12 @@ $gameId = isset($_GET['game']) ? (int)$_GET['game'] : 1;   // required game id
 $moveNo = isset($_GET['move']) ? (int)$_GET['move'] : null; // optional: show a specific move
 
 // --- PDO ---
-$dsn = "mysql:host=$DB_HOST;dbname=$DB_NAME;charset=$DB_CHARSET";
+$dbConnString = "mysql:host=$DB_HOST;dbname=$DB_NAME;charset=$DB_CHARSET";
 $options = [
   PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
   PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
 ];
-$pdo = new PDO($dsn, $DB_USER, $DB_PASS, $options);
+$pdo = new PDO($dbConnString, $DB_USER, $DB_PASS, $options);
 
 // --- Load boardstate ---
 if ($moveNo !== null) {
