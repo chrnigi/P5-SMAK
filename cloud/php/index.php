@@ -59,17 +59,18 @@ $result = $state['result'] ?? 'inprogress';
 // --- Helpers ---
 function bitSet($mask, $i) { return (($mask >> $i) & 1) === 1; }
 
-// Precompute winning lines for row-major bits 0..8 (top-left → bottom-right)
+// Precompute winning lines using binary literals (row-major bits 0..8, LSB = top-left) -- Changed from previous as this is much clearer
 $wins = [
-  (1<<0)|(1<<1)|(1<<2), // rows
-  (1<<3)|(1<<4)|(1<<5),
-  (1<<6)|(1<<7)|(1<<8),
-  (1<<0)|(1<<3)|(1<<6), // cols
-  (1<<1)|(1<<4)|(1<<7),
-  (1<<2)|(1<<5)|(1<<8),
-  (1<<0)|(1<<4)|(1<<8), // diagonals
-  (1<<2)|(1<<4)|(1<<6),
+  0b111000000, // rows
+  0b000111000,
+  0b000000111,
+  0b100100100, // columns
+  0b010010010,
+  0b001001001,
+  0b100010001, // diagonals
+  0b001010100,
 ];
+
 
 // Determine winner mask (for highlight)
 $winMask = 0;
