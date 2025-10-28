@@ -134,12 +134,12 @@ for ($i=0; $i<9; $i++) {
       <?php endfor; ?>
     </div>
     <div class="meta">
-      Game <b>#<?= htmlspecialchars((string)$gameId) ?></b>,
-      showing <b>move <?= $moveno ?></b>
+      Game <b>#<?= htmlspecialchars((string)$gameId) ?></b>,<br>
+      showing <b>move <?= $moveno ?></b><br>
       <?php if ($moveNo===null): ?> (latest)<?php endif; ?>.
-      Winner: <b><?= $winner ? $winner : '—' ?></b>.
-      Change game via <code>?game=ID</code>; show a specific move via <code>?game=ID&amp;move=N</code>.
-      Current game result: <b><?= htmlspecialchars((string)$result) ?></b>.
+      Winner: <b><?= $winner ? $winner : '—' ?></b>.<br>
+      Change game via <code>?game=ID</code>;<br> show a specific move via <code>?game=ID&amp;move=N</code>.<br>
+      Current game result: <b><?= htmlspecialchars((string)$result) ?></b>.<br>
     </div>
   </div>
 </body>
