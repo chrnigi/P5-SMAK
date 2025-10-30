@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import dk.aau.chrinigin.Smak.model.Game;
 import dk.aau.chrinigin.Smak.repository.GameRepository;

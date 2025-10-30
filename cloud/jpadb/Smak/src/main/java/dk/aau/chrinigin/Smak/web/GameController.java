@@ -3,8 +3,10 @@ package dk.aau.chrinigin.Smak.web;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -18,8 +20,6 @@ public class GameController {
     public GameController(GameService gameService) {
         this.gameService = gameService;
     }
-
-
 
     @GetMapping("/hello")
     public String hello() {
@@ -36,10 +36,13 @@ public class GameController {
         return gameService.get(id).orElseThrow(() -> new GameNotFoundException(id));
     }
 
-
-    @PostMapping("games")
+    @PostMapping("/games")
     Game addGame(@RequestBody Game game) {
         return gameService.save(game);
     }
 
+    @PatchMapping("/games/{id}")
+    Game updateGame(@PathVariable Long id, @RequestBody Game game) {
+        return gameService.save(game);
+    }
 }
