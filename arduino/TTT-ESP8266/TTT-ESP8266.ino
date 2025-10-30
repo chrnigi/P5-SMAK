@@ -5,27 +5,70 @@
 
 #include <SoftwareSerial.h>
 
-#include <Pinger.h> // ESP8266-ping library by Alessio Leoncini
 #include <ESP8266WiFi.h>
-extern "C"
-{
-  #include <lwip/icmp.h> // needed for icmp packet definitions, used by ESP8266-ping
-}
 #include <WiFiClient.h> // used to make the HTTP get request
-
+#include <sstream>
 
 // pins Rx GPIO14 (D5) and Tx GPIO 12 (D6)
 SoftwareSerial swSer(14, 12);  
+String serial;
 
-
-Pinger pinger;
 
 // SSID the ESP8266 connects to for internet access
 const char* ssid = "MSO ASUS Zenfone 10"; // WiFi network name
 const char* password = "spejdernet"; // WiFi network password
 
 const char* server = "api.restful-api.dev";
-const int port = 80;
+const int port = 8080;
+
+struct gamestate_struct{
+  int turn_counter;
+  int x_board;
+  int y_board;
+  enum{X_WON, Y_WON, DRAW, IN_PROGRESS, } result = 3;
+  int_64_t GameID = 0;
+} gamestate;
+
+bool readGamestate(String message){
+  std::stringstream messageStream(message);
+  std::string segment;
+
+   if (std::getline(messageStream, segment, ' ') && segment == "Gamestate:") {
+      std::getline(messageStream, segment, ' ')
+      gamestate.turn_counter = stoi(segment);
+      std::getline(messageStream, segment, ' ')
+      gamestate.x_board= stoi(segment);
+      std::getline(messageStream, segment, ' ')
+      gamestate.y_board = stoi(segment);
+      std::getline(messageStream, segment, ' ')
+      gamestate.result = stoi(segment);
+      return true;
+   }
+   return false;
+}
+
+bool isGameNewGame(){
+  return (gamestate.turn_counter == 1);
+}
+
+bool isGameInProgress(){
+  return (gamestate.result == gamestate_struct::IN_PROGRESS);
+}
+
+void createNewGame(){
+  String json = POST("/games","{\"result\":\"notstarted\"}");
+  // Extract Game ID from json
+  // gamestate.GameID =
+}
+
+void updateGame(){
+
+}
+
+void sendTurn(){
+
+
+}
 
 void wifiSetup(){
   // Documentation: https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/generic-class.html
@@ -50,90 +93,6 @@ void wifiSetup(){
   Serial.println("success!");
   Serial.print("Local IP Address is: ");
   Serial.println(WiFi.localIP());
-}
-
-void pingerSetup(){ // code from ESP8266-ping library by Alessio Leoncini
-  pinger.OnReceive([](const PingerResponse& response)
-  {
-    if (response.ReceivedResponse)
-    {
-      Serial.printf(
-        "Reply from %s: bytes=%d time=%lums TTL=%d\n",
-        response.DestIPAddress.toString().c_str(),
-        response.EchoMessageSize - sizeof(struct icmp_echo_hdr),
-        response.ResponseTime,
-        response.TimeToLive);
-    }
-    else
-    {
-      Serial.printf("Request timed out.\n");
-    }
-
-    // Return true to continue the ping sequence.
-    // If current event returns false, the ping sequence is interrupted.
-    return true;
-  });
-  
-  pinger.OnEnd([](const PingerResponse& response)
-  {
-    // Evaluate lost packet percentage
-    float loss = 100;
-    if(response.TotalReceivedResponses > 0)
-    {
-      loss = (response.TotalSentRequests - response.TotalReceivedResponses) * 100 / response.TotalSentRequests;
-    }
-    
-    // Print packet trip data
-    Serial.printf(
-      "Ping statistics for %s:\n",
-      response.DestIPAddress.toString().c_str());
-    Serial.printf(
-      "    Packets: Sent = %lu, Received = %lu, Lost = %lu (%.2f%% loss),\n",
-      response.TotalSentRequests,
-      response.TotalReceivedResponses,
-      response.TotalSentRequests - response.TotalReceivedResponses,
-      loss);
-
-    // Print time information
-    if(response.TotalReceivedResponses > 0)
-    {
-      Serial.printf("Approximate round trip times in milli-seconds:\n");
-      Serial.printf(
-        "    Minimum = %lums, Maximum = %lums, Average = %.2fms\n",
-        response.MinResponseTime,
-        response.MaxResponseTime,
-        response.AvgResponseTime);
-    }
-    
-    // Print host data
-    Serial.printf("Destination host data:\n");
-    Serial.printf(
-      "    IP address: %s\n",
-      response.DestIPAddress.toString().c_str());
-    if(response.DestMacAddress != nullptr)
-    {
-      Serial.printf(
-        "    MAC address: " MACSTR "\n",
-        MAC2STR(response.DestMacAddress->addr));
-    }
-    if(response.DestHostname != "")
-    {
-      Serial.printf(
-        "    DNS name: %s\n",
-        response.DestHostname.c_str());
-    }
-
-    return true;
-  });
-}
-
-void pingGoogle(){
-   // Ping google.com
-  Serial.printf("\n\nPinging google.com\n");
-  if(pinger.Ping("google.com") == false)
-  {
-    Serial.println("Error during ping command.");
-  }
 }
 
 void exampleAPIrequest(){ // code from https://github.com/esp8266/Arduino/blob/master/libraries/ESP8266WiFi/examples/WiFiClient/WiFiClient.ino and https://www.techatomfusion.com/blogs/beginners-guide-calling-api-esp8266
@@ -176,11 +135,12 @@ void exampleAPIrequest(){ // code from https://github.com/esp8266/Arduino/blob/m
   Serial.println("Example API call finished");
 }
 
-void POST(){ 
+String POST(String path, String payload){ 
 
+  String str = "";
   //server = ;
-  String path = "/objects";
-  String payload = "{\"name\": \"myTestObject\", \"data\": { \"Text\": \"Hello World!\" }}\r\n"; 
+  //path = "/";
+  //payload = "{\"name\": \"myTestObject\", \"data\": { \"Text\": \"Hello World!\" }}\r\n"; 
 
   Serial.println("-------");
   Serial.println(payload);
@@ -223,7 +183,7 @@ void POST(){
       Serial.println(">>> Client Timeout !");
       client.stop();
       //delay(60000);
-      return;
+      return "";
     }
   }
 
@@ -231,12 +191,15 @@ void POST(){
   while (client.available()) {
     String line = client.readStringUntil('\r');
     Serial.print(line);
+    str.append(line);
   }
 
   // Close the connection
   Serial.println("closing connection");
   client.stop();
   Serial.println("Example API call finished");
+
+  return str;
 }
 
 void setup() {
@@ -245,24 +208,31 @@ void setup() {
   delay(1000);
 
   wifiSetup();
-  pingerSetup();
   delay(500);
   Serial.println("\n################################################################################\n");
   //exampleAPIrequest();
-  POST();
+  POST("");
   Serial.println("\n################################################################################");
-  //pingGoogle();
-
-  Serial.println("\n################################################################################\n");
 
 }
 
 
 void loop() {
   while (swSer.available() > 0) {  //wait for data at software serial
-    Serial.write(swSer.read()); //Send data recived from software serial to hardware serial    
+    serial = swSer.readStringUntil('\n');
+    Serial.println(serial);
+    if (readGameState(serial)){ //returns true if serial is a gamestate
+      if (isGameNewGame()) createnewGame();
+      sendTurn();
+      if (!isGameInProgress()) updateGame();
+    }
+
+    //Serial.write(swSer.read()); //Send data recived from software serial to hardware serial    
   }
   while (Serial.available() > 0) { //wait for data at hardware serial
-    swSer.write(Serial.read());     //send data recived from hardware serial to software serial
+    swSer.write(Serial.read());     //send data received from hardware serial to software serial
   }
+
+
+
 }
