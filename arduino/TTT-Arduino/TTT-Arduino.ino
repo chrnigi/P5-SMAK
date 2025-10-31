@@ -48,10 +48,10 @@ int changeStreak[16];         // counts repeated confirmations of a proposed cha
 unsigned long scans = 0;      // how many scans we've done
 unsigned long lastScan = 0;
 
-bool gameHasStarted = 0;
-long gameID = 0;
+// bool gameHasStarted = 0;
+// long gameID = 0;
 
-enum{NO_WINNER_YET, X_WON, Y_WON, DRAW} result = 0;
+enum{X_WON, Y_WON, DRAW, IN_PROGRESS, } result = 3;
 
 bool is_player_x = true;
 int x_board = 0b000000000,
@@ -141,6 +141,7 @@ void turn(int sensor_nr){
 		serial_print_victory();
     if(is_player_x) result = X_WON; else result = Y_WON;
 		turn_counter = 10;
+    sendGameState();
 		return;
 	}
 	
@@ -149,6 +150,7 @@ void turn(int sensor_nr){
 		serial_print_board();
 		serial_print_draw();
     result = DRAW;
+    sendGameState();
 		return;
 	}
 	
@@ -186,24 +188,14 @@ void readSoftwareSerial(){
 }
 
 void sendGameState(){
-
-if (!gameHasStarted){ // generate game ID at the first turn, using the time since reset as a random seed
-  randomSeed(millis());
-  gameID = random(2147483647); // this is NOT a UID however is should be good enough
-  gameHasStarted = true;
-}
-
   Serial1.print("Gamestate: ");
-  Serial1.print(gameID);
-  Serial1.print(" ");
-  Serial1.print(is_player_x);
+  Serial1.print(turn_counter);
   Serial1.print(" ");
   Serial1.print(x_board);
   Serial1.print(" ");
   Serial1.print(y_board);
   Serial1.print(" ");
   Serial1.println(result);
-  Serial1.println("------");
 }
 
 void setup() {
