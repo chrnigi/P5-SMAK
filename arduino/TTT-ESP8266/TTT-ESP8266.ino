@@ -19,30 +19,30 @@ String serial;
 // SSID the ESP8266 connects to for internet access
 const char* ssid = "MSO ASUS Zenfone 10"; // WiFi network name
 const char* password = "spejdernet"; // WiFi network password
+bool connectedToWifi = false;
 
-String server = "127.0.0.1";
+String server = "130.225.39.244";
 String port = "8080";
 String path = "/games";
 
-const char* endpoint(){
-  return ("http://"+ server + ":" + port + path).c_str();
+String endpoint(){
+  return ("http://"+ server + ":" + port + path);
 }
-const char* endpoint(String newPath){
+String endpoint(String newPath){
   path = newPath;
   return endpoint();
 }
-const char* endpoint(String newPort, String newPath){
+String endpoint(String newPort, String newPath){
   port = newPort;
   path = newPath;
   return endpoint();
 }
-const char* endpoint(String newServer, String newPort, String newPath){
+String endpoint(String newServer, String newPort, String newPath){
   server = newServer;
   port = newPort;
   path = newPath;
   return endpoint();
 }
-
 
 struct gamestate_struct{
   int turn_counter;
@@ -72,12 +72,16 @@ bool readGamestate(String message){
    if (std::getline(messageStream, segment, ' ') && segment == "Gamestate:") {
       std::getline(messageStream, segment, ' ');
       gamestate.turn_counter = stoi(segment);
+
       std::getline(messageStream, segment, ' ');
       gamestate.x_board= stoi(segment);
+
       std::getline(messageStream, segment, ' ');
       gamestate.y_board = stoi(segment);
+
       std::getline(messageStream, segment, ' ');
       gamestate.result = (gamestate_struct::result_enum)stoi(segment);
+
       return true;
    }
    return false;
@@ -91,15 +95,17 @@ bool isGameInProgress(){
   return (gamestate.result == gamestate_struct::IN_PROGRESS);
 }
 
-void createNewGame(){
-
+void createNewGame(){   
   WiFiClient client;
   HTTPClient http;
+  //http.begin(client,"http://130.225.39.244:8080/games");
   http.begin(client, endpoint("/games"));
+
+  //Serial.println(String( endpoint("/games")));
 
   http.addHeader("Content-Type", "application/json");
 
-  int httpResponseCode = http.POST("{\"result\":\"notstarted\"}");
+  int httpResponseCode = http.POST("{\"result\":\"inprogress\"}");
 
   String payload = "{}"; 
 
@@ -107,6 +113,7 @@ void createNewGame(){
     Serial.print("HTTP Response code: ");
     Serial.println(httpResponseCode);
     payload = http.getString();
+    Serial.println("createNewGame: " + payload);
   }
   else {
     Serial.print("Error code: ");
@@ -116,7 +123,6 @@ void createNewGame(){
   }
   http.end();
 
-  //char json[] = payload.begin();
 
   JsonDocument doc;
   deserializeJson(doc, payload);
@@ -132,6 +138,8 @@ void updateGame(){
   http.addHeader("Content-Type", "application/json");
 
   String payload = "{\"result\":\"" + resultAsString(gamestate.result) + "\", \"id\" : " + gamestate.GameID +" }";
+
+  Serial.println("updateGame: " + payload);
 
   int httpResponseCode = http.PUT(payload);
 
@@ -149,7 +157,9 @@ void updateGame(){
 void sendTurn(){
   WiFiClient client;
   HTTPClient http;
-  http.begin(client, endpoint("/games/"+ gamestate.GameID));
+  http.begin(client, endpoint("/boardstates"));
+  //Serial.print("Send turn: ");
+  //Serial.println(endpoint("/boardstates"));
 
   http.addHeader("Content-Type", "application/json");
   
@@ -161,6 +171,8 @@ void sendTurn(){
   doc["moveno"] = gamestate.turn_counter;
 
   serializeJson(doc, payload);
+
+  Serial.println("sendTurn: " + payload);
 
   int httpResponseCode = http.POST(payload);
 
@@ -196,6 +208,7 @@ void wifiSetup(){
     Serial.print(".");
   }
 
+  connectedToWifi = true;
   Serial.println("success!");
   Serial.print("Local IP Address is: ");
   Serial.println(WiFi.localIP());
@@ -205,12 +218,11 @@ void wifiSetup(){
 void setup() {
   Serial.begin(9600);   //Initialize hardware serial with baudrate of 9600
   swSer.begin(9600);    //Initialize software serial with baudrate of 9600
-  delay(1000);
-
-  wifiSetup();
-  delay(500);
+  //delay(1000);
   Serial.println("\n################################################################################\n");
-  Serial.println("\n################################################################################");
+  wifiSetup();
+  //delay(500);
+  Serial.println("\n################################################################################\n");
 
 }
 
@@ -239,5 +251,14 @@ void loop() {
   }
 
 
+  // Prints WiFi status if it has changed
+  if (connectedToWifi != (WiFi.status()== WL_CONNECTED)){
+    connectedToWifi = !connectedToWifi;
+    if (connectedToWifi){
+      Serial.println("WiFi connected");
+    } else {
+      Serial.println("WiFi disconnected");
+    }
+  }
 
 }
