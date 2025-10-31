@@ -1,15 +1,9 @@
 package dk.aau.chrinigin.Smak.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @IdClass(BoardstateId.class)
@@ -31,10 +25,10 @@ public class Boardstate {
     @Column(name = "moveno")
     private Integer moveno;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id")
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"}) 
-    private Game game;
+    // @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.MERGE)
+    // @JoinColumn(name = "id")
+    // @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"}) 
+    // private Game game;
 
     public Boardstate() {}
 
@@ -43,7 +37,6 @@ public class Boardstate {
         this.x_placement = x_placement;
         this.o_placement = o_placement;
         this.moveno = moveno;
-        
     }
 
     public Long getId() {
@@ -78,15 +71,15 @@ public class Boardstate {
         this.moveno = moveno;
     }
     
-    @JsonIgnore
-    public Game getGame() {
-        return game;
-    }
+    // @JsonIgnore
+    // public Game getGame() {
+    //     return game;
+    // }
 
-    @JsonIgnore
-    public void setGame(Game game) {
-        this.game = game;
-    }
+    // @JsonIgnore
+    // public void setGame(Game game) {
+    //     this.game = game;
+    // }
 
     @Override
     public int hashCode() {
@@ -134,9 +127,8 @@ public class Boardstate {
     @Override
     public String toString() {
         return "Boardstate [id=" + id + ", x_placement=" + x_placement + ", o_placement=" + o_placement + ", moveno="
-                + moveno + ", game=" + game + "]";
+                + moveno + "]";
     }
-
     
 }
 

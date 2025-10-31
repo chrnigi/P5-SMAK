@@ -30,8 +30,18 @@ public class BoardstateService {
         return boardstateRepository.getByGameId(id);
     
     }
+
+    public Boardstate addBoardstate(Boardstate boardstate) {
+        return boardstateRepository.addBoardstate(
+            boardstate.getId(), 
+            boardstate.getX_placement(),
+            boardstate.getO_placement(),
+            boardstate.getMoveno()
+        ); 
+    }
    
     public Boardstate saveBoardstate(Boardstate boardstate) {
+        System.out.println(boardstate);
         return boardstateRepository.save(boardstate);
     }
 }

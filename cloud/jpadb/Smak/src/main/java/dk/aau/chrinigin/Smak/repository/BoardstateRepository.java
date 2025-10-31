@@ -16,5 +16,10 @@ public interface BoardstateRepository extends JpaRepository<Boardstate, Boardsta
     )
     public List<Boardstate> getByGameId(Long id);
 
-    
+    @Query(
+        value = "INSERT INTO boardstates (id, x_placement, o_placement, moveno) VALUES (?1, ?2, ?3, ?4)",
+        nativeQuery = true
+    )
+    public Boardstate addBoardstate(Long id, Short x_placement, Short o_placement, Integer moveno);
+
 }
