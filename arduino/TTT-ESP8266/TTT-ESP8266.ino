@@ -223,15 +223,7 @@ void setup() {
   wifiSetup();
   //delay(500);
   Serial.println("\n################################################################################\n");
-
-  // Debug
-
-  Serial.println("Trying update game (debug)");
-  gamestate.result = gamestate_struct::DRAW;
-  gamestate.GameID = 5;
-  updateGame();
-
-
+  
 }
 
 
