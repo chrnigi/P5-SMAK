@@ -36,9 +36,9 @@ const char* names[16] = {
 
 // Maps where on the physical 4x4 board, TTT is played and what turn index is used for a given field
 const int mapPinToBoard[] = {
-  0, 1 ,2, -1,
-  3, 4 ,5, -1,
-  6, 7 ,8, -1,
+   0, 1, 2,-1,
+   3, 4, 5,-1,
+   6, 7, 8,-1,
   -1,-1,-1,-1
 };
 
