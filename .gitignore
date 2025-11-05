@@ -1,6 +1,7 @@
 # Prerequisites
 *.d
 
+cloud/db-connection/*
 # Compiled Object files
 *.slo
 *.lo

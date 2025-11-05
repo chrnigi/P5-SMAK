@@ -42,6 +42,7 @@ public class GameController {
 
     @PatchMapping("/games/{id}")
     Game updateGame(@PathVariable Long id, @RequestBody Game game) {
+        game.setId(id);
         return gameService.save(game);
     }
 }
