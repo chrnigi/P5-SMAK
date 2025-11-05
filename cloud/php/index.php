@@ -24,8 +24,8 @@ if ($moveNo !== null) {
                  CAST(bs.x_placement AS UNSIGNED) AS xmask,
                  CAST(bs.o_placement AS UNSIGNED) AS omask,
                  g.result, g.gamestart
-          FROM tictactoe.boardstates bs
-          JOIN tictactoe.games g USING (id)
+          FROM ttt.boardstates bs
+          JOIN ttt.games g USING (id)
           WHERE bs.id = :gid AND bs.moveno = :mov
           LIMIT 1";
   $stmt = $pdo->prepare($sql);
@@ -35,8 +35,8 @@ if ($moveNo !== null) {
                  CAST(bs.x_placement AS UNSIGNED) AS xmask,
                  CAST(bs.o_placement AS UNSIGNED) AS omask,
                  g.result, g.gamestart
-          FROM tictactoe.boardstates bs
-          JOIN tictactoe.games g USING (id)
+          FROM ttt.boardstates bs
+          JOIN ttt.games g USING (id)
           WHERE bs.id = :gid
           ORDER BY bs.moveno DESC
           LIMIT 1";
