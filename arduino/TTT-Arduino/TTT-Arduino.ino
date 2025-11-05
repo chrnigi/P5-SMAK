@@ -122,7 +122,7 @@ void turn(int sensor_nr){
   //Serial.printf("x_board : %d\n", x_board);
   //Serial.printf("y_board : %d\n", o_board);
 
-	if (turn_counter > 9) return; // early end if the game is over
+	if (turn_counter > 8) return; // early end if the game is over
 	sensor_nr = 1 << sensor_nr;
 	
 	int * current_board = is_player_x ? &x_board : &y_board;
