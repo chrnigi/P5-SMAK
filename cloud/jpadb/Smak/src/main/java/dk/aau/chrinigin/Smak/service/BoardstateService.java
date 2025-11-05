@@ -10,7 +10,6 @@ import dk.aau.chrinigin.Smak.repository.BoardstateRepository;
 @Service
 public class BoardstateService {
     
-    static int MAX_BOARDSTATES_PER_GAME = 9;
     private final BoardstateRepository boardstateRepository;
 
     public BoardstateService(BoardstateRepository boardstateRepository) {
@@ -22,13 +21,7 @@ public class BoardstateService {
     }
 
     public List<Boardstate> getAllByGameId(Long id) {
-
-        // for (int i = 0; i < MAX_BOARDSTATES_PER_GAME; i++) {
-        //     ids.get(i).setId(id);
-        // }
-
-        return boardstateRepository.getByGameId(id);
-    
+        return boardstateRepository.getByGameId(id);    
     }
 
     public Boardstate addBoardstate(Boardstate boardstate) {
