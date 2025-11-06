@@ -1,6 +1,23 @@
 #include "pch.h"
 
+TEST(FSM, WhiteTurn) {
+	clean_state();
+	int w = 31;
+	board[w] = WHITE_PAWN;
+	pin_change(w, true);
+	EXPECT_EQ(state, states::white_begin_move);
+}
+TEST(FSM, WhiteTurnEnemy) {
+	clean_state();
+	int b = 22;
+	board[b] = BLACK_PAWN;
+	pin_change(b, true);
+	EXPECT_EQ(state, states::white_begin_enemy_capture);
+}
+
+
 TEST(FSM, UndoWhiteMove) {
+	reset();
 	pin_change(63 - 8, true);
 	EXPECT_EQ(state, states::white_begin_move);
 	pin_change(63 - 8, false);
