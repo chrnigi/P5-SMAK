@@ -14,7 +14,7 @@ void main(int argc, char* argv[])
 	using std::string;
 
 	//init_empty_board();
-	//board[1] = BLACK_KING;
+	//board[1] = p_BLACK_KING;
 	std::cout << print_board() << "\n";
 
 	pretty_print_board();

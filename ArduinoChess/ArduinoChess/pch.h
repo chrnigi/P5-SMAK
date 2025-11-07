@@ -9,66 +9,48 @@
 #include <string>
 #include <sstream>
 
-constexpr char EMPTY_SQUARE = ' ';
-constexpr char BLACK_PAWN = 'p', WHITE_PAWN = 'P';
-constexpr char BLACK_ROOK = 'r', WHITE_ROOK = 'R';
-constexpr char BLACK_KNIGHT = 'n', WHITE_KNIGHT = 'N';
-constexpr char BLACK_BISHOP = 'b', WHITE_BISHOP = 'B';
-constexpr char BLACK_QUEEN = 'q', WHITE_QUEEN = 'Q';
-constexpr char BLACK_KING = 'k', WHITE_KING = 'K';
+constexpr char p_EMPTY_SQUARE = ' ';
+constexpr char p_BLACK_PAWN = 'p', p_WHITE_PAWN = 'P';
+constexpr char p_BLACK_ROOK = 'r', p_WHITE_ROOK = 'R';
+constexpr char p_BLACK_KNIGHT = 'n', p_WHITE_KNIGHT = 'N';
+constexpr char p_BLACK_BISHOP = 'b', p_WHITE_BISHOP = 'B';
+constexpr char p_BLACK_QUEEN = 'q', p_WHITE_QUEEN = 'Q';
+constexpr char p_BLACK_KING = 'k', p_WHITE_KING = 'K';
 
-constexpr const int WHITE_KING_STARTING_SQUARE = 63 - 3;
-constexpr const int BLACK_KING_STARTING_SQUARE = 0 + 5;
+constexpr const int WHITE_KING_STARTINGSQUARE = 63 - 3;
+constexpr const int BLACK_KING_STARTINGSQUARE = 0 + 5;
 
-constexpr const int WHITE_ROOK_KING_SQUARE = 63 - 8;
-constexpr const int WHITE_ROOK_QUEEN_SQUARE = 63 - 0;
-constexpr const int BLACK_ROOK_KING_SQUARE = 0;
-constexpr const int BLACK_ROOK_QUEEN_SQUARE = 0 + 8;
+constexpr const int WHITE_ROOK_KINGSIDE_STARTINGSQUARE = 63 - 8;
+constexpr const int WHITE_ROOK_QUEENSIDE_STARTINGSQUARE = 63 - 0;
+constexpr const int BLACK_ROOK_KINGSIDE_STARTINGSQUARE = 0;
+constexpr const int BLACK_ROOK_QUEENSIDE_STARTINGSQUARE = 0 + 8;
 
-constexpr const int WHITE_KING_KINGSIDE_SQUARE = 63 - 1;
-constexpr const int WHITE_KING_QUEENSIDE_SQUARE = 63 - 5;
-constexpr const int BLACK_KING_KINGSIDE_SQUARE = 0 + 2;
-constexpr const int BLACK_KING_QUEENSIDE_SQUARE = 0 + 6;
+constexpr const int WHITE_KING_KINGSIDE_CASTLESQUARE = 63 - 1;
+constexpr const int WHITE_KING_QUEENSIDE_CASTLESQUARE = 63 - 5;
+constexpr const int BLACK_KING_KINGSIDE_CASTLESQUARE = 0 + 2;
+constexpr const int BLACK_KING_QUEENSIDE_CASTLESQUARE = 0 + 6;
 
-constexpr const int WHITE_ROOK_KINGSIDE_SQUARE = 63 - 2;
-constexpr const int WHITE_ROOK_QUEENSIDE_SQUARE = 63 - 4;
-constexpr const int BLACK_ROOK_KINGSIDE_SQUARE = 0 + 3;
-constexpr const int BLACK_ROOK_QUEENSIDE_SQUARE = 0 + 5;
+constexpr const int WHITE_ROOK_KINGSIDE_CASTLESQUARE = 63 - 2;
+constexpr const int WHITE_ROOK_QUEENSIDE_CASTLESQUARE = 63 - 4;
+constexpr const int BLACK_ROOK_KINGSIDE_CASTLESQUARE = 0 + 3;
+constexpr const int BLACK_ROOK_QUEENSIDE_CASTLESQUARE = 0 + 5;
 
 enum class piece_types : char {
-	empty = ' ',
+	empty = p_EMPTY_SQUARE,
 
-	w_pawn = 'P',
-	w_rook = 'R',
-	w_knight = 'N',
-	w_bishop = 'B',
-	w_queen = 'Q',
-	w_king = 'K',
+	w_pawn = p_WHITE_PAWN,
+	w_rook = p_WHITE_ROOK,
+	w_knight = p_WHITE_KNIGHT,
+	w_bishop = p_WHITE_BISHOP,
+	w_queen = p_WHITE_QUEEN,
+	w_king = p_WHITE_KING,
 
-	b_pawn = 'p',
-	b_rook = 'r',
-	b_knight = 'n',
-	b_bishop = 'b',
-	b_queen = 'q',
-	b_king = 'k',
-};
-
-static std::vector<piece_types> piece_chars = {
-	piece_types::empty,
-
-	piece_types::w_pawn,
-	piece_types::w_rook,
-	piece_types::w_rook,
-	piece_types::w_bishop,
-	piece_types::w_queen,
-	piece_types::w_king,
-
-	piece_types::b_pawn,
-	piece_types::b_rook,
-	piece_types::b_knight,
-	piece_types::b_bishop,
-	piece_types::b_queen,
-	piece_types::b_king,
+	b_pawn = p_BLACK_PAWN,
+	b_rook = p_BLACK_ROOK,
+	b_knight = p_BLACK_KNIGHT,
+	b_bishop = p_BLACK_BISHOP,
+	b_queen = p_BLACK_QUEEN,
+	b_king = p_BLACK_KING,
 };
 
 static std::vector<std::string> piece_strings = {
@@ -201,31 +183,31 @@ struct fsm_variables {
 
 static void WhiteCheckCastling(const int pin_number)
 {
-	if (board[pin_number] == WHITE_KING)
+	if (board[pin_number] == p_WHITE_KING)
 		chess_state.white_kingside = chess_state.white_queenside = false;
-	else if (board[pin_number] == WHITE_ROOK)
+	else if (board[pin_number] == p_WHITE_ROOK)
 	{
-		chess_state.white_kingside = chess_state.white_kingside && fsm.x == WHITE_ROOK_KING_SQUARE;
-		chess_state.white_queenside = chess_state.white_queenside && fsm.x == WHITE_ROOK_QUEEN_SQUARE;
+		chess_state.white_kingside = chess_state.white_kingside && fsm.x == WHITE_ROOK_KINGSIDE_STARTINGSQUARE;
+		chess_state.white_queenside = chess_state.white_queenside && fsm.x == WHITE_ROOK_QUEENSIDE_STARTINGSQUARE;
 	}
 }
 
 static void BlackCheckCastling(const int pin_number)
 {
-	if (board[pin_number] == BLACK_KING)
+	if (board[pin_number] == p_BLACK_KING)
 	{
 		chess_state.black_kingside = chess_state.black_queenside = false;
 	}
-	else if (board[pin_number] == BLACK_ROOK)
+	else if (board[pin_number] == p_BLACK_ROOK)
 	{
-		chess_state.black_kingside = chess_state.black_kingside && fsm.x == BLACK_ROOK_KING_SQUARE;
-		chess_state.black_queenside = chess_state.black_queenside && fsm.x == BLACK_ROOK_QUEEN_SQUARE;
+		chess_state.black_kingside = chess_state.black_kingside && fsm.x == BLACK_ROOK_KINGSIDE_STARTINGSQUARE;
+		chess_state.black_queenside = chess_state.black_queenside && fsm.x == BLACK_ROOK_QUEENSIDE_STARTINGSQUARE;
 	}
 }
 
 static void WhiteCheckEnPassant(const int pin_number)
 {
-	if (board[pin_number] == WHITE_PAWN)
+	if (board[pin_number] == p_WHITE_PAWN)
 	{
 		chess_state.en_passant = pin_number - fsm.x == -16;
 		chess_state.en_passant_square = pin_number + 8;
@@ -234,7 +216,7 @@ static void WhiteCheckEnPassant(const int pin_number)
 
 static void BlackCheckEnPassant(const int pin_number)
 {
-	if (board[pin_number] == BLACK_PAWN)
+	if (board[pin_number] == p_BLACK_PAWN)
 	{
 		chess_state.en_passant = pin_number - fsm.x == 16;
 		chess_state.en_passant_square = pin_number - 8;
@@ -242,21 +224,21 @@ static void BlackCheckEnPassant(const int pin_number)
 }
 
 static void WhiteHandlePONR(const int pin_number) {
-	if (board[pin_number] == WHITE_PAWN) chess_state.ply_since_ponr = 0;
+	if (board[pin_number] == p_WHITE_PAWN) chess_state.ply_since_ponr = 0;
 	else chess_state.ply_since_ponr++;
 }
 
 static void BlackHandlePONR(const int pin_number) {
-	if (board[pin_number] == BLACK_PAWN) chess_state.ply_since_ponr = 0;
+	if (board[pin_number] == p_BLACK_PAWN) chess_state.ply_since_ponr = 0;
 	else chess_state.ply_since_ponr++;
 }
 
 static void WhiteHandlePromotion(const int pin_number) {
-	if (board[pin_number] == WHITE_PAWN && pin_number < 8) board[pin_number] = WHITE_QUEEN;
+	if (board[pin_number] == p_WHITE_PAWN && pin_number < 8) board[pin_number] = p_WHITE_QUEEN;
 }
 
 static void BlackHandlePromotion(const int pin_number) {
-	if (board[pin_number] == BLACK_PAWN && pin_number > (63 - 8)) board[pin_number] = BLACK_QUEEN;
+	if (board[pin_number] == p_BLACK_PAWN && pin_number > (63 - 8)) board[pin_number] = p_BLACK_QUEEN;
 }
 
 /// <summary>
@@ -267,11 +249,11 @@ static void BlackHandlePromotion(const int pin_number) {
 /// <returns></returns>
 static bool CanCastle(const states s, const int pin_number){
 	if (s == white) {
-		return (board[pin_number] == WHITE_KING &&
+		return (board[pin_number] == p_WHITE_KING &&
 			(chess_state.white_kingside || chess_state.white_queenside));
 	}
 	else if (s == black) {
-		return (board[pin_number] == BLACK_KING &&
+		return (board[pin_number] == p_BLACK_KING &&
 			(chess_state.black_kingside || chess_state.black_queenside));
 	}
 	else return false;
@@ -316,7 +298,7 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			// SEND MOVE
 			state = black;
 			board[pin_number] = board[fsm.x];
-			board[fsm.x] = EMPTY_SQUARE;
+			board[fsm.x] = p_EMPTY_SQUARE;
 			chess_state.ply++;
 
 			WhiteCheckEnPassant(pin_number);
@@ -340,7 +322,7 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			// SEND CAPTURE
 			state = black;
 			board[fsm.y] = board[fsm.x];
-			board[fsm.x] = EMPTY_SQUARE;
+			board[fsm.x] = p_EMPTY_SQUARE;
 			chess_state.ply_since_ponr = 0;
 			chess_state.ply++;
 
@@ -398,7 +380,7 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			// SEND MOVE
 			state = white;
 			board[pin_number] = board[fsm.x];
-			board[fsm.x] = EMPTY_SQUARE;
+			board[fsm.x] = p_EMPTY_SQUARE;
 			chess_state.ply++;
 
 			BlackCheckEnPassant(pin_number);
@@ -421,7 +403,7 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			// SEND CAPTURE
 			state = white;
 			board[fsm.y] = board[fsm.x];
-			board[fsm.x] = EMPTY_SQUARE;
+			board[fsm.x] = p_EMPTY_SQUARE;
 			chess_state.ply_since_ponr = 0;
 			chess_state.ply++;
 
@@ -460,9 +442,9 @@ static void pin_change(const int pin_number, const bool is_up = false)
 	case white_castling: // entry for castling, king moved
 	{
 		if (is_down) {
-			if (pin_number == WHITE_KING_KINGSIDE_SQUARE && chess_state.white_kingside)
+			if (pin_number == WHITE_KING_KINGSIDE_CASTLESQUARE && chess_state.white_kingside)
 				state = white_castling_kingside_kingdown;
-			else if (pin_number == WHITE_KING_QUEENSIDE_SQUARE && chess_state.white_queenside)
+			else if (pin_number == WHITE_KING_QUEENSIDE_CASTLESQUARE && chess_state.white_queenside)
 				state = white_castling_queenside_kingdown;
 			else {
 				state = white_begin_move;
@@ -470,10 +452,10 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			}
 		}
 		else if (is_white_piece) {
-			if (board[pin_number] == WHITE_ROOK) {
-				if (pin_number == WHITE_ROOK_KING_SQUARE && chess_state.white_kingside)
+			if (board[pin_number] == p_WHITE_ROOK) {
+				if (pin_number == WHITE_ROOK_KINGSIDE_STARTINGSQUARE && chess_state.white_kingside)
 					state = white_castling_kingside_KINGUP_ROOKUP;
-				else if (pin_number == WHITE_ROOK_QUEEN_SQUARE && chess_state.white_queenside)
+				else if (pin_number == WHITE_ROOK_QUEENSIDE_STARTINGSQUARE && chess_state.white_queenside)
 					state = white_castling_queenside_KINGUP_ROOKUP;
 				else
 					state = error;
@@ -492,14 +474,14 @@ static void pin_change(const int pin_number, const bool is_up = false)
 	}
 	case white_castling_kingside_kingdown:
 	{
-		if (is_down && board[pin_number] == WHITE_ROOK && pin_number == WHITE_ROOK_KING_SQUARE)
+		if (is_down && board[pin_number] == p_WHITE_ROOK && pin_number == WHITE_ROOK_KINGSIDE_STARTINGSQUARE)
 			state = white_castling_kingside_kingdown_ROOKUP;
 		else state = error;
 		break;
 	}
 	case white_castling_queenside_kingdown:
 	{
-		if (is_down && board[pin_number] == WHITE_ROOK && pin_number == WHITE_ROOK_QUEEN_SQUARE)
+		if (is_down && board[pin_number] == p_WHITE_ROOK && pin_number == WHITE_ROOK_QUEENSIDE_STARTINGSQUARE)
 			state = white_castling_queenside_kingdown_ROOKUP;
 		else state = error;
 		break;
@@ -507,41 +489,59 @@ static void pin_change(const int pin_number, const bool is_up = false)
 
 	case white_castling_kingside_kingdown_ROOKUP:
 	{
-		if (is_down && pin_number == WHITE_ROOK_KINGSIDE_SQUARE)
+		if (is_down && pin_number == WHITE_ROOK_KINGSIDE_CASTLESQUARE)
 		{
 			// end castling
 			chess_state.white_kingside = chess_state.white_queenside = false;
 			chess_state.ply++;
 			//chess_state.ply_since_ponr = 0;
-			board[WHITE_ROOK_KING_SQUARE] = EMPTY_SQUARE;
-			board[WHITE_ROOK_KINGSIDE_SQUARE] = WHITE_ROOK;
-			board[WHITE_KING_STARTING_SQUARE] = EMPTY_SQUARE;
-			board[WHITE_KING_KINGSIDE_SQUARE] = WHITE_KING;
+			board[WHITE_ROOK_KINGSIDE_STARTINGSQUARE] = p_EMPTY_SQUARE;
+			board[WHITE_ROOK_KINGSIDE_CASTLESQUARE] = p_WHITE_ROOK;
+			board[WHITE_KING_STARTINGSQUARE] = p_EMPTY_SQUARE;
+			board[WHITE_KING_KINGSIDE_CASTLESQUARE] = p_WHITE_KING;
 			state = black;
 		}
-		else state == error;
+		else state = error;
 		break;
 	}
 	case white_castling_queenside_kingdown_ROOKUP:
 	{
-		if (is_down && pin_number == WHITE_ROOK_QUEENSIDE_SQUARE)
+		if (is_down && pin_number == WHITE_ROOK_QUEENSIDE_CASTLESQUARE)
 		{
 			// end castling
 			chess_state.white_kingside = chess_state.white_queenside = false;
 			chess_state.ply++;
 			//chess_state.ply_since_ponr = 0;
-			board[WHITE_ROOK_KING_SQUARE] = EMPTY_SQUARE;
-			board[WHITE_ROOK_KINGSIDE_SQUARE] = WHITE_ROOK;
-			board[WHITE_KING_STARTING_SQUARE] = EMPTY_SQUARE;
-			board[WHITE_KING_KINGSIDE_SQUARE] = WHITE_KING;
+			board[WHITE_ROOK_KINGSIDE_STARTINGSQUARE] = p_EMPTY_SQUARE;
+			board[WHITE_ROOK_KINGSIDE_CASTLESQUARE] = p_WHITE_ROOK;
+			board[WHITE_KING_STARTINGSQUARE] = p_EMPTY_SQUARE;
+			board[WHITE_KING_KINGSIDE_CASTLESQUARE] = p_WHITE_KING;
 			state = black;
 		}
 		else state == error;
 		break;
 	}
 
-	case white_castling_kingside_KINGUP_ROOKUP:
+	case white_castling_kingside_KINGUP_ROOKUP: 
+	{
+		if (is_down && pin_number == WHITE_KING_KINGSIDE_CASTLESQUARE)
+			state = white_castling_kingside_kingdown_ROOKUP;
+		else if (is_down && pin_number == WHITE_ROOK_KINGSIDE_CASTLESQUARE)
+			state = white_castling_kingside_KINGUP_rookdown;
+		else
+			state = error;
+		break;
+	}
 	case white_castling_queenside_KINGUP_ROOKUP:
+	{
+		if (is_down && pin_number == WHITE_KING_QUEENSIDE_CASTLESQUARE)
+			state = white_castling_queenside_kingdown_ROOKUP;
+		else if (is_down && pin_number == WHITE_ROOK_QUEENSIDE_CASTLESQUARE)
+			state = white_castling_queenside_KINGUP_rookdown;
+		else
+			state = error;
+		break;
+	}
 
 	case white_castling_kingside_KINGUP_rookdown:
 	case white_castling_queenside_KINGUP_rookdown:
