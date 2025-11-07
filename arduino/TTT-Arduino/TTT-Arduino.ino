@@ -162,7 +162,7 @@ void turn(int sensor_nr){
 void command(String command){
   if (command == "reset\n"){
     Serial.println("Resetting!");
-    Serial1.println("Arduino is Resetting");
+    Serial3.println("Arduino is Resetting");
     delay(500);
     resetFunc();
   }
@@ -170,8 +170,8 @@ void command(String command){
 
 String serial;
 void readESPserial(){
-  if (Serial1.available()){
-    serial = Serial1.readString();
+  if (Serial3.available()){
+    serial = Serial3.readString();
     Serial.print("Received string from ESP: ");
     Serial.print(serial);
     command(serial);
@@ -188,19 +188,19 @@ void readSoftwareSerial(){
 }
 
 void sendGameState(){
-  Serial1.print("Gamestate: ");
-  Serial1.print(turn_counter);
-  Serial1.print(" ");
-  Serial1.print(x_board);
-  Serial1.print(" ");
-  Serial1.print(y_board);
-  Serial1.print(" ");
-  Serial1.println(result);
+  Serial3.print("Gamestate: ");
+  Serial3.print(turn_counter);
+  Serial3.print(" ");
+  Serial3.print(x_board);
+  Serial3.print(" ");
+  Serial3.print(y_board);
+  Serial3.print(" ");
+  Serial3.println(result);
 }
 
 void setup() {
   Serial.begin(9600);
-  Serial1.begin(9600); 
+  Serial3.begin(9600); 
   Serial.println("Setup!\n########################");
 
   for (int i = 0; i < 16; i++) {
@@ -213,7 +213,7 @@ void setup() {
   Serial.println("Digital Hall scan started");
   Serial.print("ACTIVE_LEVEL = ");
   Serial.println(ACTIVE_LEVEL == LOW ? "LOW" : "HIGH");
-  Serial1.println("Arduino has finished setup.");
+  Serial3.println("Arduino has finished setup.");
 }
 
 
@@ -229,6 +229,7 @@ void loop() {
 
   lastScan = now;
   scans++;
+
 
   // Read all sensors
   for (int i = 0; i < 16; i++) {
