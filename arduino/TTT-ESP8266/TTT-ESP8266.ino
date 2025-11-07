@@ -12,7 +12,7 @@
 #include <sstream>
 
 // pins Rx GPIO14 (D5) and Tx GPIO 12 (D6)
-SoftwareSerial swSer(14, 12);  
+//SoftwareSerial Serial(14, 12);  
 String serial;
 
 
@@ -68,7 +68,7 @@ String resultAsString(int input){
 bool readGamestate(String message){
   std::stringstream messageStream(message.c_str());
   std::string segment;
-
+  
    if (std::getline(messageStream, segment, ' ') && segment == "Gamestate:") {
       std::getline(messageStream, segment, ' ');
       gamestate.turn_counter = stoi(segment);
@@ -217,7 +217,7 @@ void wifiSetup(){
 
 void setup() {
   Serial.begin(9600);   //Initialize hardware serial with baudrate of 9600
-  swSer.begin(9600);    //Initialize software serial with baudrate of 9600
+  //Serial.begin(9600);    //Initialize software serial with baudrate of 9600
   //delay(1000);
   Serial.println("\n################################################################################\n");
   wifiSetup();
@@ -227,9 +227,8 @@ void setup() {
 }
 
 void loop() {
-  while (swSer.available() > 0) {  //wait for data at software serial
-    serial = swSer.readStringUntil('\n');
-    Serial.println(serial);
+  while (Serial.available() > 0) {  //wait for data at software serial
+    serial = Serial.readStringUntil('\n');
 
     
     if (readGamestate(serial)){ //returns true if serial is a gamestate
@@ -243,12 +242,12 @@ void loop() {
         Serial.println("Failed to send gamestate, wifi disconnected");}
     }
     
-    //Serial.write(swSer.read()); //Send data recived from software serial to hardware serial    
+    //Serial.write(Serial.read()); //Send data recived from software serial to hardware serial    
   }
-  while (Serial.available() > 0) { //wait for data at hardware serial
-    swSer.write(Serial.read());     //send data received from hardware serial to software serial
+  /*while (Serial.available() > 0) { //wait for data at hardware serial
+    Serial.write(Serial.read());     //send data received from hardware serial to software serial
   }
-
+  */
 
   // Prints WiFi status if it has changed
   if (connectedToWifi != (WiFi.status()== WL_CONNECTED)){
