@@ -17,6 +17,9 @@ constexpr char BLACK_BISHOP = 'b', WHITE_BISHOP = 'B';
 constexpr char BLACK_QUEEN = 'q', WHITE_QUEEN = 'Q';
 constexpr char BLACK_KING = 'k', WHITE_KING = 'K';
 
+constexpr const int WHITE_KING_STARTING_SQUARE = 63 - 3;
+constexpr const int BLACK_KING_STARTING_SQUARE = 0 + 5;
+
 constexpr const int WHITE_ROOK_KING_SQUARE = 63 - 8;
 constexpr const int WHITE_ROOK_QUEEN_SQUARE = 63 - 0;
 constexpr const int BLACK_ROOK_KING_SQUARE = 0;
@@ -26,6 +29,11 @@ constexpr const int WHITE_KING_KINGSIDE_SQUARE = 63 - 1;
 constexpr const int WHITE_KING_QUEENSIDE_SQUARE = 63 - 5;
 constexpr const int BLACK_KING_KINGSIDE_SQUARE = 0 + 2;
 constexpr const int BLACK_KING_QUEENSIDE_SQUARE = 0 + 6;
+
+constexpr const int WHITE_ROOK_KINGSIDE_SQUARE = 63 - 2;
+constexpr const int WHITE_ROOK_QUEENSIDE_SQUARE = 63 - 4;
+constexpr const int BLACK_ROOK_KINGSIDE_SQUARE = 0 + 3;
+constexpr const int BLACK_ROOK_QUEENSIDE_SQUARE = 0 + 5;
 
 enum class piece_types : char {
 	empty = ' ',
@@ -144,13 +152,10 @@ enum states {
 	white_castling,
 	white_castling_kingside_kingdown,
 	white_castling_queenside_kingdown,
-
-	white_castling_kingside_kingdown_ROOKUP,
-	white_castling_queenside_kingdown_ROOKUP,
-
 	white_castling_kingside_KINGUP_ROOKUP,
 	white_castling_queenside_KINGUP_ROOKUP,
-
+	white_castling_kingside_kingdown_ROOKUP,
+	white_castling_queenside_kingdown_ROOKUP,
 	white_castling_kingside_KINGUP_rookdown,
 	white_castling_queenside_KINGUP_rookdown,
 
@@ -452,23 +457,88 @@ static void pin_change(const int pin_number, const bool is_up = false)
 		break;
 	}
 	
-	case white_castling:
+	case white_castling: // entry for castling, king moved
 	{
 		if (is_down) {
-			if (pin_number == WHITE_)
+			if (pin_number == WHITE_KING_KINGSIDE_SQUARE && chess_state.white_kingside)
+				state = white_castling_kingside_kingdown;
+			else if (pin_number == WHITE_KING_QUEENSIDE_SQUARE && chess_state.white_queenside)
+				state = white_castling_queenside_kingdown;
+			else {
+				state = white_begin_move;
+				pin_change(pin_number, is_up);
+			}
 		}
 		else if (is_white_piece) {
-
+			if (board[pin_number] == WHITE_ROOK) {
+				if (pin_number == WHITE_ROOK_KING_SQUARE && chess_state.white_kingside)
+					state = white_castling_kingside_KINGUP_ROOKUP;
+				else if (pin_number == WHITE_ROOK_QUEEN_SQUARE && chess_state.white_queenside)
+					state = white_castling_queenside_KINGUP_ROOKUP;
+				else
+					state = error;
+			}
+			else
+			{
+				state = error;
+			}
 		}
 		else if (is_black_piece)
-			state = error;
+		{
+			state = white_begin_capture;
+			fsm.y = pin_number;
+		}
 		break;
 	}
 	case white_castling_kingside_kingdown:
+	{
+		if (is_down && board[pin_number] == WHITE_ROOK && pin_number == WHITE_ROOK_KING_SQUARE)
+			state = white_castling_kingside_kingdown_ROOKUP;
+		else state = error;
+		break;
+	}
 	case white_castling_queenside_kingdown:
+	{
+		if (is_down && board[pin_number] == WHITE_ROOK && pin_number == WHITE_ROOK_QUEEN_SQUARE)
+			state = white_castling_queenside_kingdown_ROOKUP;
+		else state = error;
+		break;
+	}
 
 	case white_castling_kingside_kingdown_ROOKUP:
+	{
+		if (is_down && pin_number == WHITE_ROOK_KINGSIDE_SQUARE)
+		{
+			// end castling
+			chess_state.white_kingside = chess_state.white_queenside = false;
+			chess_state.ply++;
+			//chess_state.ply_since_ponr = 0;
+			board[WHITE_ROOK_KING_SQUARE] = EMPTY_SQUARE;
+			board[WHITE_ROOK_KINGSIDE_SQUARE] = WHITE_ROOK;
+			board[WHITE_KING_STARTING_SQUARE] = EMPTY_SQUARE;
+			board[WHITE_KING_KINGSIDE_SQUARE] = WHITE_KING;
+			state = black;
+		}
+		else state == error;
+		break;
+	}
 	case white_castling_queenside_kingdown_ROOKUP:
+	{
+		if (is_down && pin_number == WHITE_ROOK_QUEENSIDE_SQUARE)
+		{
+			// end castling
+			chess_state.white_kingside = chess_state.white_queenside = false;
+			chess_state.ply++;
+			//chess_state.ply_since_ponr = 0;
+			board[WHITE_ROOK_KING_SQUARE] = EMPTY_SQUARE;
+			board[WHITE_ROOK_KINGSIDE_SQUARE] = WHITE_ROOK;
+			board[WHITE_KING_STARTING_SQUARE] = EMPTY_SQUARE;
+			board[WHITE_KING_KINGSIDE_SQUARE] = WHITE_KING;
+			state = black;
+		}
+		else state == error;
+		break;
+	}
 
 	case white_castling_kingside_KINGUP_ROOKUP:
 	case white_castling_queenside_KINGUP_ROOKUP:
