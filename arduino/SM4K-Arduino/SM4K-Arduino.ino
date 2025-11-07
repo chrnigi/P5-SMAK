@@ -98,6 +98,11 @@ void loop() {
         Serial.print(i);
         Serial.print(" ");
         Serial.println(state[i]);
+
+        Serial3.print("PinChanges: ");
+        Serial3.print(i);
+        Serial3.print(" ");
+        Serial3.println(state[i]);
       }
     } else {
       changeStreak[i] = 0;
