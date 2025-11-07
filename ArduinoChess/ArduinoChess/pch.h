@@ -146,6 +146,16 @@ enum states {
 	black_begin_capture,
 	black_begin_enemy_capture,
 
+	black_castling,
+	black_castling_kingside_kingdown,
+	black_castling_queenside_kingdown,
+	black_castling_kingside_KINGUP_ROOKUP,
+	black_castling_queenside_KINGUP_ROOKUP,
+	black_castling_kingside_kingdown_ROOKUP,
+	black_castling_queenside_kingdown_ROOKUP,
+	black_castling_kingside_KINGUP_rookdown,
+	black_castling_queenside_KINGUP_rookdown,
+
 	error,
 } static state;
 
@@ -571,6 +581,144 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			board[WHITE_ROOK_QUEENSIDE_CASTLESQUARE] = p_WHITE_ROOK;
 			board[WHITE_KING_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[WHITE_KING_QUEENSIDE_CASTLESQUARE] = p_WHITE_KING;
+			state = black;
+		}
+		else state == error;
+		break;
+	}
+
+	case black_castling: // entry for castling, king moved
+	{
+		if (is_down) {
+			if (pin_number == BLACK_KING_KINGSIDE_CASTLESQUARE && chess_state.black_kingside)
+				state = black_castling_kingside_kingdown;
+			else if (pin_number == BLACK_KING_QUEENSIDE_CASTLESQUARE && chess_state.black_queenside)
+				state = black_castling_queenside_kingdown;
+			else {
+				state = black_begin_move;
+				pin_change(pin_number, is_up);
+			}
+		}
+		else if (is_black_piece) {
+			if (board[pin_number] == p_BLACK_ROOK) {
+				if (pin_number == BLACK_ROOK_KINGSIDE_STARTINGSQUARE && chess_state.black_kingside)
+					state = black_castling_kingside_KINGUP_ROOKUP;
+				else if (pin_number == BLACK_ROOK_QUEENSIDE_STARTINGSQUARE && chess_state.black_queenside)
+					state = black_castling_queenside_KINGUP_ROOKUP;
+				else
+					state = error;
+			}
+			else
+			{
+				state = error;
+			}
+		}
+		else if (is_white_piece)
+		{
+			state = black_begin_capture;
+			fsm.y = pin_number;
+		}
+		break;
+	}
+	case black_castling_kingside_kingdown:
+	{
+		if (is_down && board[pin_number] == p_BLACK_ROOK && pin_number == BLACK_ROOK_KINGSIDE_STARTINGSQUARE)
+			state = black_castling_kingside_kingdown_ROOKUP;
+		else state = error;
+		break;
+	}
+	case black_castling_queenside_kingdown:
+	{
+		if (is_down && board[pin_number] == p_BLACK_ROOK && pin_number == BLACK_ROOK_QUEENSIDE_STARTINGSQUARE)
+			state = black_castling_queenside_kingdown_ROOKUP;
+		else state = error;
+		break;
+	}
+
+	case black_castling_kingside_kingdown_ROOKUP:
+	{
+		if (is_down && pin_number == BLACK_ROOK_KINGSIDE_CASTLESQUARE)
+		{
+			// end castling
+			chess_state.black_kingside = chess_state.black_queenside = false;
+			chess_state.ply++;
+			//chess_state.ply_since_ponr = 0;
+			board[BLACK_ROOK_KINGSIDE_STARTINGSQUARE] = p_EMPTY_SQUARE;
+			board[BLACK_ROOK_KINGSIDE_CASTLESQUARE] = p_BLACK_ROOK;
+			board[BLACK_KING_STARTINGSQUARE] = p_EMPTY_SQUARE;
+			board[BLACK_KING_KINGSIDE_CASTLESQUARE] = p_BLACK_KING;
+			state = black;
+		}
+		else state = error;
+		break;
+	}
+	case black_castling_queenside_kingdown_ROOKUP:
+	{
+		if (is_down && pin_number == BLACK_ROOK_QUEENSIDE_CASTLESQUARE)
+		{
+			// end castling
+			chess_state.black_kingside = chess_state.black_queenside = false;
+			chess_state.ply++;
+			//chess_state.ply_since_ponr = 0;
+			board[BLACK_ROOK_QUEENSIDE_STARTINGSQUARE] = p_EMPTY_SQUARE;
+			board[BLACK_ROOK_QUEENSIDE_CASTLESQUARE] = p_BLACK_ROOK;
+			board[BLACK_KING_STARTINGSQUARE] = p_EMPTY_SQUARE;
+			board[BLACK_KING_QUEENSIDE_CASTLESQUARE] = p_BLACK_KING;
+			state = black;
+		}
+		else state == error;
+		break;
+	}
+
+	case black_castling_kingside_KINGUP_ROOKUP:
+	{
+		if (is_down && pin_number == BLACK_KING_KINGSIDE_CASTLESQUARE)
+			state = black_castling_kingside_kingdown_ROOKUP;
+		else if (is_down && pin_number == BLACK_ROOK_KINGSIDE_CASTLESQUARE)
+			state = black_castling_kingside_KINGUP_rookdown;
+		else
+			state = error;
+		break;
+	}
+	case black_castling_queenside_KINGUP_ROOKUP:
+	{
+		if (is_down && pin_number == BLACK_KING_QUEENSIDE_CASTLESQUARE)
+			state = black_castling_queenside_kingdown_ROOKUP;
+		else if (is_down && pin_number == BLACK_ROOK_QUEENSIDE_CASTLESQUARE)
+			state = black_castling_queenside_KINGUP_rookdown;
+		else
+			state = error;
+		break;
+	}
+
+	case black_castling_kingside_KINGUP_rookdown:
+	{
+		if (is_down && pin_number == BLACK_KING_KINGSIDE_CASTLESQUARE) {
+			// end castling
+			chess_state.black_kingside = chess_state.black_queenside = false;
+			chess_state.ply++;
+			//chess_state.ply_since_ponr = 0;
+			board[BLACK_ROOK_KINGSIDE_STARTINGSQUARE] = p_EMPTY_SQUARE;
+			board[BLACK_ROOK_KINGSIDE_CASTLESQUARE] = p_BLACK_ROOK;
+			board[BLACK_KING_STARTINGSQUARE] = p_EMPTY_SQUARE;
+			board[BLACK_KING_KINGSIDE_CASTLESQUARE] = p_BLACK_KING;
+			state = black;
+		}
+		else state = error;
+		break;
+	}
+	case black_castling_queenside_KINGUP_rookdown:
+	{
+		if (is_down && pin_number == BLACK_ROOK_QUEENSIDE_CASTLESQUARE)
+		{
+			// end castling
+			chess_state.black_kingside = chess_state.black_queenside = false;
+			chess_state.ply++;
+			//chess_state.ply_since_ponr = 0;
+			board[BLACK_ROOK_QUEENSIDE_STARTINGSQUARE] = p_EMPTY_SQUARE;
+			board[BLACK_ROOK_QUEENSIDE_CASTLESQUARE] = p_BLACK_ROOK;
+			board[BLACK_KING_STARTINGSQUARE] = p_EMPTY_SQUARE;
+			board[BLACK_KING_QUEENSIDE_CASTLESQUARE] = p_BLACK_KING;
 			state = black;
 		}
 		else state == error;
