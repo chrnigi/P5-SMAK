@@ -512,10 +512,10 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			chess_state.white_kingside = chess_state.white_queenside = false;
 			chess_state.ply++;
 			//chess_state.ply_since_ponr = 0;
-			board[WHITE_ROOK_KINGSIDE_STARTINGSQUARE] = p_EMPTY_SQUARE;
-			board[WHITE_ROOK_KINGSIDE_CASTLESQUARE] = p_WHITE_ROOK;
+			board[WHITE_ROOK_QUEENSIDE_STARTINGSQUARE] = p_EMPTY_SQUARE;
+			board[WHITE_ROOK_QUEENSIDE_CASTLESQUARE] = p_WHITE_ROOK;
 			board[WHITE_KING_STARTINGSQUARE] = p_EMPTY_SQUARE;
-			board[WHITE_KING_KINGSIDE_CASTLESQUARE] = p_WHITE_KING;
+			board[WHITE_KING_QUEENSIDE_CASTLESQUARE] = p_WHITE_KING;
 			state = black;
 		}
 		else state == error;
@@ -544,7 +544,38 @@ static void pin_change(const int pin_number, const bool is_up = false)
 	}
 
 	case white_castling_kingside_KINGUP_rookdown:
+	{
+		if (is_down && pin_number == WHITE_KING_KINGSIDE_CASTLESQUARE) {
+			// end castling
+			chess_state.white_kingside = chess_state.white_queenside = false;
+			chess_state.ply++;
+			//chess_state.ply_since_ponr = 0;
+			board[WHITE_ROOK_KINGSIDE_STARTINGSQUARE] = p_EMPTY_SQUARE;
+			board[WHITE_ROOK_KINGSIDE_CASTLESQUARE] = p_WHITE_ROOK;
+			board[WHITE_KING_STARTINGSQUARE] = p_EMPTY_SQUARE;
+			board[WHITE_KING_KINGSIDE_CASTLESQUARE] = p_WHITE_KING;
+			state = black;
+		}
+		else state = error;
+		break;
+	}
 	case white_castling_queenside_KINGUP_rookdown:
+	{
+		if (is_down && pin_number == WHITE_ROOK_QUEENSIDE_CASTLESQUARE)
+		{
+			// end castling
+			chess_state.white_kingside = chess_state.white_queenside = false;
+			chess_state.ply++;
+			//chess_state.ply_since_ponr = 0;
+			board[WHITE_ROOK_QUEENSIDE_STARTINGSQUARE] = p_EMPTY_SQUARE;
+			board[WHITE_ROOK_QUEENSIDE_CASTLESQUARE] = p_WHITE_ROOK;
+			board[WHITE_KING_STARTINGSQUARE] = p_EMPTY_SQUARE;
+			board[WHITE_KING_QUEENSIDE_CASTLESQUARE] = p_WHITE_KING;
+			state = black;
+		}
+		else state == error;
+		break;
+	}
 	
 	default: // error
 		break;
