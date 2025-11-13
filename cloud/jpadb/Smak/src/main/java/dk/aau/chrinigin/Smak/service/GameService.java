@@ -1,4 +1,6 @@
 package dk.aau.chrinigin.Smak.service;
+// Service layer for managing Game entities. Provides methods to retrieve all games,
+// get a specific game by ID, and save a game to the database.
 
 import java.util.List;
 import java.util.Optional;

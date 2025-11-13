@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Smak Chess Viewer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!--
+  This file is our chess viewer
+  It talks to the backend (/games, /moves, /pgn), shows a visual board
+  and lets us click through moves one-by-one
+
+  All written without external libraries so nothing breaks
+-->
+
+<style>
+  :root {
+    --bg: #0d1117;
+    --fg: #e6edf3;
+    --card: #161b22;
+    --border: #30363d;
+    --muted: #8b949e;
+    --light-square: #f0d9b5;
+    --dark-square: #b58863;
+  }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: system-ui, sans-serif;
+  }
+
+  header {
+    padding: 12px 20px;
+    background: #090d12;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  main {
+    display: grid;
+    grid-template-columns: 520px 1fr;
+    gap: 20px;
+    padding: 20px;
+  }
+
+  .panel {
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: var(--card);
+    border: 1px solid var(--border);
+  }
+
+  #board {
+    width: 100%;
+    max-width: 480px;
+    aspect-ratio: 1 / 1;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-auto-rows: 1fr;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 0 auto;
+  }
+
+  .square {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 34px;
+    user-select: none;
+  }
+
+  .light { background: var(--light-square); }
+  .dark  { background: var(--dark-square); }
+
+  #fenBox, #gameInfo {
+    margin-top: 10px;
+    padding: 8px 10px;
+    background: #0f141a;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+  }
+
+  .controls {
+    margin-top: 10px;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  #movesTable {
+    width: 100%;
+    margin-top: 10px;
+    border-collapse: collapse;
+  }
+  #movesTable th, #movesTable td {
+    padding: 6px 5px;
+    border-bottom: 1px solid var(--border);
+  }
+  #movesTable tr.active {
+    background: #1d2633;
+  }
+
+  #pgnBox {
+    margin-top: 14px;
+    padding: 8px 10px;
+    background: #0f141a;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    max-height: 260px;
+    overflow-y: auto;
+    font-family: ui-monospace, Menlo, Consolas;
+  }
+</style>
+</head>
+
+<body>
+
+<header>
+  <strong>♟ Smak Viewer</strong>
+
+  Game:
+  <select id="gameSelect"></select>
+
+  <button id="refreshBtn">↻ Refresh</button>
+  <span id="status"></span>
+</header>
+
+<main>
+
+  <!--
+    LEFT SIDE: visual chess board + fen + start/end info + buttons
+  -->
+  <div class="panel">
+    <h2>Board</h2>
+    <div id="board"></div>
+
+    <div id="fenBox"></div>
+    <div id="gameInfo"></div>
+
+    <div class="controls">
+      <button id="btnFirst">⏮</button>
+      <button id="btnPrev">◀</button>
+      <button id="btnNext">▶</button>
+      <button id="btnLast">⏭</button>
+      <span id="plyLabel" style="margin-left:10px;"></span>
+    </div>
+  </div>
+
+  <!--
+  RIGHT SIDE: moves table + PGN box
+  -->
+  <div class="panel">
+    <h2>Moves</h2>
+
+    <table id="movesTable">
+      <thead>
+      <tr><th>#</th><th>Side</th><th>Move</th><th>Flags</th></tr>
+      </thead>
+      <tbody id="movesBody"></tbody>
+    </table>
+
+    <h2 style="margin-top:16px;">PGN</h2>
+    <div id="pgnBox"></div>
+  </div>
+
+</main>
+
+<script>
+  // Easier access to important elements
+  const el = {
+    gameSelect: document.getElementById('gameSelect'),
+    refreshBtn: document.getElementById('refreshBtn'),
+    status: document.getElementById('status'),
+    board: document.getElementById('board'),
+    fenBox: document.getElementById('fenBox'),
+    gameInfo: document.getElementById('gameInfo'),
+    movesBody: document.getElementById('movesBody'),
+    pgnBox: document.getElementById('pgnBox'),
+    btnFirst: document.getElementById('btnFirst'),
+    btnPrev: document.getElementById('btnPrev'),
+    btnNext: document.getElementById('btnNext'),
+    btnLast: document.getElementById('btnLast'),
+    plyLabel: document.getElementById('plyLabel'),
+  };
+
+  // Our memory of the currently loaded game
+  let state = {
+    game: null,
+    moves: [],
+    index: -1,  
+  };
+
+  // Quick helper for fetch JSON
+  async function fetchJson(url) {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(await resp.text());
+    return resp.json();
+  }
+
+  // Convert piece letters → unicode chess symbols
+  function pieceChar(c) {
+    switch (c) {
+      case 'P': return '♙'; 
+      case 'N': return '♘';
+      case 'B': return '♗';
+      case 'R': return '♖';
+      case 'Q': return '♕';
+      case 'K': return '♔';
+      case 'p': return '♟';
+      case 'n': return '♞';
+      case 'b': return '♝';
+      case 'r': return '♜';
+      case 'q': return '♛';
+      case 'k': return '♚';
+      default: return '';
+    }
+  }
+
+  // Draw the board visually from FEN
+  function renderBoardFromFen(fen) {
+    const placement = fen.split(' ')[0];
+    const rows = placement.split('/');
+
+    el.board.innerHTML = '';
+
+    for (let r = 0; r < 8; r++) {
+      let file = 0;
+      for (const ch of rows[r]) {
+        if (/\d/.test(ch)) {
+          // empty squares
+          for (let i = 0; i < +ch; i++) {
+            addSquare(r, file++, '');
+          }
+        } else {
+          // actual piece
+          addSquare(r, file, pieceChar(ch));
+          file++;
+        }
+      }
+    }
+  }
+
+  function addSquare(rank, file, piece) {
+    const sq = document.createElement('div');
+    sq.classList.add('square');
+    const isLight = (rank + file) % 2 === 0;
+    sq.classList.add(isLight ? 'light' : 'dark');
+    sq.textContent = piece;
+    el.board.appendChild(sq);
+  }
+
+  // Update board + fen text
+  function setFen(fen) {
+    renderBoardFromFen(fen);
+    el.fenBox.textContent = "FEN:\n" + fen;
+  }
+
+  // Pick the correct FEN for the given move 
+  function fenAt(index) {
+    if (index < 0) return state.game.initialFen;
+    if (index < state.moves.length) return state.moves[index].fenAfter;
+    return state.game.latestFen || state.game.initialFen;
+  }
+
+  function updatePlyLabel() {
+    if (state.index < 0) {
+      el.plyLabel.textContent = "Initial position";
+      return;
+    }
+    const m = state.moves[state.index];
+    const player = (m.plyno % 2 === 1 ? "White" : "Black");
+    el.plyLabel.textContent = `Ply ${m.plyno} (${player})`;
+  }
+
+  function highlightRows() {
+    [...el.movesBody.children].forEach(tr => tr.classList.remove('active'));
+    if (state.index >= 0 && state.index < state.moves.length) {
+      const row = el.movesBody.querySelector(`tr[data-index="${state.index}"]`);
+      if (row) row.classList.add('active');
+    }
+  }
+
+  // Main function for changing current displayed position
+  function showIndex(i) {
+    if (!state.game) return;
+    if (i < -1) i = -1;
+    if (i >= state.moves.length) i = state.moves.length - 1;
+    state.index = i;
+
+    setFen(fenAt(i));
+    updatePlyLabel();
+    highlightRows();
+  }
+
+  // Display "Start / End / Result"
+  function renderGameInfo() {
+    const g = state.game;
+    const start = g.gamestart ? new Date(g.gamestart).toLocaleString() : "-";
+    const end   = g.gameend   ? new Date(g.gameend).toLocaleString()   : "-";
+    el.gameInfo.textContent =
+`Start:  ${start}
+End:    ${end}
+Result: ${g.result}`;
+  }
+
+  // Build the moves table
+  function renderMoves() {
+    el.movesBody.innerHTML = "";
+    state.moves.forEach((m, idx) => {
+      const tr = document.createElement('tr');
+      tr.dataset.index = idx;
+
+      const moveNo = (m.plyno % 2 === 1 ? Math.ceil(m.plyno / 2) : "");
+      const side = (m.plyno % 2 === 1 ? "W" : "B");
+
+      tr.innerHTML = `
+        <td>${moveNo}</td>
+        <td>${side}</td>
+        <td>${m.san || m.uci}</td>
+        <td>${m.isMate ? "#" : m.isCheck ? "+" : ""}</td>
+      `;
+
+      tr.addEventListener("click", () => showIndex(idx));
+      el.movesBody.appendChild(tr);
+    });
+  }
+
+  async function loadGame(id) {
+    try {
+      el.status.textContent = "Loading...";
+      const game = await fetchJson(`/games/${id}`);
+      const moves = await fetchJson(`/moves/${id}`);
+
+      state.game = game;
+      state.moves = moves || [];
+      state.index = -1;  // start at initial now before it started at the end
+
+      renderGameInfo();
+      renderMoves();
+      showIndex(-1); // actually show initial board
+      el.pgnBox.textContent = game.pgn || "";
+
+      el.status.textContent = `${moves.length} plies • ${game.result}`;
+    } catch (e) {
+      el.status.textContent = "Error: " + e.message;
+    }
+  }
+
+  async function loadGameList() {
+    try {
+      const games = await fetchJson('/games');
+      el.gameSelect.innerHTML = games
+        .map(g => `<option value="${g.id}">Game #${g.id} (${g.result})</option>`)
+        .join('');
+
+      if (games.length) loadGame(games[0].id);
+      else el.status.textContent = "No games found";
+    } catch (e) {
+      el.status.textContent = "Error loading games";
+    }
+  }
+
+  // Button listeners
+  el.gameSelect.addEventListener('change', () => loadGame(el.gameSelect.value));
+  el.refreshBtn.addEventListener('click', () => loadGame(el.gameSelect.value));
+  el.btnFirst.addEventListener('click', () => showIndex(-1));
+  el.btnPrev.addEventListener('click',  () => showIndex(state.index - 1));
+  el.btnNext.addEventListener('click',  () => showIndex(state.index + 1));
+  el.btnLast.addEventListener('click',  () => showIndex(state.moves.length - 1));
+
+  // Load everything on startup
+  loadGameList();
+</script>
+
+</body>
+</html>

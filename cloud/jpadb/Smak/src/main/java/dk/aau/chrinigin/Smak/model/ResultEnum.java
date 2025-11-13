@@ -1,24 +1,11 @@
 package dk.aau.chrinigin.Smak.model;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonValue;
+// Represents the possible outcomes of a chess game.
 
 public enum ResultEnum {
-    xwin("xwin"), 
-    owin("owin"), 
-    draw("draw"), 
-    inprogress("inprogress"), 
-    notstarted("notstarted"), 
-    error("error");
-
-    private String jsonvalue;
-
-    ResultEnum(@JsonProperty String jsonvalue) {
-        this.jsonvalue = jsonvalue;
-    }
-
-    @JsonValue
-    public String getJsonValue() {
-        return jsonvalue;
-    }
+    WHITEWIN,
+    BLACKWIN,
+    DRAW,
+    INPROGRESS,
+    NOTSTARTED,
+    ERROR
 }
