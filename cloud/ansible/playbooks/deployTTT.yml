@@ -1,0 +1,165 @@
+- hosts: all
+  become: yes
+  become_user: root
+
+  vars_files:
+    - ./tictactoeVault
+
+  vars:
+    # --- customize these ---
+    repo_url: "https://github.com/chrnigi/P5-SMAK.git"
+    repo_dest: "/opt/SMAK"          # where the repo will live
+    app_subdir: "cloud/jpadb/Smak"                   # if mvnw is in a subdir, e.g. "server"; else ""
+    app_dir: "{{ repo_dest }}/{{ app_subdir }}"
+    screen_session: "TTT"
+    # file you want to change INSIDE the repo
+    file_to_modify: "{{ app_dir }}/src/main/resources/application.properties"
+    phpfiletomodify: "{{ repo_dest }}/cloud/php/index.php"
+    # how to start your program after mvn package
+    start_command: "java -jar target/Smak-0.0.1-SNAPSHOT.jar"
+    # ------------------------
+
+  tasks:
+    - name: Mark /opt/SMAK as safe git directory for root
+      ansible.builtin.command: git config --global --add safe.directory {{ repo_dest }}
+      changed_when: false
+
+
+    - name: Clone or update Git repository
+      ansible.builtin.git:
+        repo: "{{ repo_url }}"
+        dest: "{{ repo_dest }}"
+        version: main
+        force: yes
+
+    - name: Ensure username correct
+      ansible.builtin.lineinfile:
+        path: "{{ file_to_modify }}"
+        regexp: '^spring.datasource.username='
+        line: 'spring.datasource.username={{ db_username }}'
+        create: yes
+      
+    - name: Ensure password correct
+      ansible.builtin.lineinfile:
+        path: "{{ file_to_modify }}"
+        regexp: '^spring.datasource.password='
+        line: 'spring.datasource.password={{ db_password }}'
+        create: yes
+
+    - name: Ensure mvnw is executable
+      ansible.builtin.file:
+        path: "{{ app_dir }}/mvnw"
+        mode: "0755"
+
+    - name: Run Maven package (skip tests)
+      ansible.builtin.shell: ./mvnw package -Dmaven.test.skip=true
+      args:
+        chdir: >-
+          {{ app_dir }}
+      register: mvn_result
+
+    - name: Show Maven output (optional)
+      ansible.builtin.debug:
+        var: mvn_result.stdout_lines
+
+    # Create non-root user for safety
+    - name: Ensure app user exists
+      ansible.builtin.user:
+        name: smak
+        shell: /bin/bash
+
+    # Repo must belong to smak so the app can run correctly
+    - name: Ensure repo ownership
+      ansible.builtin.file:
+        path: "{{ repo_dest }}"
+        owner: smak
+        group: smak
+        recurse: yes
+
+    # Kill dead or existing screen sessions AS smak, but without Ansible become_user
+    - name: Cleanup existing screen sessions
+      ansible.builtin.shell: |
+        sudo -u smak screen -wipe || true
+        sudo -u smak screen -S {{ screen_session }} -X quit || true
+      args:
+        chdir: "{{ app_dir }}"
+      ignore_errors: true
+
+    # Start the application AS smak
+    - name: Start application in detached screen session
+      ansible.builtin.shell: |
+        sudo -u smak screen -dmS {{ screen_session }} {{ start_command }}
+      args:
+        chdir: "{{ app_dir }}"
+
+
+    - name: Check screen sessions for {{ screen_session }}
+      ansible.builtin.shell: |
+        sudo -u smak screen -ls
+      args:
+        chdir: "{{ app_dir }}"
+      register: screen_check
+      failed_when: false
+      changed_when: false
+
+    - name: Decide if screen session {{ screen_session }} is missing or dead
+      ansible.builtin.set_fact:
+        screen_session_needs_restart: >-
+          {{ screen_check.rc != 0
+             or (
+                  (screen_check.stdout is search('\\.{{ screen_session }}'))
+                  and (screen_check.stdout is search('Dead'))
+                )
+          }}
+
+    - name: Restart application if screen session is missing or dead
+      ansible.builtin.shell: |
+        sudo -u smak screen -wipe || true
+        sudo -u smak screen -dmS {{ screen_session }} {{ start_command }}
+      args:
+        chdir: "{{ app_dir }}"
+      when: screen_session_needs_restart | bool
+
+
+##########################
+####### PHP DEPLOY #######
+##########################
+    - name: Ensure dbname correct
+      ansible.builtin.lineinfile:
+        path: "{{ phpfiletomodify }}"
+        regexp: '^\$DB_NAME\s*='
+        line: "$DB_NAME = '{{ db_name }}';"
+        create: yes
+    
+    - name: Ensure webui username correct
+      ansible.builtin.lineinfile:
+        path: "{{ phpfiletomodify }}"
+        regexp: '^\$DB_USER\s*='
+        line: "$DB_USER = '{{ webui_username }}';"
+        create: yes
+      
+    - name: Ensure webui password correct
+      ansible.builtin.lineinfile:
+        path: "{{ phpfiletomodify }}"
+        regexp: '^\$DB_PASS\s*='
+        line: "$DB_PASS = '{{ webui_password }}';"
+        create: yes
+
+    - name: Ensure tictactoe web directory exists
+      ansible.builtin.file:
+        path: "/var/www/html/tictactoe"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+
+    - name: Deploy tictactoe index.php
+      ansible.builtin.copy:
+        src: "{{ phpfiletomodify }}"
+        dest: "/var/www/html/tictactoe/index.php"
+        owner: root
+        group: root
+        mode: "0644"
+        remote_src: yes
+

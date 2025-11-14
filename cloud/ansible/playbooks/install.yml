@@ -1,0 +1,52 @@
+- hosts: all
+  become: yes
+  become_user: root
+
+  vars_files:
+    - ./packages.yml
+
+  vars:
+    docker_repo_uri: "https://download.docker.com/linux/debian"
+    docker_keyring_path: "/etc/apt/keyrings/docker.asc"
+    docker_sources_path: "/etc/apt/sources.list.d/docker.sources"
+
+  tasks:
+    - name: Ensure required dependencies for Docker repo are installed
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - curl
+        state: present
+        update_cache: yes
+
+    - name: Ensure /etc/apt/keyrings directory exists
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: "0755"
+
+    - name: Download Docker's official GPG key
+      ansible.builtin.get_url:
+        url: "{{ docker_repo_uri }}/gpg"
+        dest: "{{ docker_keyring_path }}"
+        mode: "0644"
+
+    - name: Configure Docker repository
+      ansible.builtin.copy:
+        dest: "{{ docker_sources_path }}"
+        mode: "0644"
+        content: |
+          Types: deb
+          URIs: {{ docker_repo_uri }}
+          Suites: {{ ansible_lsb.codename | default(ansible_facts.distribution_release) }}
+          Components: stable
+          Signed-By: {{ docker_keyring_path }}
+
+    - name: Update APT cache after adding Docker repo
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Ensure packages (from packages.yml) are installed
+      ansible.builtin.package:
+        name: "{{ packages }}"
+        state: present

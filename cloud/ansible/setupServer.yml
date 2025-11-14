@@ -1,0 +1,14 @@
+- import_playbook: playbooks/useradd-Ansible.yml
+  tags: useradd
+
+- import_playbook: playbooks/install.yml
+  tags: pkginstall
+
+- import_playbook: playbooks/webConfig.yml
+  tags: webconfig
+
+- import_playbook: playbooks/tttDBsetup.yml
+  tags: tttdbsetup
+
+- import_playbook: playbooks/deployTTT.yml
+  tags: tttdeploy

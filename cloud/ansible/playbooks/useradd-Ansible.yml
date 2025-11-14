@@ -1,0 +1,42 @@
+- name: ansibleUserCreation
+  hosts: all
+  become: yes
+
+  vars:
+    # Get the public key from the *controller* machine
+    ansible_pubkey: "{{ lookup('file', './authorized_keys') }}"
+    # The user we are currently logging in as (from inventory/CLI)
+    login_user: "{{ ansible_user | default(ansible_ssh_user) }}"
+
+  tasks:
+    - name: Ping my hosts
+      ansible.builtin.ping:
+
+    - meta: refresh_inventory
+
+    - name: Add user ansible with sudo group
+      ansible.builtin.user:
+        name: ansible
+        comment: "Ansible Automation User"
+        uid: 1040
+        group: sudo
+        state: present
+        create_home: yes
+        shell: /bin/bash
+
+    - name: Allow sudo group passwordless sudo
+      ansible.builtin.copy:
+        dest: /etc/sudoers.d/99-sudo-nopasswd
+        content: "%sudo ALL=(ALL:ALL) NOPASSWD: ALL\n"
+        owner: root
+        group: root
+        mode: '0440'
+        validate: '/usr/sbin/visudo -cf %s'
+
+    # Install the same key for BOTH the ansible user and the login user
+    - name: Set authorized key for ansible and current login user
+      ansible.posix.authorized_key:
+        user: "{{ item }}"
+        state: present
+        key: "{{ ansible_pubkey }}"
+      loop: "{{ [ 'ansible', login_user ] | unique }}"
