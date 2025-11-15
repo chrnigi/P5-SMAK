@@ -1,6 +1,18 @@
 #include "pch.h"
 
-TEST(FSM, WhiteTurn) {
+static const bool up = true;
+static const bool down = false;
+
+static int pin(std::string s) {
+	char file_char = s.at(0);
+	int file =  (file_char - 'a');
+	
+	char rank_char = s.at(1);
+	int rank = rank_char - '0';
+	int r = (8-rank) << 3;
+
+	return (r | file);
+}
 	clean_state();
 	int w = 31;
 	board[w] = p_WHITE_PAWN;
