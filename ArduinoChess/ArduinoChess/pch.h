@@ -821,6 +821,9 @@ static std::string print_fen_string() {
 	return ss.str();
 }
 
+/// <summary>
+/// Reset the state of chess_state and fsm, initializes the board to the starting position
+/// </summary>
 static void reset() {
 	state = white;
 	init_starting_board();
@@ -828,6 +831,9 @@ static void reset() {
 	fsm.reset();
 }
 
+/// <summary>
+/// Reset the state of chess_state and fsm, initializes the board to an empty position
+/// </summary>
 static void clean_state() {
 	state = white;
 	init_empty_board();
