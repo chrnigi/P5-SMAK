@@ -329,12 +329,12 @@ static void pin_change(const int pin_number, const bool is_up = false)
 	{
 		bool is_y_down = (is_down && (fsm.y == pin_number));
 		bool is_en_passant = (is_down && chess_state.en_passant && chess_state.en_passant_square == pin_number);
-		if (is_y_down) {
+		if (is_y_down || is_en_passant) {
 			// SEND CAPTURE
 			state = black;
-			board[fsm.y] = board[fsm.x];
+			board[pin_number] = board[fsm.x];
 			board[fsm.x] = p_EMPTY_SQUARE;
-			if (is_en_passant) board[fsm.y + 8] = p_EMPTY_SQUARE;
+			if (is_en_passant) board[fsm.y] = p_EMPTY_SQUARE;
 			chess_state.ply_since_ponr = 0;
 			chess_state.ply++;
 
@@ -412,12 +412,12 @@ static void pin_change(const int pin_number, const bool is_up = false)
 	{
 		bool is_y_down = (is_down && (fsm.y == pin_number));
 		bool is_en_passant = (is_down && chess_state.en_passant && chess_state.en_passant_square == pin_number);
-		if (is_y_down) {
+		if (is_y_down || is_en_passant) {
 			// SEND CAPTURE
 			state = white;
-			board[fsm.y] = board[fsm.x];
+			board[pin_number] = board[fsm.x];
 			board[fsm.x] = p_EMPTY_SQUARE;
-			if (is_en_passant) board[fsm.y - 8] = p_EMPTY_SQUARE;
+			if (is_en_passant) board[fsm.y] = p_EMPTY_SQUARE;
 			chess_state.ply_since_ponr = 0;
 			chess_state.ply++;
 
