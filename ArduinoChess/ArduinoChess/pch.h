@@ -532,7 +532,7 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			board[WHITE_KING_QUEENSIDE_CASTLESQUARE] = p_WHITE_KING;
 			state = black;
 		}
-		else state == error;
+		else state = error;
 		break;
 	}
 
@@ -587,7 +587,7 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			board[WHITE_KING_QUEENSIDE_CASTLESQUARE] = p_WHITE_KING;
 			state = black;
 		}
-		else state == error;
+		else state = error;
 		break;
 	}
 
@@ -670,7 +670,7 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			board[BLACK_KING_QUEENSIDE_CASTLESQUARE] = p_BLACK_KING;
 			state = black;
 		}
-		else state == error;
+		else state = error;
 		break;
 	}
 
@@ -725,7 +725,7 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			board[BLACK_KING_QUEENSIDE_CASTLESQUARE] = p_BLACK_KING;
 			state = black;
 		}
-		else state == error;
+		else state = error;
 		break;
 	}
 	
