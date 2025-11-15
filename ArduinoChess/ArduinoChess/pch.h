@@ -276,8 +276,8 @@ static void pin_change(const int pin_number, const bool is_up = false)
 	const bool is_down = !is_up;
 	char piece = board[pin_number];
 	bool is_empty_square = (piece == ' ');
-	bool is_black_piece = !(!is_empty_square && piece < 'a');
-	bool is_white_piece = !(!is_empty_square && piece > 'a');
+	bool is_black_piece = !is_empty_square && !(piece < 'a');
+	bool is_white_piece = !is_empty_square && !(piece > 'a');
 	
 	switch (state)
 	{
