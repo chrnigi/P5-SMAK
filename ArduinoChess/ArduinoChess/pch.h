@@ -639,14 +639,14 @@ static void pin_change(const int pin_number, const bool is_up = false)
 	}
 	case black_castling_kingside_kingdown:
 	{
-		if (is_down && board[pin_number] == p_BLACK_ROOK && pin_number == BLACK_ROOK_KINGSIDE_STARTINGSQUARE)
+		if (is_up && board[pin_number] == p_BLACK_ROOK && pin_number == BLACK_ROOK_KINGSIDE_STARTINGSQUARE)
 			state = black_castling_kingside_kingdown_ROOKUP;
 		else state = error;
 		break;
 	}
 	case black_castling_queenside_kingdown:
 	{
-		if (is_down && board[pin_number] == p_BLACK_ROOK && pin_number == BLACK_ROOK_QUEENSIDE_STARTINGSQUARE)
+		if (is_up && board[pin_number] == p_BLACK_ROOK && pin_number == BLACK_ROOK_QUEENSIDE_STARTINGSQUARE)
 			state = black_castling_queenside_kingdown_ROOKUP;
 		else state = error;
 		break;
