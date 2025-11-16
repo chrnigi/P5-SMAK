@@ -459,7 +459,9 @@ static void pin_change(const int pin_number, const bool is_up = false)
 	case white_castling: // entry for castling, king moved
 	{
 		if (is_down) {
-			if (pin_number == WHITE_KING_KINGSIDE_CASTLESQUARE && chess_state.white_kingside)
+			if (pin_number == WHITE_KING_STARTINGSQUARE)
+				state = white; // undo move
+			else if (pin_number == WHITE_KING_KINGSIDE_CASTLESQUARE && chess_state.white_kingside)
 				state = white_castling_kingside_kingdown;
 			else if (pin_number == WHITE_KING_QUEENSIDE_CASTLESQUARE && chess_state.white_queenside)
 				state = white_castling_queenside_kingdown;
@@ -597,7 +599,9 @@ static void pin_change(const int pin_number, const bool is_up = false)
 	case black_castling: // entry for castling, king moved
 	{
 		if (is_down) {
-			if (pin_number == BLACK_KING_KINGSIDE_CASTLESQUARE && chess_state.black_kingside)
+			if (pin_number == BLACK_KING_STARTINGSQUARE)
+				state = black; // undo move
+			else if (pin_number == BLACK_KING_KINGSIDE_CASTLESQUARE && chess_state.black_kingside)
 				state = black_castling_kingside_kingdown;
 			else if (pin_number == BLACK_KING_QUEENSIDE_CASTLESQUARE && chess_state.black_queenside)
 				state = black_castling_queenside_kingdown;
