@@ -451,3 +451,318 @@ TEST(FSM_en_passant, test_all_en_passant_squares) {
 	}
 	ASSERT_EQ(chess_state.ply, 16);
 }
+
+static const int countPieces() {
+	int counter = 0;
+	for (char c : board) 
+		if (c != p_EMPTY_SQUARE) counter += 1;
+	return counter;
+}
+TEST(FSM_castling, black_kingside_castle_1__krkr) {
+	clean_state();
+	state = states::black;
+	board[BLACK_ROOK_KINGSIDE_STARTINGSQUARE] = p_BLACK_ROOK;
+	board[BLACK_KING_STARTINGSQUARE] = p_BLACK_KING;
+	ASSERT_TRUE(chess_state.black_kingside);
+	ASSERT_EQ(countPieces(), 2) << "There should only be 2 pieces on the board";
+	pin_change(pin("e8"), up);
+	ASSERT_EQ(state, states::black_castling);
+	pin_change(pin("h8"), up);
+	ASSERT_EQ(state, states::black_castling_kingside_KINGUP_ROOKUP);
+	pin_change(pin("g8"), down);
+	ASSERT_EQ(state, states::black_castling_kingside_kingdown_ROOKUP);
+	pin_change(pin("f8"), down);
+	ASSERT_EQ(state, states::white);
+	ASSERT_FALSE(chess_state.en_passant);
+	ASSERT_FALSE(chess_state.black_kingside);
+	ASSERT_FALSE(chess_state.black_queenside);
+	ASSERT_EQ(board[pin("g8")], p_BLACK_KING);
+	ASSERT_EQ(board[pin("f8")], p_BLACK_ROOK);
+	ASSERT_EQ(countPieces(), 2) << "There should only be 2 pieces on the board";
+}
+TEST(FSM_castling, black_kingside_castle_2__krrk) {
+	clean_state();
+	state = states::black;
+	board[BLACK_ROOK_KINGSIDE_STARTINGSQUARE] = p_BLACK_ROOK;
+	board[BLACK_KING_STARTINGSQUARE] = p_BLACK_KING;
+	pin_change(pin("e8"), up);
+	ASSERT_EQ(state, states::black_castling);
+	pin_change(pin("h8"), up);
+	ASSERT_EQ(state, states::black_castling_kingside_KINGUP_ROOKUP);
+	pin_change(pin("f8"), down);
+	ASSERT_EQ(state, states::black_castling_kingside_KINGUP_rookdown);
+	pin_change(pin("g8"), down);
+	ASSERT_EQ(state, states::white);
+	ASSERT_FALSE(chess_state.en_passant);
+	ASSERT_FALSE(chess_state.black_kingside);
+	ASSERT_FALSE(chess_state.black_queenside);
+	ASSERT_EQ(board[pin("g8")], p_BLACK_KING);
+	ASSERT_EQ(board[pin("f8")], p_BLACK_ROOK);
+	ASSERT_EQ(countPieces(), 2) << "There should only be 2 pieces on the board";
+}
+TEST(FSM_castling, black_kingside_castle_3__kkrr) {
+	clean_state();
+	state = states::black;
+	board[BLACK_ROOK_KINGSIDE_STARTINGSQUARE] = p_BLACK_ROOK;
+	board[BLACK_KING_STARTINGSQUARE] = p_BLACK_KING;
+	pin_change(pin("e8"), up);
+	ASSERT_EQ(state, states::black_castling);
+	pin_change(pin("g8"), down);
+	ASSERT_EQ(state, states::black_castling_kingside_kingdown);
+	pin_change(pin("h8"), up);
+	ASSERT_EQ(state, states::black_castling_kingside_kingdown_ROOKUP);
+	pin_change(pin("f8"), down);
+	ASSERT_EQ(state, states::white);
+	ASSERT_FALSE(chess_state.en_passant);
+	ASSERT_FALSE(chess_state.black_kingside);
+	ASSERT_FALSE(chess_state.black_queenside);
+	ASSERT_EQ(board[pin("g8")], p_BLACK_KING);
+	ASSERT_EQ(board[pin("f8")], p_BLACK_ROOK);
+	ASSERT_EQ(countPieces(), 2) << "There should only be 2 pieces on the board";
+}
+TEST(FSM_castling, black_queenside_castle_1__krkr) {
+	clean_state();
+	state = states::black;
+	board[BLACK_ROOK_QUEENSIDE_STARTINGSQUARE] = p_BLACK_ROOK;
+	board[BLACK_KING_STARTINGSQUARE] = p_BLACK_KING;
+	ASSERT_TRUE(chess_state.black_queenside);
+	ASSERT_EQ(countPieces(), 2) << "There should only be 2 pieces on the board";
+	pin_change(pin("e8"), up);
+	ASSERT_EQ(state, states::black_castling);
+	pin_change(pin("a8"), up);
+	ASSERT_EQ(state, states::black_castling_queenside_KINGUP_ROOKUP);
+	pin_change(pin("c8"), down);
+	ASSERT_EQ(state, states::black_castling_queenside_kingdown_ROOKUP);
+	pin_change(pin("d8"), down);
+	ASSERT_EQ(state, states::white);
+	ASSERT_FALSE(chess_state.en_passant);
+	ASSERT_FALSE(chess_state.black_kingside);
+	ASSERT_FALSE(chess_state.black_queenside);
+	ASSERT_EQ(board[pin("c8")], p_BLACK_KING);
+	ASSERT_EQ(board[pin("d8")], p_BLACK_ROOK);
+	ASSERT_EQ(countPieces(), 2) << "There should only be 2 pieces on the board";
+}
+TEST(FSM_castling, black_queenside_castle_2__krrk) {
+	clean_state();
+	state = states::black;
+	board[BLACK_ROOK_QUEENSIDE_STARTINGSQUARE] = p_BLACK_ROOK;
+	board[BLACK_KING_STARTINGSQUARE] = p_BLACK_KING;
+	pin_change(pin("e8"), up);
+	ASSERT_EQ(state, states::black_castling);
+	pin_change(pin("a8"), up);
+	ASSERT_EQ(state, states::black_castling_queenside_KINGUP_ROOKUP);
+	pin_change(pin("d8"), down);
+	ASSERT_EQ(state, states::black_castling_queenside_KINGUP_rookdown);
+	pin_change(pin("c8"), down);
+	ASSERT_EQ(state, states::white);
+	ASSERT_FALSE(chess_state.en_passant);
+	ASSERT_FALSE(chess_state.black_kingside);
+	ASSERT_FALSE(chess_state.black_queenside);
+	ASSERT_EQ(board[pin("c8")], p_BLACK_KING);
+	ASSERT_EQ(board[pin("d8")], p_BLACK_ROOK);
+	ASSERT_EQ(countPieces(), 2) << "There should only be 2 pieces on the board";
+}
+TEST(FSM_castling, black_queenside_castle_3__kkrr) {
+	clean_state();
+	state = states::black;
+	board[BLACK_ROOK_QUEENSIDE_STARTINGSQUARE] = p_BLACK_ROOK;
+	board[BLACK_KING_STARTINGSQUARE] = p_BLACK_KING;
+	pin_change(pin("e8"), up);
+	ASSERT_EQ(state, states::black_castling);
+	pin_change(pin("c8"), down);
+	ASSERT_EQ(state, states::black_castling_queenside_kingdown);
+	pin_change(pin("a8"), up);
+	ASSERT_EQ(state, states::black_castling_queenside_kingdown_ROOKUP);
+	pin_change(pin("d8"), down);
+	ASSERT_EQ(state, states::white);
+	ASSERT_FALSE(chess_state.en_passant);
+	ASSERT_FALSE(chess_state.black_kingside);
+	ASSERT_FALSE(chess_state.black_queenside);
+	ASSERT_EQ(board[pin("c8")], p_BLACK_KING);
+	ASSERT_EQ(board[pin("d8")], p_BLACK_ROOK);
+	ASSERT_EQ(countPieces(), 2) << "There should only be 2 pieces on the board";
+}
+
+// white
+TEST(FSM_castling, white_kingside_castle_1__krkr) {
+	clean_state();
+	board[WHITE_ROOK_KINGSIDE_STARTINGSQUARE] = p_WHITE_ROOK;
+	board[WHITE_KING_STARTINGSQUARE] = p_WHITE_KING;
+	ASSERT_TRUE(chess_state.white_kingside);
+	ASSERT_EQ(countPieces(), 2) << "There should only be 2 pieces on the board";
+	pin_change(pin("e1"), up);
+	ASSERT_EQ(state, states::white_castling);
+	pin_change(pin("h1"), up);
+	ASSERT_EQ(state, states::white_castling_kingside_KINGUP_ROOKUP);
+	pin_change(pin("g1"), down);
+	ASSERT_EQ(state, states::white_castling_kingside_kingdown_ROOKUP);
+	pin_change(pin("f1"), down);
+	ASSERT_EQ(state, states::black);
+	ASSERT_FALSE(chess_state.en_passant);
+	ASSERT_FALSE(chess_state.white_kingside);
+	ASSERT_FALSE(chess_state.white_queenside);
+	ASSERT_EQ(board[pin("g1")], p_WHITE_KING);
+	ASSERT_EQ(board[pin("f1")], p_WHITE_ROOK);
+	ASSERT_EQ(countPieces(), 2) << "There should only be 2 pieces on the board";
+}
+TEST(FSM_castling, white_kingside_castle_2__krrk) {
+	clean_state();
+	board[WHITE_ROOK_KINGSIDE_STARTINGSQUARE] = p_WHITE_ROOK;
+	board[WHITE_KING_STARTINGSQUARE] = p_WHITE_KING;
+	pin_change(pin("e1"), up);
+	ASSERT_EQ(state, states::white_castling);
+	pin_change(pin("h1"), up);
+	ASSERT_EQ(state, states::white_castling_kingside_KINGUP_ROOKUP);
+	pin_change(pin("f1"), down);
+	ASSERT_EQ(state, states::white_castling_kingside_KINGUP_rookdown);
+	pin_change(pin("g1"), down);
+	ASSERT_EQ(state, states::black);
+	ASSERT_FALSE(chess_state.en_passant);
+	ASSERT_FALSE(chess_state.white_kingside);
+	ASSERT_FALSE(chess_state.white_queenside);
+	ASSERT_EQ(board[pin("g1")], p_WHITE_KING);
+	ASSERT_EQ(board[pin("f1")], p_WHITE_ROOK);
+	ASSERT_EQ(countPieces(), 2) << "There should only be 2 pieces on the board";
+}
+TEST(FSM_castling, white_kingside_castle_3__kkrr) {
+	clean_state();
+	board[WHITE_ROOK_KINGSIDE_STARTINGSQUARE] = p_WHITE_ROOK;
+	board[WHITE_KING_STARTINGSQUARE] = p_WHITE_KING;
+	pin_change(pin("e1"), up);
+	ASSERT_EQ(state, states::white_castling);
+	pin_change(pin("g1"), down);
+	ASSERT_EQ(state, states::white_castling_kingside_kingdown);
+	pin_change(pin("h1"), up);
+	ASSERT_EQ(state, states::white_castling_kingside_kingdown_ROOKUP);
+	pin_change(pin("f1"), down);
+	ASSERT_EQ(state, states::black);
+	ASSERT_FALSE(chess_state.en_passant);
+	ASSERT_FALSE(chess_state.white_kingside);
+	ASSERT_FALSE(chess_state.white_queenside);
+	ASSERT_EQ(board[pin("g1")], p_WHITE_KING);
+	ASSERT_EQ(board[pin("f1")], p_WHITE_ROOK);
+	ASSERT_EQ(countPieces(), 2) << "There should only be 2 pieces on the board";
+}
+TEST(FSM_castling, white_queenside_castle_1__krkr) {
+	clean_state();
+	board[WHITE_ROOK_QUEENSIDE_STARTINGSQUARE] = p_WHITE_ROOK;
+	board[WHITE_KING_STARTINGSQUARE] = p_WHITE_KING;
+	ASSERT_TRUE(chess_state.white_queenside);
+	ASSERT_EQ(countPieces(), 2) << "There should only be 2 pieces on the board";
+	pin_change(pin("e1"), up);
+	ASSERT_EQ(state, states::white_castling);
+	pin_change(pin("a1"), up);
+	ASSERT_EQ(state, states::white_castling_queenside_KINGUP_ROOKUP);
+	pin_change(pin("c1"), down);
+	ASSERT_EQ(state, states::white_castling_queenside_kingdown_ROOKUP);
+	pin_change(pin("d1"), down);
+	ASSERT_EQ(state, states::black);
+	ASSERT_FALSE(chess_state.en_passant);
+	ASSERT_FALSE(chess_state.white_kingside);
+	ASSERT_FALSE(chess_state.white_queenside);
+	ASSERT_EQ(board[pin("c1")], p_WHITE_KING);
+	ASSERT_EQ(board[pin("d1")], p_WHITE_ROOK);
+	ASSERT_EQ(countPieces(), 2) << "There should only be 2 pieces on the board";
+}
+TEST(FSM_castling, white_queenside_castle_2__krrk) {
+	clean_state();
+	board[WHITE_ROOK_QUEENSIDE_STARTINGSQUARE] = p_WHITE_ROOK;
+	board[WHITE_KING_STARTINGSQUARE] = p_WHITE_KING;
+	pin_change(pin("e1"), up);
+	ASSERT_EQ(state, states::white_castling);
+	pin_change(pin("a1"), up);
+	ASSERT_EQ(state, states::white_castling_queenside_KINGUP_ROOKUP);
+	pin_change(pin("d1"), down);
+	ASSERT_EQ(state, states::white_castling_queenside_KINGUP_rookdown);
+	pin_change(pin("c1"), down);
+	ASSERT_EQ(state, states::black);
+	ASSERT_FALSE(chess_state.en_passant);
+	ASSERT_FALSE(chess_state.white_kingside);
+	ASSERT_FALSE(chess_state.white_queenside);
+	ASSERT_EQ(board[pin("c1")], p_WHITE_KING);
+	ASSERT_EQ(board[pin("d1")], p_WHITE_ROOK);
+	ASSERT_EQ(countPieces(), 2) << "There should only be 2 pieces on the board";
+}
+TEST(FSM_castling, white_queenside_castle_3__kkrr) {
+	clean_state();
+	board[WHITE_ROOK_QUEENSIDE_STARTINGSQUARE] = p_WHITE_ROOK;
+	board[WHITE_KING_STARTINGSQUARE] = p_WHITE_KING;
+	pin_change(pin("e1"), up);
+	ASSERT_EQ(state, states::white_castling);
+	pin_change(pin("c1"), down);
+	ASSERT_EQ(state, states::white_castling_queenside_kingdown);
+	pin_change(pin("a1"), up);
+	ASSERT_EQ(state, states::white_castling_queenside_kingdown_ROOKUP);
+	pin_change(pin("d1"), down);
+	ASSERT_EQ(state, states::black);
+	ASSERT_FALSE(chess_state.en_passant);
+	ASSERT_FALSE(chess_state.white_kingside);
+	ASSERT_FALSE(chess_state.white_queenside);
+	ASSERT_EQ(board[pin("c1")], p_WHITE_KING);
+	ASSERT_EQ(board[pin("d1")], p_WHITE_ROOK);
+	ASSERT_EQ(countPieces(), 2) << "There should only be 2 pieces on the board";
+}
+
+TEST(FSM_castling, cancel_into_move) {
+	clean_state();
+	board[WHITE_ROOK_QUEENSIDE_STARTINGSQUARE] = p_WHITE_ROOK;
+	board[WHITE_KING_STARTINGSQUARE] = p_WHITE_KING;
+	pin_change(pin("e1"), up);
+	ASSERT_EQ(state, states::white_castling);
+	pin_change(pin("e2"), down);
+	ASSERT_EQ(state, states::black) << "Should move from white castling to blacks turn since the king performed a move";
+
+	clean_state();
+	state = states::black;
+	board[BLACK_ROOK_QUEENSIDE_STARTINGSQUARE] = p_BLACK_ROOK;
+	board[BLACK_KING_STARTINGSQUARE] = p_BLACK_KING;
+	pin_change(pin("e8"), up);
+	ASSERT_EQ(state, states::black_castling);
+	pin_change(pin("e7"), down);
+	ASSERT_EQ(state, states::white) << "Should move from black castling to whites turn since the king performed a move";
+}
+TEST(FSM_castling, cancel_into_capture) {
+	clean_state();
+	board[pin("e2")] = p_BLACK_KNIGHT;
+	board[WHITE_KING_STARTINGSQUARE] = p_WHITE_KING;
+	pin_change(pin("e1"), up);
+	ASSERT_EQ(state, states::white_castling);
+	pin_change(pin("e2"), up);
+	ASSERT_EQ(state, states::white_begin_capture);
+	pin_change(pin("e2"), down);
+	ASSERT_EQ(state, states::black);
+	ASSERT_EQ(board[pin("e1")], p_EMPTY_SQUARE);
+	ASSERT_EQ(board[pin("e2")], p_WHITE_KING);
+	ASSERT_EQ(countPieces(), 1);
+
+	clean_state();
+	state = states::black;
+	board[pin("e7")] = p_WHITE_KNIGHT;
+	board[BLACK_KING_STARTINGSQUARE] = p_BLACK_KING;
+	pin_change(pin("e8"), up);
+	ASSERT_EQ(state, states::black_castling);
+	pin_change(pin("e7"), up);
+	ASSERT_EQ(state, states::black_begin_capture);
+	pin_change(pin("e7"), down);
+	ASSERT_EQ(state, states::white);
+	ASSERT_EQ(board[pin("e8")], p_EMPTY_SQUARE);
+	ASSERT_EQ(board[pin("e7")], p_BLACK_KING);
+	ASSERT_EQ(countPieces(), 1);
+}
+
+TEST(FSM_castling, cancel_into_undo) {
+	clean_state();
+	board[WHITE_KING_STARTINGSQUARE] = p_WHITE_KING;
+	pin_change(pin("e1"), up);
+	ASSERT_EQ(state, states::white_castling);
+	pin_change(pin("e1"), down);
+	EXPECT_EQ(state, states::white);
+
+	clean_state();
+	state = states::black;
+	board[BLACK_KING_STARTINGSQUARE] = p_BLACK_KING;
+	pin_change(pin("e8"), up);
+	ASSERT_EQ(state, states::black_castling);
+	pin_change(pin("e8"), down);
+	EXPECT_EQ(state, states::black);
+}
