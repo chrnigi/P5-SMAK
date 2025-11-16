@@ -1,5 +1,4 @@
 #include "pch.h"
-
 static const bool up = true;
 static const bool down = false;
 
