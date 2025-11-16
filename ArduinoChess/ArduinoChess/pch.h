@@ -18,22 +18,22 @@ constexpr char p_BLACK_QUEEN = 'q', p_WHITE_QUEEN = 'Q';
 constexpr char p_BLACK_KING = 'k', p_WHITE_KING = 'K';
 
 constexpr const int WHITE_KING_STARTINGSQUARE = 63 - 3;
-constexpr const int BLACK_KING_STARTINGSQUARE = 0 + 5;
+constexpr const int BLACK_KING_STARTINGSQUARE = 0 + 4;
 
-constexpr const int WHITE_ROOK_KINGSIDE_STARTINGSQUARE = 63 - 8;
-constexpr const int WHITE_ROOK_QUEENSIDE_STARTINGSQUARE = 63 - 0;
-constexpr const int BLACK_ROOK_KINGSIDE_STARTINGSQUARE = 0;
-constexpr const int BLACK_ROOK_QUEENSIDE_STARTINGSQUARE = 0 + 8;
+constexpr const int WHITE_ROOK_KINGSIDE_STARTINGSQUARE = 63 - 0;
+constexpr const int WHITE_ROOK_QUEENSIDE_STARTINGSQUARE = 63 - 7;
+constexpr const int BLACK_ROOK_KINGSIDE_STARTINGSQUARE = 0 + 7;
+constexpr const int BLACK_ROOK_QUEENSIDE_STARTINGSQUARE = 0;
 
 constexpr const int WHITE_KING_KINGSIDE_CASTLESQUARE = 63 - 1;
 constexpr const int WHITE_KING_QUEENSIDE_CASTLESQUARE = 63 - 5;
-constexpr const int BLACK_KING_KINGSIDE_CASTLESQUARE = 0 + 2;
-constexpr const int BLACK_KING_QUEENSIDE_CASTLESQUARE = 0 + 6;
+constexpr const int BLACK_KING_KINGSIDE_CASTLESQUARE = 0 + 6;
+constexpr const int BLACK_KING_QUEENSIDE_CASTLESQUARE = 0 + 2;
 
 constexpr const int WHITE_ROOK_KINGSIDE_CASTLESQUARE = 63 - 2;
 constexpr const int WHITE_ROOK_QUEENSIDE_CASTLESQUARE = 63 - 4;
-constexpr const int BLACK_ROOK_KINGSIDE_CASTLESQUARE = 0 + 3;
-constexpr const int BLACK_ROOK_QUEENSIDE_CASTLESQUARE = 0 + 5;
+constexpr const int BLACK_ROOK_KINGSIDE_CASTLESQUARE = 0 + 5;
+constexpr const int BLACK_ROOK_QUEENSIDE_CASTLESQUARE = 0 + 3;
 
 enum class piece_types : char {
 	empty = p_EMPTY_SQUARE,
