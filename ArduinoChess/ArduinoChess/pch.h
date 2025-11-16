@@ -665,7 +665,7 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			board[BLACK_ROOK_KINGSIDE_CASTLESQUARE] = p_BLACK_ROOK;
 			board[BLACK_KING_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[BLACK_KING_KINGSIDE_CASTLESQUARE] = p_BLACK_KING;
-			state = black;
+			state = white;
 		}
 		else state = error;
 		break;
@@ -683,7 +683,7 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			board[BLACK_ROOK_QUEENSIDE_CASTLESQUARE] = p_BLACK_ROOK;
 			board[BLACK_KING_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[BLACK_KING_QUEENSIDE_CASTLESQUARE] = p_BLACK_KING;
-			state = black;
+			state = white;
 		}
 		else state = error;
 		break;
@@ -722,14 +722,14 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			board[BLACK_ROOK_KINGSIDE_CASTLESQUARE] = p_BLACK_ROOK;
 			board[BLACK_KING_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[BLACK_KING_KINGSIDE_CASTLESQUARE] = p_BLACK_KING;
-			state = black;
+			state = white;
 		}
 		else state = error;
 		break;
 	}
 	case black_castling_queenside_KINGUP_rookdown:
 	{
-		if (is_down && pin_number == BLACK_ROOK_QUEENSIDE_CASTLESQUARE)
+		if (is_down && pin_number == BLACK_KING_QUEENSIDE_CASTLESQUARE)
 		{
 			// end castling
 			chess_state.black_kingside = chess_state.black_queenside = false;
@@ -740,7 +740,7 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			board[BLACK_ROOK_QUEENSIDE_CASTLESQUARE] = p_BLACK_ROOK;
 			board[BLACK_KING_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[BLACK_KING_QUEENSIDE_CASTLESQUARE] = p_BLACK_KING;
-			state = black;
+			state = white;
 		}
 		else state = error;
 		break;
