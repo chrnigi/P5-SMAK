@@ -488,6 +488,7 @@ static void pin_change(const int pin_number, const bool is_up = false)
 		{
 			state = white_begin_capture;
 			fsm.y = pin_number;
+			fsm.x = WHITE_KING_STARTINGSQUARE;
 		}
 		break;
 	}
@@ -632,6 +633,7 @@ static void pin_change(const int pin_number, const bool is_up = false)
 		{
 			state = black_begin_capture;
 			fsm.y = pin_number;
+			fsm.x = BLACK_KING_STARTINGSQUARE;
 		}
 		break;
 	}
