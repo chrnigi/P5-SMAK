@@ -584,7 +584,7 @@ static void pin_change(const int pin_number, const bool is_up = false)
 	}
 	case white_castling_queenside_KINGUP_rookdown:
 	{
-		if (is_down && pin_number == WHITE_ROOK_QUEENSIDE_CASTLESQUARE)
+		if (is_down && pin_number == WHITE_KING_QUEENSIDE_CASTLESQUARE)
 		{
 			// end castling
 			chess_state.white_kingside = chess_state.white_queenside = false;
