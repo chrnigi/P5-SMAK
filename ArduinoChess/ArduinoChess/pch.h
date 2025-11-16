@@ -513,6 +513,7 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			// end castling
 			chess_state.white_kingside = chess_state.white_queenside = false;
 			chess_state.ply++;
+			chess_state.en_passant = false;
 			//chess_state.ply_since_ponr = 0;
 			board[WHITE_ROOK_KINGSIDE_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[WHITE_ROOK_KINGSIDE_CASTLESQUARE] = p_WHITE_ROOK;
@@ -530,6 +531,7 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			// end castling
 			chess_state.white_kingside = chess_state.white_queenside = false;
 			chess_state.ply++;
+			chess_state.en_passant = false;
 			//chess_state.ply_since_ponr = 0;
 			board[WHITE_ROOK_QUEENSIDE_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[WHITE_ROOK_QUEENSIDE_CASTLESQUARE] = p_WHITE_ROOK;
@@ -568,6 +570,7 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			// end castling
 			chess_state.white_kingside = chess_state.white_queenside = false;
 			chess_state.ply++;
+			chess_state.en_passant = false;
 			//chess_state.ply_since_ponr = 0;
 			board[WHITE_ROOK_KINGSIDE_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[WHITE_ROOK_KINGSIDE_CASTLESQUARE] = p_WHITE_ROOK;
@@ -585,6 +588,7 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			// end castling
 			chess_state.white_kingside = chess_state.white_queenside = false;
 			chess_state.ply++;
+			chess_state.en_passant = false;
 			//chess_state.ply_since_ponr = 0;
 			board[WHITE_ROOK_QUEENSIDE_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[WHITE_ROOK_QUEENSIDE_CASTLESQUARE] = p_WHITE_ROOK;
@@ -653,6 +657,7 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			// end castling
 			chess_state.black_kingside = chess_state.black_queenside = false;
 			chess_state.ply++;
+			chess_state.en_passant = false;
 			//chess_state.ply_since_ponr = 0;
 			board[BLACK_ROOK_KINGSIDE_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[BLACK_ROOK_KINGSIDE_CASTLESQUARE] = p_BLACK_ROOK;
@@ -670,6 +675,7 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			// end castling
 			chess_state.black_kingside = chess_state.black_queenside = false;
 			chess_state.ply++;
+			chess_state.en_passant = false;
 			//chess_state.ply_since_ponr = 0;
 			board[BLACK_ROOK_QUEENSIDE_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[BLACK_ROOK_QUEENSIDE_CASTLESQUARE] = p_BLACK_ROOK;
@@ -708,6 +714,7 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			// end castling
 			chess_state.black_kingside = chess_state.black_queenside = false;
 			chess_state.ply++;
+			chess_state.en_passant = false;
 			//chess_state.ply_since_ponr = 0;
 			board[BLACK_ROOK_KINGSIDE_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[BLACK_ROOK_KINGSIDE_CASTLESQUARE] = p_BLACK_ROOK;
@@ -725,6 +732,7 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			// end castling
 			chess_state.black_kingside = chess_state.black_queenside = false;
 			chess_state.ply++;
+			chess_state.en_passant = false;
 			//chess_state.ply_since_ponr = 0;
 			board[BLACK_ROOK_QUEENSIDE_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[BLACK_ROOK_QUEENSIDE_CASTLESQUARE] = p_BLACK_ROOK;
