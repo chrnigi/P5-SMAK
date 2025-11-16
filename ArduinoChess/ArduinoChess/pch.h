@@ -373,6 +373,9 @@ static void pin_change(const int pin_number, const bool is_up = false)
 	case black:
 	{
 		if (is_down || is_empty_square) state = error;
+		else if (CanCastle(state, pin_number)) {
+			state = black_castling;
+		}
 		else if (is_black_piece) {
 			state = black_begin_move;
 			fsm.x = pin_number;
