@@ -5,8 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public enum GameStateEnum {
     WHITE_WIN("WHITE_WIN"),
     BLACK_WIN("BLACK_WIN"),
-    WHITE_WIN_TIME("WHITE_WIN_TIME"),
-    BLACK_WIN_TIME("BLACK_WIN_TIME"),
     DRAW_AGREED("DRAW_AGREED"),
     DRAW_REPETITION("DRAW_REPETITION"),
     DRAW_FIFTY_MOVES("DRAW_FIFTY_MOVES"),

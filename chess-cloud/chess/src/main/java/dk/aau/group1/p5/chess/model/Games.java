@@ -28,12 +28,6 @@ public class Games {
     @Enumerated(EnumType.STRING)
     private GameStateEnum gamestate;
 
-    @Column(name = "white_rating")
-    private Short white_rating;
-
-    @Column(name = "black_rating")
-    private Short black_rating;
-
     @Column(name = "gamestart")
     private Timestamp gamestart;
 
