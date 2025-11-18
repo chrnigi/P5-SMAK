@@ -1,4 +1,6 @@
 # Prerequisites
+build/*
+.cache/*
 *.d
 
 cloud/db-connection/*
@@ -41,6 +43,12 @@ cloud/db-connection/*
 # debug information files
 *.dwo
 .vscode/*
-/ArduinoChess/ArduinoChess/.vs/ArduinoChess
+
+# Files generated when compiling in Visual Studio
+/ArduinoChess/ArduinoChess/.vs
 /ArduinoChess/ArduinoChess/ArduinoChess/x64/Debug
-/ArduinoChess/ArduinoChess/packages/Microsoft.googletest.v140.windesktop.msvcstl.static.rt-dyn.1.8.1.7
+/ArduinoChess/ArduinoChess/packages
+/ArduinoChess/ArduinoChess/x64
+/.vs/CMakeWorkspaceSettings.json
+/.vs/ProjectSettings.json
+/.vs/slnx.sqlite
