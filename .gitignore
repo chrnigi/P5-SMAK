@@ -41,3 +41,6 @@ cloud/db-connection/*
 # debug information files
 *.dwo
 .vscode/*
+/ArduinoChess/ArduinoChess/.vs/ArduinoChess
+/ArduinoChess/ArduinoChess/ArduinoChess/x64/Debug
+/ArduinoChess/ArduinoChess/packages/Microsoft.googletest.v140.windesktop.msvcstl.static.rt-dyn.1.8.1.7
