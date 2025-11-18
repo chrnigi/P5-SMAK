@@ -41,3 +41,7 @@ cloud/db-connection/*
 # debug information files
 *.dwo
 .vscode/*
+
+# ansible
+.ansible
+.password

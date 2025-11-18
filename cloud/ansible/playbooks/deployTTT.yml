@@ -86,31 +86,41 @@
         group: smak
         recurse: true
 
-    # Kill dead or existing screen sessions AS smak, but without Ansible become_user
+    # Kill dead or existing screen sessions AS smak
     - name: Cleanup existing screen sessions
       ansible.builtin.shell: |
-        sudo -u smak screen -wipe || true
-        sudo -u smak screen -S {{ screen_session }} -X quit || true
+        screen -wipe || true
+        screen -S {{ screen_session }} -X quit || true
       args:
         chdir: "{{ app_dir }}"
-      ignore_errors: true
+      become: true
+      become_user: smak
+      register: screen_cleanup
+      failed_when: false
+      changed_when: true
+
 
     # Start the application AS smak
     - name: Start application in detached screen session
-      ansible.builtin.shell: |
-        sudo -u smak screen -dmS {{ screen_session }} {{ start_command }}
+      ansible.builtin.command: >
+        screen -dmS {{ screen_session }} {{ start_command }}
       args:
         chdir: "{{ app_dir }}"
+      become: true
+      become_user: smak
+      changed_when: true
 
 
     - name: Check screen sessions for {{ screen_session }}
-      ansible.builtin.shell: |
-        sudo -u smak screen -ls
+      ansible.builtin.command: screen -ls
       args:
         chdir: "{{ app_dir }}"
+      become: true
+      become_user: smak
       register: screen_check
       failed_when: false
       changed_when: false
+
 
     - name: Decide if screen session is missing or dead
       ansible.builtin.set_fact:
@@ -124,11 +134,15 @@
 
     - name: Restart application if screen session is missing or dead
       ansible.builtin.shell: |
-        sudo -u smak screen -wipe || true
-        sudo -u smak screen -dmS {{ screen_session }} {{ start_command }}
+        screen -wipe || true
+        screen -dmS {{ screen_session }} {{ start_command }}
       args:
         chdir: "{{ app_dir }}"
+      become: true
+      become_user: smak
       when: screen_session_needs_restart | bool
+      register: screen_restart
+      changed_when: screen_restart.rc == 0
 
 
 ##########################
