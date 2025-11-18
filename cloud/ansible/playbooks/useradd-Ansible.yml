@@ -1,6 +1,6 @@
-- name: ansibleUserCreation
+- name: AnsibleUserCreation
   hosts: all
-  become: yes
+  become: true
 
   vars:
     # Get the public key from the *controller* machine
@@ -12,8 +12,6 @@
     - name: Ping my hosts
       ansible.builtin.ping:
 
-    - meta: refresh_inventory
-
     - name: Add user ansible with sudo group
       ansible.builtin.user:
         name: ansible
@@ -21,7 +19,7 @@
         uid: 1040
         group: sudo
         state: present
-        create_home: yes
+        create_home: true
         shell: /bin/bash
 
     - name: Allow sudo group passwordless sudo
@@ -39,4 +37,4 @@
         user: "{{ item }}"
         state: present
         key: "{{ ansible_pubkey }}"
-      loop: "{{ [ 'ansible', login_user ] | unique }}"
+      loop: "{{ ['ansible', login_user] | unique }}"

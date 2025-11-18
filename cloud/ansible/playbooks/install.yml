@@ -1,9 +1,9 @@
 - hosts: all
-  become: yes
+  become: true
   become_user: root
 
   vars_files:
-    - ./packages.yml
+    - ./packages.txt
 
   vars:
     docker_repo_uri: "https://download.docker.com/linux/debian"
@@ -17,7 +17,7 @@
           - ca-certificates
           - curl
         state: present
-        update_cache: yes
+        update_cache: true
 
     - name: Ensure /etc/apt/keyrings directory exists
       ansible.builtin.file:
@@ -44,9 +44,9 @@
 
     - name: Update APT cache after adding Docker repo
       ansible.builtin.apt:
-        update_cache: yes
+        update_cache: true
 
-    - name: Ensure packages (from packages.yml) are installed
+    - name: Ensure packages (from packages.txt) are installed
       ansible.builtin.package:
         name: "{{ packages }}"
         state: present
