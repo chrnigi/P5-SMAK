@@ -1,5 +1,5 @@
 # Usage
-Ansible vault password goes in .password file that you make yourself, otherwise commands are to be run with --ask-vault-password
+Ansible vault password goes in the .password file, otherwise commands are to be run with --ask-vault-password
 
 
 ## First config of server
