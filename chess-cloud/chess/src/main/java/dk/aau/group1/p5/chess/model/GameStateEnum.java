@@ -1,6 +1,7 @@
 package dk.aau.group1.p5.chess.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum GameStateEnum {
     WHITE_WIN("WHITE_WIN"),
@@ -19,6 +20,7 @@ public enum GameStateEnum {
         this.jsonvalue = jsonvalue;
     }
 
+    @JsonValue
     public String getJsonValue() {
         return jsonvalue;
     }
