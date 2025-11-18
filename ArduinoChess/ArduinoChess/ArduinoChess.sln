@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36616.10 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ArduinoChess", "ArduinoChess.vcxproj", "{97DBD923-EEA5-4544-8453-2BD8B5E711A7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{97DBD923-EEA5-4544-8453-2BD8B5E711A7}.Debug|x64.ActiveCfg = Debug|x64
+		{97DBD923-EEA5-4544-8453-2BD8B5E711A7}.Debug|x64.Build.0 = Debug|x64
+		{97DBD923-EEA5-4544-8453-2BD8B5E711A7}.Debug|x86.ActiveCfg = Debug|Win32
+		{97DBD923-EEA5-4544-8453-2BD8B5E711A7}.Debug|x86.Build.0 = Debug|Win32
+		{97DBD923-EEA5-4544-8453-2BD8B5E711A7}.Release|x64.ActiveCfg = Release|x64
+		{97DBD923-EEA5-4544-8453-2BD8B5E711A7}.Release|x64.Build.0 = Release|x64
+		{97DBD923-EEA5-4544-8453-2BD8B5E711A7}.Release|x86.ActiveCfg = Release|Win32
+		{97DBD923-EEA5-4544-8453-2BD8B5E711A7}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6A3972D9-C1D5-4512-9E21-B5D96B386A66}
+	EndGlobalSection
+EndGlobal
