@@ -28,7 +28,7 @@ public class Move {
     @Column(name = "piece_type_captured")
     private PieceType pieceCaptured;
 
-    // promotion is a Boolean; DB column 'promotion' can be TINYINT(1) or BOOLEAN
+    // promotion is a Boolean; DB column 'promotion' 
     private Boolean promotion;
 
     @ManyToOne(fetch = FetchType.LAZY)
