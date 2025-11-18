@@ -52,6 +52,13 @@ void command(String command){
   }
 }
 
+void readESPserial(){
+  if (Serial3.available()){
+    Serial.print("Received string from ESP: ");
+    Serial.print(Serial3.readString());
+  }
+}
+
 void setup() {
   Serial.begin(9600);
   Serial3.begin(9600); 
@@ -71,7 +78,7 @@ void loop() {
   unsigned long now = millis();
   
   // Read serial
-  //readESPserial();
+  readESPserial();
 
   if (now - lastScan < (unsigned long)SCAN_EVERY_MS) return;
 
@@ -89,10 +96,6 @@ void loop() {
       if (changeStreak[i] >= HITS_NEEDED) {
         state[i] = proposed;
         changeStreak[i] = 0;
-
-        Serial.print(names[i]);
-        Serial.print(" -> ");
-        Serial.println(state[i] ? "ACTIVE" : "INACTIVE");
 
         Serial.print("PinChanges: ");
         Serial.print(i);
