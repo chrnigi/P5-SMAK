@@ -3,12 +3,10 @@ package dk.aau.chrinigin.Smak.model;
 import java.io.Serializable;
 import java.util.Objects;
 
-// Composite key for Move: uniquely identifies each move by combining
-// the game id and the ply number. Required for JPA to map Move correctly.
-
 public class MoveId implements Serializable {
-    private Long id;       
-    private Integer plyno; 
+
+    private Long id;       // game id
+    private Integer plyno; // half-move number
 
     public MoveId() {}
 

@@ -5,13 +5,8 @@
 <title>Smak Chess Viewer</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<!--
-  This file is our chess viewer
-  It talks to the backend (/games, /moves, /pgn), shows a visual board
-  and lets us click through moves one-by-one
-
-  All written without external libraries so nothing breaks
--->
+<!-- chess rules engine, used to turn UCI into board positions + SAN -->
+<script src="https://cdn.jsdelivr.net/npm/chess.js@1.0.0/dist/chess.min.js"></script>
 
 <style>
   :root {
@@ -40,6 +35,33 @@
     border-bottom: 1px solid var(--border);
   }
 
+  header strong {
+    font-size: 15px;
+  }
+
+  header select, header button {
+    background: #0d1117;
+    color: var(--fg);
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    font-size: 13px;
+  }
+
+  header button {
+    cursor: pointer;
+  }
+
+  header button:hover {
+    background: #111827;
+  }
+
+  #status {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
   main {
     display: grid;
     grid-template-columns: 520px 1fr;
@@ -52,6 +74,11 @@
     border-radius: 10px;
     background: var(--card);
     border: 1px solid var(--border);
+  }
+
+  h2 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
   }
 
   #board {
@@ -77,13 +104,15 @@
   .light { background: var(--light-square); }
   .dark  { background: var(--dark-square); }
 
-  #fenBox, #gameInfo {
+  #gameInfo {
     margin-top: 10px;
     padding: 8px 10px;
     background: #0f141a;
     border-radius: 7px;
     border: 1px solid var(--border);
     font-family: ui-monospace, Menlo, Consolas, monospace;
+    white-space: pre-line;
+    font-size: 13px;
   }
 
   .controls {
@@ -93,28 +122,62 @@
     align-items: center;
   }
 
+  .controls button {
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: #0d1117;
+    color: var(--fg);
+    cursor: pointer;
+  }
+
+  .controls button:hover {
+    background: #111827;
+  }
+
+  #plyLabel {
+    margin-left: 10px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
   #movesTable {
     width: 100%;
-    margin-top: 10px;
+    margin-top: 6px;
     border-collapse: collapse;
+    font-size: 13px;
   }
+
   #movesTable th, #movesTable td {
     padding: 6px 5px;
     border-bottom: 1px solid var(--border);
   }
+
+  #movesTable th {
+    text-align: left;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
   #movesTable tr.active {
     background: #1d2633;
   }
 
-  #pgnBox {
-    margin-top: 14px;
-    padding: 8px 10px;
-    background: #0f141a;
-    border-radius: 7px;
-    border: 1px solid var(--border);
-    max-height: 260px;
-    overflow-y: auto;
-    font-family: ui-monospace, Menlo, Consolas;
+  #movesTable tr:hover {
+    background: #1b2230;
+    cursor: pointer;
+  }
+
+  .flag {
+    font-size: 12px;
+    color: #f97373;
+  }
+
+  @media (max-width: 900px) {
+    main {
+      grid-template-columns: 1fr;
+    }
   }
 </style>
 </head>
@@ -133,14 +196,11 @@
 
 <main>
 
-  <!--
-    LEFT SIDE: visual chess board + fen + start/end info + buttons
-  -->
+  <!-- LEFT: board + meta + buttons -->
   <div class="panel">
     <h2>Board</h2>
     <div id="board"></div>
 
-    <div id="fenBox"></div>
     <div id="gameInfo"></div>
 
     <div class="controls">
@@ -148,40 +208,31 @@
       <button id="btnPrev">◀</button>
       <button id="btnNext">▶</button>
       <button id="btnLast">⏭</button>
-      <span id="plyLabel" style="margin-left:10px;"></span>
+      <span id="plyLabel"></span>
     </div>
   </div>
 
-  <!--
-  RIGHT SIDE: moves table + PGN box
-  -->
+  <!-- RIGHT: moves -->
   <div class="panel">
     <h2>Moves</h2>
-
     <table id="movesTable">
       <thead>
       <tr><th>#</th><th>Side</th><th>Move</th><th>Flags</th></tr>
       </thead>
       <tbody id="movesBody"></tbody>
     </table>
-
-    <h2 style="margin-top:16px;">PGN</h2>
-    <div id="pgnBox"></div>
   </div>
 
 </main>
 
 <script>
-  // Easier access to important elements
   const el = {
     gameSelect: document.getElementById('gameSelect'),
     refreshBtn: document.getElementById('refreshBtn'),
     status: document.getElementById('status'),
     board: document.getElementById('board'),
-    fenBox: document.getElementById('fenBox'),
     gameInfo: document.getElementById('gameInfo'),
     movesBody: document.getElementById('movesBody'),
-    pgnBox: document.getElementById('pgnBox'),
     btnFirst: document.getElementById('btnFirst'),
     btnPrev: document.getElementById('btnPrev'),
     btnNext: document.getElementById('btnNext'),
@@ -189,24 +240,25 @@
     plyLabel: document.getElementById('plyLabel'),
   };
 
-  // Our memory of the currently loaded game
-  let state = {
+  // current viewer state
+  const state = {
     game: null,
-    moves: [],
-    index: -1,  
+    rawMoves: [],
+    moves: [],   // enriched with san, check, mate
+    fens: [],    // fens[0] = start, fens[i] = after move i
+    index: -1,   // -1 = start position
   };
 
-  // Quick helper for fetch JSON
   async function fetchJson(url) {
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error(await resp.text());
-    return resp.json();
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
   }
 
-  // Convert piece letters → unicode chess symbols
+  // piece -> unicode
   function pieceChar(c) {
     switch (c) {
-      case 'P': return '♙'; 
+      case 'P': return '♙';
       case 'N': return '♘';
       case 'B': return '♗';
       case 'R': return '♖';
@@ -222,8 +274,11 @@
     }
   }
 
-  // Draw the board visually from FEN
   function renderBoardFromFen(fen) {
+    if (!fen) {
+      el.board.innerHTML = '';
+      return;
+    }
     const placement = fen.split(' ')[0];
     const rows = placement.split('/');
 
@@ -233,12 +288,10 @@
       let file = 0;
       for (const ch of rows[r]) {
         if (/\d/.test(ch)) {
-          // empty squares
           for (let i = 0; i < +ch; i++) {
             addSquare(r, file++, '');
           }
         } else {
-          // actual piece
           addSquare(r, file, pieceChar(ch));
           file++;
         }
@@ -255,17 +308,12 @@
     el.board.appendChild(sq);
   }
 
-  // Update board + fen text
-  function setFen(fen) {
-    renderBoardFromFen(fen);
-    el.fenBox.textContent = "FEN:\n" + fen;
-  }
-
-  // Pick the correct FEN for the given move 
   function fenAt(index) {
-    if (index < 0) return state.game.initialFen;
-    if (index < state.moves.length) return state.moves[index].fenAfter;
-    return state.game.latestFen || state.game.initialFen;
+    if (!state.fens.length) return null;
+    // index -1 => fens[0]
+    if (index < 0) return state.fens[0];
+    const idx = Math.min(index + 1, state.fens.length - 1);
+    return state.fens[idx];
   }
 
   function updatePlyLabel() {
@@ -286,30 +334,32 @@
     }
   }
 
-  // Main function for changing current displayed position
   function showIndex(i) {
     if (!state.game) return;
     if (i < -1) i = -1;
     if (i >= state.moves.length) i = state.moves.length - 1;
-    state.index = i;
 
-    setFen(fenAt(i));
+    state.index = i;
+    const fen = fenAt(i);
+    renderBoardFromFen(fen);
     updatePlyLabel();
     highlightRows();
   }
 
-  // Display "Start / End / Result"
   function renderGameInfo() {
     const g = state.game;
     const start = g.gamestart ? new Date(g.gamestart).toLocaleString() : "-";
     const end   = g.gameend   ? new Date(g.gameend).toLocaleString()   : "-";
+    const result = g.result || "UNKNOWN";
+    const st = g.state || "-";
+
     el.gameInfo.textContent =
 `Start:  ${start}
 End:    ${end}
-Result: ${g.result}`;
+State:  ${st}
+Result: ${result}`;
   }
 
-  // Build the moves table
   function renderMoves() {
     el.movesBody.innerHTML = "";
     state.moves.forEach((m, idx) => {
@@ -319,11 +369,14 @@ Result: ${g.result}`;
       const moveNo = (m.plyno % 2 === 1 ? Math.ceil(m.plyno / 2) : "");
       const side = (m.plyno % 2 === 1 ? "W" : "B");
 
+      const flagText = m.isMate ? "#" : (m.isCheck ? "+" : "");
+      const flagsHtml = flagText ? `<span class="flag">${flagText}</span>` : "";
+
       tr.innerHTML = `
         <td>${moveNo}</td>
         <td>${side}</td>
         <td>${m.san || m.uci}</td>
-        <td>${m.isMate ? "#" : m.isCheck ? "+" : ""}</td>
+        <td>${flagsHtml}</td>
       `;
 
       tr.addEventListener("click", () => showIndex(idx));
@@ -331,22 +384,80 @@ Result: ${g.result}`;
     });
   }
 
+  // Build SAN + FEN on frontend using chess.js and only UCI
+  function buildFromUci(rawMoves) {
+    if (typeof Chess === "undefined") {
+      // fallback: just show uci, no board logic
+      state.fens = [];
+      return rawMoves.map(m => ({
+        ...m,
+        san: m.uci,
+        isCheck: false,
+        isMate: false,
+      }));
+    }
+
+    const game = new Chess(); // standard starting position
+    const sorted = [...rawMoves].sort((a, b) => (a.plyno ?? 0) - (b.plyno ?? 0));
+
+    const fens = [];
+    const enriched = [];
+
+    // initial position
+    fens.push(game.fen());
+
+    for (const m of sorted) {
+      const uci = m.uci || "";
+      if (uci.length < 4) continue;
+
+      const moveObj = {
+        from: uci.slice(0, 2),
+        to:   uci.slice(2, 4)
+      };
+
+      if (uci.length >= 5) {
+        moveObj.promotion = uci[4].toLowerCase();
+      } else if (m.promotion) {
+        moveObj.promotion = "q";
+      }
+
+      const res = game.move(moveObj);
+      let san = uci;
+      if (res && res.san) san = res.san;
+
+      const isMate = san.includes("#");
+      const isCheck = !isMate && san.includes("+");
+
+      enriched.push({
+        ...m,
+        san,
+        isCheck,
+        isMate
+      });
+
+      fens.push(game.fen());
+    }
+
+    state.fens = fens;
+    return enriched;
+  }
+
   async function loadGame(id) {
     try {
       el.status.textContent = "Loading...";
       const game = await fetchJson(`/games/${id}`);
-      const moves = await fetchJson(`/moves/${id}`);
+      const rawMoves = await fetchJson(`/moves/${id}`);
 
       state.game = game;
-      state.moves = moves || [];
-      state.index = -1;  // start at initial now before it started at the end
+      state.rawMoves = rawMoves || [];
+      state.moves = buildFromUci(state.rawMoves);
+      state.index = -1;
 
       renderGameInfo();
       renderMoves();
-      showIndex(-1); // actually show initial board
-      el.pgnBox.textContent = game.pgn || "";
+      showIndex(-1);
 
-      el.status.textContent = `${moves.length} plies • ${game.result}`;
+      el.status.textContent = `${state.moves.length} plies • ${game.result}`;
     } catch (e) {
       el.status.textContent = "Error: " + e.message;
     }
@@ -354,27 +465,32 @@ Result: ${g.result}`;
 
   async function loadGameList() {
     try {
-      const games = await fetchJson('/games');
+      const games = await fetchJson("/games");
+      if (!games || !games.length) {
+        el.gameSelect.innerHTML = "<option>(no games)</option>";
+        el.status.textContent = "No games found";
+        return;
+      }
+
       el.gameSelect.innerHTML = games
         .map(g => `<option value="${g.id}">Game #${g.id} (${g.result})</option>`)
-        .join('');
+        .join("");
 
-      if (games.length) loadGame(games[0].id);
-      else el.status.textContent = "No games found";
+      await loadGame(games[0].id);
     } catch (e) {
       el.status.textContent = "Error loading games";
     }
   }
 
-  // Button listeners
-  el.gameSelect.addEventListener('change', () => loadGame(el.gameSelect.value));
-  el.refreshBtn.addEventListener('click', () => loadGame(el.gameSelect.value));
-  el.btnFirst.addEventListener('click', () => showIndex(-1));
-  el.btnPrev.addEventListener('click',  () => showIndex(state.index - 1));
-  el.btnNext.addEventListener('click',  () => showIndex(state.index + 1));
-  el.btnLast.addEventListener('click',  () => showIndex(state.moves.length - 1));
+  // hook up controls
+  el.gameSelect.addEventListener("change", () => loadGame(el.gameSelect.value));
+  el.refreshBtn.addEventListener("click", () => loadGame(el.gameSelect.value));
+  el.btnFirst.addEventListener("click", () => showIndex(-1));
+  el.btnPrev.addEventListener("click",  () => showIndex(state.index - 1));
+  el.btnNext.addEventListener("click",  () => showIndex(state.index + 1));
+  el.btnLast.addEventListener("click",  () => showIndex(state.moves.length - 1));
 
-  // Load everything on startup
+  // boot
   loadGameList();
 </script>
 
