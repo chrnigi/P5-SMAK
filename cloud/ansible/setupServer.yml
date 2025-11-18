@@ -1,14 +1,19 @@
-- import_playbook: playbooks/useradd-Ansible.yml
+- name: AnsibleUserCreation
+  import_playbook: playbooks/useradd-Ansible.yml
   tags: useradd
 
-- import_playbook: playbooks/install.yml
+- name: PKGinstall
+  import_playbook: playbooks/install.yml
   tags: pkginstall
 
-- import_playbook: playbooks/webConfig.yml
+- name: Webconfig
+  import_playbook: playbooks/webConfig.yml
   tags: webconfig
 
-- import_playbook: playbooks/tttDBsetup.yml
+- name: TTTdbsetup
+  import_playbook: playbooks/tttDBsetup.yml
   tags: tttdbsetup
 
-- import_playbook: playbooks/deployTTT.yml
+- name: TTTdeploy
+  import_playbook: playbooks/deployTTT.yml
   tags: tttdeploy

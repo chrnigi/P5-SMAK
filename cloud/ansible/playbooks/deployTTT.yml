@@ -1,4 +1,5 @@
-- hosts: all
+- name: TTTDeploy
+  hosts: all
   become: true
   become_user: root
 
@@ -21,8 +22,11 @@
 
   tasks:
     - name: Mark /opt/SMAK as safe git directory for root
-      ansible.builtin.command: git config --global --add safe.directory {{ repo_dest }}
-      changed_when: false
+      community.general.git_config:
+        name: safe.directory
+        value: "{{ repo_dest }}"
+        scope: global
+        state: present
 
 
     - name: Clone or update Git repository
@@ -30,21 +34,27 @@
         repo: "{{ repo_url }}"
         dest: "{{ repo_dest }}"
         version: main
-        force: yes
+        force: true
 
     - name: Ensure username correct
       ansible.builtin.lineinfile:
         path: "{{ file_to_modify }}"
         regexp: '^spring.datasource.username='
         line: 'spring.datasource.username={{ db_username }}'
-        create: yes
-      
+        create: true
+        owner: root
+        group: root
+        mode: "0640"
+
     - name: Ensure password correct
       ansible.builtin.lineinfile:
         path: "{{ file_to_modify }}"
         regexp: '^spring.datasource.password='
         line: 'spring.datasource.password={{ db_password }}'
-        create: yes
+        create: true
+        owner: root
+        group: root
+        mode: "0640"
 
     - name: Ensure mvnw is executable
       ansible.builtin.file:
@@ -52,11 +62,11 @@
         mode: "0755"
 
     - name: Run Maven package (skip tests)
-      ansible.builtin.shell: ./mvnw package -Dmaven.test.skip=true
+      ansible.builtin.command: ./mvnw package -Dmaven.test.skip=true
       args:
-        chdir: >-
-          {{ app_dir }}
+        chdir: "{{ app_dir }}"
       register: mvn_result
+      changed_when: "'BUILD SUCCESS' in mvn_result.stdout"
 
     - name: Show Maven output (optional)
       ansible.builtin.debug:
@@ -74,7 +84,7 @@
         path: "{{ repo_dest }}"
         owner: smak
         group: smak
-        recurse: yes
+        recurse: true
 
     # Kill dead or existing screen sessions AS smak, but without Ansible become_user
     - name: Cleanup existing screen sessions
@@ -102,7 +112,7 @@
       failed_when: false
       changed_when: false
 
-    - name: Decide if screen session {{ screen_session }} is missing or dead
+    - name: Decide if screen session is missing or dead
       ansible.builtin.set_fact:
         screen_session_needs_restart: >-
           {{ screen_check.rc != 0
@@ -129,21 +139,31 @@
         path: "{{ phpfiletomodify }}"
         regexp: '^\$DB_NAME\s*='
         line: "$DB_NAME = '{{ db_name }}';"
-        create: yes
-    
+        create: true
+        owner: root
+        group: root
+        mode: "0640"
+
     - name: Ensure webui username correct
       ansible.builtin.lineinfile:
         path: "{{ phpfiletomodify }}"
         regexp: '^\$DB_USER\s*='
         line: "$DB_USER = '{{ webui_username }}';"
-        create: yes
-      
+        create: true
+        owner: root
+        group: root
+        mode: "0640"
+
     - name: Ensure webui password correct
       ansible.builtin.lineinfile:
         path: "{{ phpfiletomodify }}"
         regexp: '^\$DB_PASS\s*='
         line: "$DB_PASS = '{{ webui_password }}';"
-        create: yes
+        create: true
+        owner: root
+        group: root
+        mode: "0640"
+
 
     - name: Ensure tictactoe web directory exists
       ansible.builtin.file:
@@ -153,7 +173,6 @@
         group: root
         mode: "0755"
 
-
     - name: Deploy tictactoe index.php
       ansible.builtin.copy:
         src: "{{ phpfiletomodify }}"
@@ -161,5 +180,4 @@
         owner: root
         group: root
         mode: "0644"
-        remote_src: yes
-
+        remote_src: true

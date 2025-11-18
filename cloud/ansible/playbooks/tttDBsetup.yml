@@ -1,11 +1,11 @@
-- name: tttDBsetup
+- name: TTTDBsetup
   hosts: all
   become: true
   become_user: root
 
   vars_files:
     - ./tictactoeVault
-  
+
   tasks:
     - name: Create a new database with name 'ttt'
       community.mysql.mysql_db:
