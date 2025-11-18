@@ -43,3 +43,12 @@ cloud/db-connection/*
 # debug information files
 *.dwo
 .vscode/*
+
+# Files generated when compiling in Visual Studio
+/ArduinoChess/ArduinoChess/.vs
+/ArduinoChess/ArduinoChess/ArduinoChess/x64/Debug
+/ArduinoChess/ArduinoChess/packages
+/ArduinoChess/ArduinoChess/x64
+/.vs/CMakeWorkspaceSettings.json
+/.vs/ProjectSettings.json
+/.vs/slnx.sqlite
