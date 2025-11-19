@@ -15,7 +15,7 @@ import jakarta.persistence.Table;
 @Entity
 @IdClass(MoveId.class)
 @Table(name = "moves")
-public class Moves {
+public class Move {
     @Id
     @Column(name = "id", nullable = false)
     Long id;
@@ -56,9 +56,9 @@ public class Moves {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Game game;
 
-    public Moves() {}
+    public Move() {}
 
-    public Moves(Long id, Integer move_number, Integer ply_number, PiecesEnum piece_moved, PiecesEnum piece_captured,
+    public Move(Long id, Integer move_number, Integer ply_number, PiecesEnum piece_moved, PiecesEnum piece_captured,
             Boolean is_promotion, Boolean is_capture, Boolean is_enpassant, Boolean is_castles, Short from_square,
             Short to_square) {
         this.id = id;
@@ -162,11 +162,11 @@ public class Moves {
         this.to_square = to_square;
     }
 
-    public Games getGame() {
+    public Game getGame() {
         return game;
     }
 
-    public void setGame(Games game) {
+    public void setGame(Game game) {
         this.game = game;
     }
 
@@ -196,7 +196,7 @@ public class Moves {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        Moves other = (Moves) obj;
+        Move other = (Move) obj;
         if (id == null) {
             if (other.id != null)
                 return false;
