@@ -10,7 +10,7 @@ import dk.aau.group1.p5.chess.repository.GameRepository;
 
 @Service
 public class GameService {
-    private final GamesRepository gameRepository;
+    private final GameRepository gameRepository;
 
     public GameService(GameRepository gameRepository) {
         this.gameRepository = gameRepository;
