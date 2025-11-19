@@ -45,3 +45,4 @@ cloud/db-connection/*
 # ansible
 .ansible
 .password
+cloud/ansible/.password

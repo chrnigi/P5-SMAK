@@ -1,0 +1,69 @@
+- name: Deploy Nginx Proxy Manager
+  hosts: all
+  become: true
+
+  vars_files:
+    - ./tictactoeVault
+
+  vars:
+    npm_app_dir: /opt/nginx-proxy-manager
+    npm_data_dir: /opt/nginx-proxy-manager/data
+    npm_archive_src: npm-data.enc
+    npm_archive_tmp: /tmp/npm-data.tar
+
+  tasks:
+    - name: Ensure target directories exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0750"
+      loop:
+        - "{{ npm_app_dir }}"
+        - "{{ npm_data_dir }}"
+
+    - name: Copy docker-compose.yml to target
+      ansible.builtin.copy:
+        src: ./templates/docker-compose.yml
+        dest: "{{ npm_app_dir }}/docker-compose.yml"
+        mode: "0644"
+
+    - name: Copy encrypted NPM data archive
+      ansible.builtin.copy:
+        src: "./files/{{ npm_archive_src }}"
+        dest: "/tmp/{{ npm_archive_src }}"
+        mode: "0600"
+
+    - name: Decrypt NPM data archive to tar
+      ansible.builtin.shell: |
+        set -e
+        openssl enc -d -aes-256-cbc -salt -pbkdf2 \
+          -in "/tmp/{{ npm_archive_src }}" \
+          -out "{{ npm_archive_tmp }}" \
+          -pass pass:"{{ npmpassword }}"
+
+    - name: Extract NPM data tar into data directory
+      ansible.builtin.unarchive:
+        src: "{{ npm_archive_tmp }}"
+        dest: "{{ npm_data_dir }}"
+        remote_src: true
+        owner: root
+        group: root
+        mode: "0640"
+        extra_opts:
+          - "--strip-components=0"
+
+    - name: Remove temporary decrypted tar
+      ansible.builtin.file:
+        path: "{{ npm_archive_tmp }}"
+        state: absent
+
+    - name: Start/Update Nginx Proxy Manager (docker compose up -d)
+      ansible.builtin.command: docker compose up -d
+      args:
+        chdir: "{{ npm_app_dir }}"
+      register: docker_compose_result
+      changed_when: >
+        'Creating' in docker_compose_result.stdout
+        or 'Recreating' in docker_compose_result.stdout
+        or 'Starting' in docker_compose_result.stdout
+      failed_when: docker_compose_result.rc != 0

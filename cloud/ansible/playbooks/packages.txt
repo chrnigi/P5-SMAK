@@ -12,3 +12,5 @@ packages:
   - php-mysql
   - screen
   - python3-pymysql
+  - zip
+  - unzip

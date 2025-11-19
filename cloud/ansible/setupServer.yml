@@ -17,3 +17,7 @@
 - name: TTTdeploy
   import_playbook: playbooks/deployTTT.yml
   tags: tttdeploy
+
+- name: NPMdeploy
+  import_playbook: playbooks/reverseproxySetup.yml
+  tags: revproxy
