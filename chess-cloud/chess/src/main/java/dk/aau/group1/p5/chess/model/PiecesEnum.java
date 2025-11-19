@@ -8,7 +8,8 @@ public enum PiecesEnum {
     ROOK("R"),
     BISHOP("B"),
     KNIGHT("N"),
-    PAWN("P");
+    PAWN("P"),
+    NONE("NONE");
 
     
     private String jsonvalue;

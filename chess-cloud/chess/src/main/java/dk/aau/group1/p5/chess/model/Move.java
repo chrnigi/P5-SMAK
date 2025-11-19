@@ -30,7 +30,7 @@ public class Move {
     @Column(name = "piece_moved", nullable = false)
     private PiecesEnum piece_moved;
 
-    @Column(name = "piece_captured", nullable = true)
+    @Column(name = "piece_captured", nullable = false)
     private PiecesEnum piece_captured;
 
     @Column(name = "from_square", nullable = false)
