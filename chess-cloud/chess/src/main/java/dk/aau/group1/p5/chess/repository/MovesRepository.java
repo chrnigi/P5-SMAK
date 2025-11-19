@@ -6,9 +6,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import dk.aau.group1.p5.chess.model.MoveId;
-import dk.aau.group1.p5.chess.model.Moves;
+import dk.aau.group1.p5.chess.model.Move;
 
-public interface MovesRepository extends JpaRepository<Moves, MoveId> {
+public interface MovesRepository extends JpaRepository<Move, MoveId> {
     
     @Query(
         value = "SELECT * FROM moves m WHERE m.id = ?1",

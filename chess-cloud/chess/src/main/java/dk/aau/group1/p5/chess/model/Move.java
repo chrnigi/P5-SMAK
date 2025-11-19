@@ -54,7 +54,7 @@ public class Moves {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id", insertable = false, updatable = false)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-    private Games game;
+    private Game game;
 
     public Moves() {}
 
