@@ -1,4 +1,6 @@
 # Prerequisites
+build/*
+.cache/*
 *.d
 
 cloud/db-connection/*
@@ -46,3 +48,12 @@ cloud/db-connection/*
 .ansible
 .password
 cloud/ansible/.password
+
+# Files generated when compiling in Visual Studio
+/ArduinoChess/ArduinoChess/.vs
+/ArduinoChess/ArduinoChess/ArduinoChess/x64/Debug
+/ArduinoChess/ArduinoChess/packages
+/ArduinoChess/ArduinoChess/x64
+/.vs/CMakeWorkspaceSettings.json
+/.vs/ProjectSettings.json
+/.vs/slnx.sqlite
