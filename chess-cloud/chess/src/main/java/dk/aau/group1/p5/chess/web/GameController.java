@@ -9,35 +9,35 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import dk.aau.group1.p5.chess.model.Games;
-import dk.aau.group1.p5.chess.service.GamesService;
+import dk.aau.group1.p5.chess.model.Game;
+import dk.aau.group1.p5.chess.service.GameService;
 
 @RestController
-public class GamesController {
-    private final GamesService gamesService;
+public class GameController {
+    private final GameService gameService;
 
-    public GamesController(GamesService gamesService) {
-        this.gamesService = gamesService;
+    public GameController(GameService gameService) {
+        this.gameService = gameService;
     }
 
     @GetMapping("/games")
-    public List<Games> getAllGames() {
-        return gamesService.getAll();
+    public List<Game> getAllGames() {
+        return gameService.getAll();
     }
 
     @GetMapping("/games/{id}")
-    public Games getGameById(@PathVariable Long id) {
-        return gamesService.get(id).orElseThrow(() -> new RuntimeException() /* Change to custom exception */); 
+    public Game getGameById(@PathVariable Long id) {
+        return gameService.get(id).orElseThrow(() -> new RuntimeException() /* Change to custom exception */); 
     }
 
     @PostMapping("/games")
-    public Games addGame(@RequestBody Games game) {
-        return gamesService.save(game);
+    public Game addGame(@RequestBody Game game) {
+        return gameService.save(game);
     }
 
     @PatchMapping("/games/{id}")
-    public Games updateGame(@PathVariable Long id, @RequestBody Games game) {
+    public Game updateGame(@PathVariable Long id, @RequestBody Game game) {
         game.setId(id);
-        return gamesService.save(game);
+        return gameService.save(game);
     } 
 }

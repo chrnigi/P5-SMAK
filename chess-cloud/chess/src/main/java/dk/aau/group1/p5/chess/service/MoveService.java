@@ -4,28 +4,28 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import dk.aau.group1.p5.chess.model.Moves;
-import dk.aau.group1.p5.chess.repository.MovesRepository;
+import dk.aau.group1.p5.chess.model.Move;
+import dk.aau.group1.p5.chess.repository.MoveRepository;
 
 @Service
-public class MovesService {
+public class MoveService {
 
-    private final MovesRepository movesRepository;
+    private final MoveRepository moveRepository;
 
-    public MovesService(MovesRepository movesRepository) {
-        this.movesRepository = movesRepository;
+    public MoveService(MoveRepository moveRepository) {
+        this.moveRepository = moveRepository;
     }
 
-    public List<Moves> getAll() {
-        return movesRepository.findAll();
+    public List<Move> getAll() {
+        return moveRepository.findAll();
     }
 
-    public List<Moves> getAllByGameId(Long id) {
-        return movesRepository.getByGameId(id);
+    public List<Move> getAllByGameId(Long id) {
+        return moveRepository.getByGameId(id);
     }
 
-    public Moves saveMove(Moves move) {
-        return movesRepository.save(move);
+    public Move saveMove(Move move) {
+        return moveRepository.save(move);
     }
 
 }

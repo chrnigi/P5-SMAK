@@ -8,12 +8,12 @@ import org.springframework.data.jpa.repository.Query;
 import dk.aau.group1.p5.chess.model.MoveId;
 import dk.aau.group1.p5.chess.model.Move;
 
-public interface MovesRepository extends JpaRepository<Move, MoveId> {
+public interface MoveRepository extends JpaRepository<Move, MoveId> {
     
     @Query(
         value = "SELECT * FROM moves m WHERE m.id = ?1",
         nativeQuery = true
     )
-    public List<Moves> getByGameId(Long id);
+    public List<Move> getByGameId(Long id);
 
 }

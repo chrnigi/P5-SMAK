@@ -7,29 +7,29 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-import dk.aau.group1.p5.chess.model.Moves;
-import dk.aau.group1.p5.chess.service.MovesService;
+import dk.aau.group1.p5.chess.model.Move;
+import dk.aau.group1.p5.chess.service.MoveService;
 
-public class MovesController {
-    private final MovesService movesService;
+public class MoveController {
+    private final MoveService moveService;
 
-    public MovesController(MovesService movesService) {
-        this.movesService = movesService;
+    public MoveController(MoveService moveService) {
+        this.moveService = moveService;
     }
 
     @GetMapping("/moves")
-    public List<Moves> getAll() {
-        return movesService.getAll();
+    public List<Move> getAll() {
+        return moveService.getAll();
     }
 
     @GetMapping("/moves/{id}")
-    public List<Moves> getByGameId(@PathVariable Long id) {
-        return movesService.getAllByGameId(id);
+    public List<Move> getByGameId(@PathVariable Long id) {
+        return moveService.getAllByGameId(id);
     }
 
     @PostMapping("/moves")
-    public Moves addMove(@RequestBody Moves move) {
-        return movesService.saveMove(move);
+    public Move addMove(@RequestBody Move move) {
+        return moveService.saveMove(move);
     }
 
 
