@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.300)
+cmake_minimum_required(VERSION 3.30.0)
 
 set(SRC_FILES
     clientlib.cpp

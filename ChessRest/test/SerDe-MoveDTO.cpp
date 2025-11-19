@@ -2,7 +2,7 @@
 #include <models.hpp>
 #include <clientlib.hpp>
 #include <chesslib.hpp>
-#include <print>
+#include <fmt/core.h>
 #include <oatpp/parser/json/mapping/ObjectMapper.hpp>
 
 // E2E4
@@ -41,7 +41,7 @@ int main(void) {
     assert(dto->to_square == dto_from_str->to_square);
     
     auto serialized = objectMapper->writeToString(dto);
-    std::println("{}", std::string(serialized->c_str()));
+    fmt::println("{}", std::string(serialized->c_str()));
     assert(serialized == MOVE_JSON_INPUT);
 
     return 0;

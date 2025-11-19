@@ -9,6 +9,7 @@ add_executable(SerDe_test_game
 target_link_libraries(SerDe_test_game
     PUBLIC chessclientlib
     PRIVATE oatpp
+    PUBLIC fmt
 )
 add_test(
     NAME SerDe_test_game
@@ -22,6 +23,7 @@ add_executable(SerDe_test_move
 target_link_libraries(SerDe_test_move
     PUBLIC chessclientlib
     PRIVATE oatpp
+    PUBLIC fmt
 )
 
 add_test(
@@ -36,6 +38,7 @@ add_executable(MoveDTO_test_convert
 target_link_libraries(MoveDTO_test_convert
     PUBLIC chessclientlib
     PRIVATE oatpp
+    PUBLIC fmt
 )
 add_test(
     NAME MoveDTO_test_convert
@@ -49,6 +52,7 @@ add_executable(GetFenByPly
 target_link_libraries(GetFenByPly
     PUBLIC chessclientlib
     PRIVATE oatpp
+    PUBLIC fmt
 )
 add_test(
     NAME GetFenByPly

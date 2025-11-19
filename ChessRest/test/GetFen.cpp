@@ -4,7 +4,7 @@
 #include <chesslib.hpp>
 #include <models.hpp>
 #include <clientlib.hpp>
-#include <print>
+#include <fmt/core.h>
 #include <vector>
 
 
@@ -26,7 +26,7 @@ int main(void) {
 
     std::string pos = gof.getPositionByPly(1);
 
-    std::println("{}", pos);
+    fmt::println("{}", pos);
 
     assert(pos == "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1");
 
