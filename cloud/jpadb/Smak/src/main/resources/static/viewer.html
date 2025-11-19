@@ -1,12 +1,13 @@
+</body>
+</html>
+
+
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <title>Smak Chess Viewer</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
-<!-- chess rules engine, used to turn UCI into board positions + SAN -->
-<script src="https://cdn.jsdelivr.net/npm/chess.js@1.0.0/dist/chess.min.js"></script>
 
 <style>
   :root {
@@ -15,8 +16,8 @@
     --card: #161b22;
     --border: #30363d;
     --muted: #8b949e;
-    --light-square: #f0d9b5;
-    --dark-square: #b58863;
+    --light-square: #cfc2ad;
+    --dark-square: #080808;
   }
 
   body {
@@ -35,11 +36,10 @@
     border-bottom: 1px solid var(--border);
   }
 
-  header strong {
-    font-size: 15px;
-  }
+  header strong { font-size: 15px; }
 
-  header select, header button {
+  header select,
+  header button {
     background: #0d1117;
     color: var(--fg);
     border-radius: 999px;
@@ -51,10 +51,7 @@
   header button {
     cursor: pointer;
   }
-
-  header button:hover {
-    background: #111827;
-  }
+  header button:hover { background:#111827; }
 
   #status {
     margin-left: auto;
@@ -76,11 +73,9 @@
     border: 1px solid var(--border);
   }
 
-  h2 {
-    margin: 0 0 8px 0;
-    font-size: 16px;
-  }
+  h2 { margin: 0 0 8px 0; font-size: 16px; }
 
+  /* Visual chess board */
   #board {
     width: 100%;
     max-width: 480px;
@@ -94,13 +89,12 @@
   }
 
   .square {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 34px;
-    user-select: none;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:34px;
+    user-select:none;
   }
-
   .light { background: var(--light-square); }
   .dark  { background: var(--dark-square); }
 
@@ -131,10 +125,7 @@
     color: var(--fg);
     cursor: pointer;
   }
-
-  .controls button:hover {
-    background: #111827;
-  }
+  .controls button:hover { background:#111827; }
 
   #plyLabel {
     margin-left: 10px;
@@ -148,55 +139,38 @@
     border-collapse: collapse;
     font-size: 13px;
   }
-
   #movesTable th, #movesTable td {
     padding: 6px 5px;
     border-bottom: 1px solid var(--border);
   }
-
   #movesTable th {
     text-align: left;
     font-size: 12px;
     color: var(--muted);
   }
 
-  #movesTable tr.active {
-    background: #1d2633;
-  }
+  #movesTable tr.active { background:#1d2633; }
+  #movesTable tr:hover  { background:#1b2230; cursor:pointer; }
 
-  #movesTable tr:hover {
-    background: #1b2230;
-    cursor: pointer;
-  }
-
-  .flag {
-    font-size: 12px;
-    color: #f97373;
-  }
+  .flag { font-size:12px; color:#f97373; }
 
   @media (max-width: 900px) {
-    main {
-      grid-template-columns: 1fr;
-    }
+    main { grid-template-columns: 1fr; }
   }
 </style>
 </head>
-
 <body>
 
 <header>
   <strong>♟ Smak Viewer</strong>
-
   Game:
   <select id="gameSelect"></select>
-
   <button id="refreshBtn">↻ Refresh</button>
   <span id="status"></span>
 </header>
 
 <main>
-
-  <!-- LEFT: board + meta + buttons -->
+  <!-- LEFT: board + game meta + navigation -->
   <div class="panel">
     <h2>Board</h2>
     <div id="board"></div>
@@ -212,17 +186,16 @@
     </div>
   </div>
 
-  <!-- RIGHT: moves -->
+  <!-- RIGHT: move list -->
   <div class="panel">
     <h2>Moves</h2>
     <table id="movesTable">
       <thead>
-      <tr><th>#</th><th>Side</th><th>Move</th><th>Flags</th></tr>
+      <tr><th>#</th><th>Side</th><th>Move (UCI)</th><th>Flags</th></tr>
       </thead>
       <tbody id="movesBody"></tbody>
     </table>
   </div>
-
 </main>
 
 <script>
@@ -240,13 +213,12 @@
     plyLabel: document.getElementById('plyLabel'),
   };
 
-  // current viewer state
+  // Viewer state
   const state = {
     game: null,
-    rawMoves: [],
-    moves: [],   // enriched with san, check, mate
-    fens: [],    // fens[0] = start, fens[i] = after move i
-    index: -1,   // -1 = start position
+    moves: [],      // raw moves from backend (with uci, pieceMoved, pieceCaptured, promotion)
+    boards: [],     // boards[i] = position after i moves, boards[0] = start
+    index: -1       // -1 => initial position (boards[0])
   };
 
   async function fetchJson(url) {
@@ -255,65 +227,172 @@
     return r.json();
   }
 
-  // piece -> unicode
+  /* Board representation from UCI  */
+
+  // Build standard starting position, 8x8, chars: rnbqkbnr / p / P / R etc, '.' = empty
+  function initialBoard() {
+    const rows = [
+      "rnbqkbnr",
+      "pppppppp",
+      "........",
+      "........",
+      "........",
+      "........",
+      "PPPPPPPP",
+      "RNBQKBNR"
+    ];
+    return rows.map(r => r.split(""));
+  }
+
+  function cloneBoard(b) {
+    return b.map(row => row.slice());
+  }
+
+  function squareFromAlgebraic(sq) {
+    // sq like "e4"
+    const file = sq.charCodeAt(0) - "a".charCodeAt(0); // 0..7
+    const rankNum = parseInt(sq[1], 10);               // 1..8
+    const rank = 8 - rankNum;                          // 0 = 8th rank (top)
+    return { rank, file };
+  }
+
+  function applyUci(board, move) {
+    const uci = move.uci || "";
+    if (uci.length < 4) return;
+
+    const from = squareFromAlgebraic(uci.slice(0, 2));
+    const to   = squareFromAlgebraic(uci.slice(2, 4));
+    const isWhite = (move.plyno % 2 === 1);
+
+    let piece = board[from.rank][from.file];
+
+    // If for some reason we don't find a piece, fall back to something reasonable
+    if (!piece || piece === ".") {
+      piece = isWhite ? "P" : "p";
+    }
+
+    // Handle castling
+    const isKing = piece === "K" || piece === "k";
+    if (isKing && Math.abs(from.file - to.file) === 2) {
+      // King move
+      board[from.rank][from.file] = ".";
+      board[to.rank][to.file] = piece;
+
+      // Rook move as part of castling
+      if (to.file === 6) { // king side: e1g1 or e8g8
+        const rookFromFile = 7;
+        const rookToFile   = 5;
+        const rook = board[from.rank][rookFromFile];
+        board[from.rank][rookFromFile] = ".";
+        board[from.rank][rookToFile]   = rook;
+      } else if (to.file === 2) { // queen side: e1c1 or e8c8
+        const rookFromFile = 0;
+        const rookToFile   = 3;
+        const rook = board[from.rank][rookFromFile];
+        board[from.rank][rookFromFile] = ".";
+        board[from.rank][rookToFile]   = rook;
+      }
+      return;
+    }
+
+    // Promotion: either promotion=true or uci like e7e8q
+    const willPromote = move.promotion || (uci.length >= 5 && (uci[4] === "q" || uci[4] === "Q"));
+    if (willPromote) {
+      piece = isWhite ? "Q" : "q";
+    }
+
+    // Normal move (capture = just overwrite target square)
+    board[from.rank][from.file] = ".";
+    board[to.rank][to.file] = piece;
+  }
+
+  // Precompute all board positions from UCI moves
+  function buildBoardsFromMoves(moves) {
+    const boards = [];
+    let b = initialBoard();
+    boards.push(cloneBoard(b)); // after 0 moves
+
+    const ordered = [...moves].sort((a, b) => (a.plyno ?? 0) - (b.plyno ?? 0));
+    ordered.forEach(m => {
+      applyUci(b, m);
+      boards.push(cloneBoard(b));
+    });
+
+    return { boards, ordered };
+  }
+
+  /* ---------- rendering ---------- */
+
   function pieceChar(c) {
     switch (c) {
-      case 'P': return '♙';
-      case 'N': return '♘';
-      case 'B': return '♗';
-      case 'R': return '♖';
-      case 'Q': return '♕';
-      case 'K': return '♔';
-      case 'p': return '♟';
-      case 'n': return '♞';
-      case 'b': return '♝';
-      case 'r': return '♜';
-      case 'q': return '♛';
-      case 'k': return '♚';
-      default: return '';
+      case "P": return "♙";
+      case "N": return "♘";
+      case "B": return "♗";
+      case "R": return "♖";
+      case "Q": return "♕";
+      case "K": return "♔";
+      case "p": return "♟";
+      case "n": return "♞";
+      case "b": return "♝";
+      case "r": return "♜";
+      case "q": return "♛";
+      case "k": return "♚";
+      default:  return "";
     }
   }
 
-  function renderBoardFromFen(fen) {
-    if (!fen) {
-      el.board.innerHTML = '';
-      return;
-    }
-    const placement = fen.split(' ')[0];
-    const rows = placement.split('/');
+  function renderBoard(boardMatrix) {
+    el.board.innerHTML = "";
+    if (!boardMatrix) return;
 
-    el.board.innerHTML = '';
-
-    for (let r = 0; r < 8; r++) {
-      let file = 0;
-      for (const ch of rows[r]) {
-        if (/\d/.test(ch)) {
-          for (let i = 0; i < +ch; i++) {
-            addSquare(r, file++, '');
-          }
-        } else {
-          addSquare(r, file, pieceChar(ch));
-          file++;
-        }
+    for (let rank = 0; rank < 8; rank++) {
+      for (let file = 0; file < 8; file++) {
+        const sq = document.createElement("div");
+        sq.classList.add("square");
+        const isLight = (rank + file) % 2 === 0;
+        sq.classList.add(isLight ? "light" : "dark");
+        sq.textContent = pieceChar(boardMatrix[rank][file]);
+        el.board.appendChild(sq);
       }
     }
   }
 
-  function addSquare(rank, file, piece) {
-    const sq = document.createElement('div');
-    sq.classList.add('square');
-    const isLight = (rank + file) % 2 === 0;
-    sq.classList.add(isLight ? 'light' : 'dark');
-    sq.textContent = piece;
-    el.board.appendChild(sq);
+  function renderGameInfo() {
+    const g = state.game;
+    const start = g.gamestart ? new Date(g.gamestart).toLocaleString() : "-";
+    const end   = g.gameend   ? new Date(g.gameend).toLocaleString()   : "-";
+    const st    = g.state || "-";
+
+    el.gameInfo.textContent =
+`Start:  ${start}
+End:    ${end}
+State:  ${st}`;
   }
 
-  function fenAt(index) {
-    if (!state.fens.length) return null;
-    // index -1 => fens[0]
-    if (index < 0) return state.fens[0];
-    const idx = Math.min(index + 1, state.fens.length - 1);
-    return state.fens[idx];
+  function renderMovesTable() {
+    el.movesBody.innerHTML = "";
+    state.moves.forEach((m, idx) => {
+      const tr = document.createElement("tr");
+      tr.dataset.index = idx;
+
+      const moveNo = (m.plyno % 2 === 1 ? Math.ceil(m.plyno / 2) : "");
+      const side   = (m.plyno % 2 === 1 ? "W" : "B");
+
+      const flags = [];
+      if (m.pieceCaptured && m.pieceCaptured !== "NONE") flags.push("x");
+      if (m.promotion) flags.push("=Q");
+      const flagHtml = flags.length ? `<span class="flag">${flags.join(" ")}</span>` : "";
+
+      tr.innerHTML = `
+        <td>${moveNo}</td>
+        <td>${side}</td>
+        <td>${m.uci}</td>
+        <td>${flagHtml}</td>
+      `;
+
+      tr.addEventListener("click", () => showIndex(idx));
+      el.movesBody.appendChild(tr);
+    });
   }
 
   function updatePlyLabel() {
@@ -322,15 +401,15 @@
       return;
     }
     const m = state.moves[state.index];
-    const player = (m.plyno % 2 === 1 ? "White" : "Black");
-    el.plyLabel.textContent = `Ply ${m.plyno} (${player})`;
+    const side = (m.plyno % 2 === 1 ? "White" : "Black");
+    el.plyLabel.textContent = `Ply ${m.plyno} (${side})`;
   }
 
   function highlightRows() {
-    [...el.movesBody.children].forEach(tr => tr.classList.remove('active'));
+    [...el.movesBody.children].forEach(tr => tr.classList.remove("active"));
     if (state.index >= 0 && state.index < state.moves.length) {
       const row = el.movesBody.querySelector(`tr[data-index="${state.index}"]`);
-      if (row) row.classList.add('active');
+      if (row) row.classList.add("active");
     }
   }
 
@@ -338,128 +417,36 @@
     if (!state.game) return;
     if (i < -1) i = -1;
     if (i >= state.moves.length) i = state.moves.length - 1;
-
     state.index = i;
-    const fen = fenAt(i);
-    renderBoardFromFen(fen);
+
+    const boardIndex = i + 1; // boards[0] = start, boards[1] = after move 1, ...
+    renderBoard(state.boards[boardIndex]);
     updatePlyLabel();
     highlightRows();
   }
 
-  function renderGameInfo() {
-    const g = state.game;
-    const start = g.gamestart ? new Date(g.gamestart).toLocaleString() : "-";
-    const end   = g.gameend   ? new Date(g.gameend).toLocaleString()   : "-";
-    const result = g.result || "UNKNOWN";
-    const st = g.state || "-";
-
-    el.gameInfo.textContent =
-`Start:  ${start}
-End:    ${end}
-State:  ${st}
-Result: ${result}`;
-  }
-
-  function renderMoves() {
-    el.movesBody.innerHTML = "";
-    state.moves.forEach((m, idx) => {
-      const tr = document.createElement('tr');
-      tr.dataset.index = idx;
-
-      const moveNo = (m.plyno % 2 === 1 ? Math.ceil(m.plyno / 2) : "");
-      const side = (m.plyno % 2 === 1 ? "W" : "B");
-
-      const flagText = m.isMate ? "#" : (m.isCheck ? "+" : "");
-      const flagsHtml = flagText ? `<span class="flag">${flagText}</span>` : "";
-
-      tr.innerHTML = `
-        <td>${moveNo}</td>
-        <td>${side}</td>
-        <td>${m.san || m.uci}</td>
-        <td>${flagsHtml}</td>
-      `;
-
-      tr.addEventListener("click", () => showIndex(idx));
-      el.movesBody.appendChild(tr);
-    });
-  }
-
-  // Build SAN + FEN on frontend using chess.js and only UCI
-  function buildFromUci(rawMoves) {
-    if (typeof Chess === "undefined") {
-      // fallback: just show uci, no board logic
-      state.fens = [];
-      return rawMoves.map(m => ({
-        ...m,
-        san: m.uci,
-        isCheck: false,
-        isMate: false,
-      }));
-    }
-
-    const game = new Chess(); // standard starting position
-    const sorted = [...rawMoves].sort((a, b) => (a.plyno ?? 0) - (b.plyno ?? 0));
-
-    const fens = [];
-    const enriched = [];
-
-    // initial position
-    fens.push(game.fen());
-
-    for (const m of sorted) {
-      const uci = m.uci || "";
-      if (uci.length < 4) continue;
-
-      const moveObj = {
-        from: uci.slice(0, 2),
-        to:   uci.slice(2, 4)
-      };
-
-      if (uci.length >= 5) {
-        moveObj.promotion = uci[4].toLowerCase();
-      } else if (m.promotion) {
-        moveObj.promotion = "q";
-      }
-
-      const res = game.move(moveObj);
-      let san = uci;
-      if (res && res.san) san = res.san;
-
-      const isMate = san.includes("#");
-      const isCheck = !isMate && san.includes("+");
-
-      enriched.push({
-        ...m,
-        san,
-        isCheck,
-        isMate
-      });
-
-      fens.push(game.fen());
-    }
-
-    state.fens = fens;
-    return enriched;
-  }
+  /* Loading games  */
 
   async function loadGame(id) {
     try {
       el.status.textContent = "Loading...";
-      const game = await fetchJson(`/games/${id}`);
-      const rawMoves = await fetchJson(`/moves/${id}`);
+      const game  = await fetchJson(`/games/${id}`);
+      const moves = await fetchJson(`/moves/${id}`);
 
-      state.game = game;
-      state.rawMoves = rawMoves || [];
-      state.moves = buildFromUci(state.rawMoves);
-      state.index = -1;
+      const { boards, ordered } = buildBoardsFromMoves(moves || []);
+
+      state.game   = game;
+      state.moves  = ordered;
+      state.boards = boards;
+      state.index  = -1;
 
       renderGameInfo();
-      renderMoves();
-      showIndex(-1);
+      renderMovesTable();
+      showIndex(-1);   // show initial position
 
-      el.status.textContent = `${state.moves.length} plies • ${game.result}`;
-    } catch (e) {
-      el.status.textContent = "Error: " + e.message;
+      el.status.textContent = `${state.moves.length} plies • ${game.state}`;
+    } catch (err) {
+      el.status.textContent = "Error: " + err.message;
     }
   }
 
@@ -473,24 +460,25 @@ Result: ${result}`;
       }
 
       el.gameSelect.innerHTML = games
-        .map(g => `<option value="${g.id}">Game #${g.id} (${g.result})</option>`)
+        .map(g => `<option value="${g.id}">Game #${g.id} (${g.state})</option>`)
         .join("");
 
       await loadGame(games[0].id);
-    } catch (e) {
+    } catch (err) {
       el.status.textContent = "Error loading games";
     }
   }
 
-  // hook up controls
+  /*  Buttons */
+
   el.gameSelect.addEventListener("change", () => loadGame(el.gameSelect.value));
   el.refreshBtn.addEventListener("click", () => loadGame(el.gameSelect.value));
   el.btnFirst.addEventListener("click", () => showIndex(-1));
-  el.btnPrev.addEventListener("click",  () => showIndex(state.index - 1));
-  el.btnNext.addEventListener("click",  () => showIndex(state.index + 1));
-  el.btnLast.addEventListener("click",  () => showIndex(state.moves.length - 1));
+  el.btnPrev.addEventListener("click", () => showIndex(state.index - 1));
+  el.btnNext.addEventListener("click", () => showIndex(state.index + 1));
+  el.btnLast.addEventListener("click", () => showIndex(state.moves.length - 1));
 
-  // boot
+
   loadGameList();
 </script>
 

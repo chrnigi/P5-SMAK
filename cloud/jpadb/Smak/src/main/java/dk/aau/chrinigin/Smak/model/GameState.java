@@ -1,16 +1,18 @@
 package dk.aau.chrinigin.Smak.model;
 
+/**
+ * Overall game state:
+ * - PRE_GAME: no moves yet
+ * - WHITE_TO_MOVE / BLACK_TO_MOVE: game in progress
+ * - WHITE_WIN / BLACK_WIN / DRAW: finished games
+ * - ILLEGAL_STATE: fallback if something goes wrong
+ */
 public enum GameState {
-    WHITE_WIN,
-    BLACK_WIN,
-    DRAW_AGREED,
-    DRAW_REPETITION,
-    DRAW_FIFTY_MOVES,
+    PRE_GAME,
     WHITE_TO_MOVE,
     BLACK_TO_MOVE,
-    NOT_STARTED,
-    PRE_GAME,
-    ERROR
-
+    WHITE_WIN,
+    BLACK_WIN,
+    DRAW,
+    ILLEGAL_STATE
 }
-

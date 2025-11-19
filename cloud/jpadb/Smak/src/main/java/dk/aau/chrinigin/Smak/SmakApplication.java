@@ -14,18 +14,16 @@ public class SmakApplication {
 
 /* 
 This is how to create a new game and post moves to it using PowerShell
-with the NEW pure-UCI backend.
+with the NEW backend.
 
 # 1) Create a new game
-# We just post an empty JSON body – the backend sets start time and state automatically.
+# We just post an empty JSON body, the backend sets start time and state automatically.
 
 $g  = irm -Method Post http://localhost:8080/games -ContentType "application/json" -Body '{}'
 $id = $g.id
 
 # 2) Post moves
-# We now ONLY send UCI. No SAN is stored in the database anymore.
-# pieceMoved / pieceCaptured / promotion are optional and can be added later
-# when the Arduino / engine knows them.
+# We now ONLY send UCI. The backend figures out piece types and promotions itself.
 
 function Post-Move([int]$ply,[string]$uci) {
     $body = @{

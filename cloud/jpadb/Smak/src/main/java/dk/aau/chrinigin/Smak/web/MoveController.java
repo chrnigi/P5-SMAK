@@ -1,19 +1,22 @@
 package dk.aau.chrinigin.Smak.web;
 
 import dk.aau.chrinigin.Smak.model.Game;
+import dk.aau.chrinigin.Smak.model.GameState;
 import dk.aau.chrinigin.Smak.model.Move;
 import dk.aau.chrinigin.Smak.model.PieceType;
 import dk.aau.chrinigin.Smak.repository.GameRepository;
 import dk.aau.chrinigin.Smak.service.MoveService;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.github.bhlangonijr.chesslib.Board;
-import com.github.bhlangonijr.chesslib.Piece;
 import com.github.bhlangonijr.chesslib.Square;
 import com.github.bhlangonijr.chesslib.Side;
+import com.github.bhlangonijr.chesslib.Piece;
 
+import java.sql.Timestamp;
 import java.util.Comparator;
 import java.util.List;
 
@@ -28,6 +31,7 @@ public class MoveController {
         this.gameRepository = gameRepository;
     }
 
+    // Tiny health check
     @GetMapping("/moves/ping")
     public String movesPing() {
         return "MoveController is alive";
@@ -43,6 +47,19 @@ public class MoveController {
         return moveService.getByGameId(id);
     }
 
+    /**
+     * POST /moves
+     * Body example (PowerShell):
+     *  { "id": 4, "plyno": 1, "uci": "e2e4" }
+     *
+     * We:
+     *  - validate input
+     *  - rebuild board from all previous moves (UCI only)
+     *  - detect pieceMoved / pieceCaptured for the new move
+     *  - apply the move
+     *  - update Game.state + gameend if the game finished
+     *  - store move in DB
+     */
     @PostMapping("/moves")
     Move newMove(@RequestBody Move move) {
 
@@ -52,153 +69,131 @@ public class MoveController {
         if (move.getPlyno() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Move must contain plyno");
         }
-
-        String uci = move.getUci();
-        if (uci == null || (uci.length() != 4 && uci.length() != 5)) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "UCI must be 4 or 5 characters, e.g. e2e4 or a7a8q"
-            );
+        if (move.getUci() == null || move.getUci().length() < 4) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "UCI must be at least 4 chars, e.g. e2e4");
         }
 
         Game game = gameRepository.findById(move.getId())
                 .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Game not found: " + move.getId()
-                ));
+                        HttpStatus.NOT_FOUND, "Game not found: " + move.getId()));
 
-        // 1) rebuild board from start using all existing moves
-        Board board = new Board(); // standard starting position
-
+        // 1) Load all existing moves, sort by ply
         List<Move> existing = moveService.getByGameId(move.getId());
-        existing.sort(Comparator.comparing(Move::getPlyno));
+        existing.sort(Comparator.comparingInt(m -> m.getPlyno() == null ? 0 : m.getPlyno()));
 
+        // 2) Rebuild board from scratch (standard starting position)
+        Board board = new Board();
         for (Move m : existing) {
-            applyUci(board, m.getUci());
+            applyUciToBoard(board, m.getUci());
         }
 
-        // 2) compute piece moved / captured BEFORE applying the new move
-        Square fromSq = Square.fromValue(uci.substring(0, 2).toUpperCase());
-        Square toSq   = Square.fromValue(uci.substring(2, 4).toUpperCase());
-        
+        // 3) Detect pieceMoved / pieceCaptured for THIS move
+        String uci = move.getUci();
+        Square from = Square.fromValue(uci.substring(0, 2).toUpperCase());
+        Square to   = Square.fromValue(uci.substring(2, 4).toUpperCase());
 
-        Piece fromPiece = board.getPiece(fromSq);
-        Piece toPieceBefore = board.getPiece(toSq);
+        Piece fromPiece = board.getPiece(from);
+        Piece toPiece   = board.getPiece(to);
 
-        // piece that moves (color-specific)
-        PieceType movedType = mapPieceType(fromPiece);
-        move.setPieceMoved(movedType);
+        move.setPieceMoved(mapPiece(fromPiece));
+        move.setPieceCaptured(mapPiece(toPiece));
 
-        // promotion (we only care about promotion to queen via 'q')
-        boolean isPromotion = (uci.length() == 5 && Character.toLowerCase(uci.charAt(4)) == 'q');
+        boolean isPromotion = (uci.length() >= 5 &&
+                (uci.charAt(4) == 'q' || uci.charAt(4) == 'Q'));
         move.setPromotion(isPromotion);
 
-        // piece captured (if any)
-        PieceType capturedType = null;
-
-        if (toPieceBefore != Piece.NONE) {
-            // if target has same-color piece → illegal move
-            if (sameColor(fromPiece, toPieceBefore)) {
-            throw new ResponseStatusException(
-                HttpStatus.BAD_REQUEST,
-                "Illegal move: cannot capture own piece on " + uci.substring(2, 4)
-            );
-            }
-            // normal capture of opponent piece
-            capturedType = mapPieceType(toPieceBefore);
+        // 4) Build and apply chesslib Move
+        com.github.bhlangonijr.chesslib.move.Move chessMove;
+        if (isPromotion) {
+            Side side = board.getSideToMove();
+            Piece promoPiece = (side == Side.WHITE ? Piece.WHITE_QUEEN : Piece.BLACK_QUEEN);
+            chessMove = new com.github.bhlangonijr.chesslib.move.Move(from, to, promoPiece);
         } else {
-            // possible en passant: pawn moves diagonally to an empty square
-            if (fromPiece == Piece.WHITE_PAWN || fromPiece == Piece.BLACK_PAWN) {
-            int fileDiff = Math.abs(uci.charAt(0) - uci.charAt(2));
-            int rankDiff = Math.abs(uci.charAt(1) - uci.charAt(3));
-            if (fileDiff == 1 && rankDiff == 1) {
-                capturedType = (fromPiece == Piece.WHITE_PAWN)
-                    ? PieceType.B_PAWN
-                    : PieceType.W_PAWN;
-            }
-            }
+            chessMove = new com.github.bhlangonijr.chesslib.move.Move(from, to);
         }
 
-        move.setPieceCaptured(capturedType);
-
-
-        // 3) actually apply the move to validate legality
-        boolean ok = applyUci(board, uci);
+        boolean ok = board.doMove(chessMove);
         if (!ok) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Illegal move for current position: " + uci
-            );
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Illegal move for current position: " + uci);
         }
 
-        // 4) save
+        // 5) Update game state / gameend
+        updateGameStateFromBoard(game, board);
+
+        gameRepository.save(game);
         return moveService.save(move);
     }
 
-    // apply a UCI move on a chesslib Board
-    private static boolean applyUci(Board board, String uci) {
-        if (uci == null || (uci.length() != 4 && uci.length() != 5)) {
-            return false;
-        }
+    /* ----- helpers below ----- */
+
+    private void applyUciToBoard(Board board, String uci) {
+        if (uci == null || uci.length() < 4) return;
 
         Square from = Square.fromValue(uci.substring(0, 2).toUpperCase());
         Square to   = Square.fromValue(uci.substring(2, 4).toUpperCase());
 
         com.github.bhlangonijr.chesslib.move.Move chessMove;
 
-        if (uci.length() == 5) {
-            char promChar = Character.toLowerCase(uci.charAt(4));
+        if (uci.length() >= 5) {
+            char prom = Character.toLowerCase(uci.charAt(4));
             Side side = board.getSideToMove();
-            Piece promoPiece = switch (promChar) {
-                case 'q' -> (side == Side.WHITE ? Piece.WHITE_QUEEN  : Piece.BLACK_QUEEN);
-                case 'r' -> (side == Side.WHITE ? Piece.WHITE_ROOK   : Piece.BLACK_ROOK);
-                case 'b' -> (side == Side.WHITE ? Piece.WHITE_BISHOP : Piece.BLACK_BISHOP);
-                case 'n' -> (side == Side.WHITE ? Piece.WHITE_KNIGHT : Piece.BLACK_KNIGHT);
-                default  -> null;
+            Piece promoPiece = switch (prom) {
+                case 'q' -> (side == Side.WHITE ? Piece.WHITE_QUEEN : Piece.BLACK_QUEEN);
+                case 'r' -> (side == Side.WHITE ? Piece.WHITE_ROOK  : Piece.BLACK_ROOK);
+                case 'b' -> (side == Side.WHITE ? Piece.WHITE_BISHOP: Piece.BLACK_BISHOP);
+                case 'n' -> (side == Side.WHITE ? Piece.WHITE_KNIGHT: Piece.BLACK_KNIGHT);
+                default  -> (side == Side.WHITE ? Piece.WHITE_QUEEN : Piece.BLACK_QUEEN);
             };
-            if (promoPiece == null) return false;
             chessMove = new com.github.bhlangonijr.chesslib.move.Move(from, to, promoPiece);
         } else {
             chessMove = new com.github.bhlangonijr.chesslib.move.Move(from, to);
         }
 
-        return board.doMove(chessMove);
+        board.doMove(chessMove); // previous moves are assumed valid
     }
 
-    // map chesslib Piece → our color-specific PieceType
-    private static PieceType mapPieceType(Piece p) {
-        if (p == null) return PieceType.NONE;
-
+    private PieceType mapPiece(Piece p) {
+        if (p == null || p == Piece.NONE) return PieceType.NONE;
         return switch (p) {
-            case WHITE_PAWN  -> PieceType.W_PAWN;
-            case BLACK_PAWN  -> PieceType.B_PAWN;
-            case WHITE_KNIGHT-> PieceType.W_KNIGHT;
-            case BLACK_KNIGHT-> PieceType.B_KNIGHT;
-            case WHITE_BISHOP-> PieceType.W_BISHOP;
-            case BLACK_BISHOP-> PieceType.B_BISHOP;
-            case WHITE_ROOK  -> PieceType.W_ROOK;
-            case BLACK_ROOK  -> PieceType.B_ROOK;
-            case WHITE_QUEEN -> PieceType.W_QUEEN;
-            case BLACK_QUEEN -> PieceType.B_QUEEN;
-            case WHITE_KING  -> PieceType.W_KING;
-            case BLACK_KING  -> PieceType.B_KING;
-            default          -> PieceType.NONE;
+            case WHITE_PAWN   -> PieceType.W_PAWN;
+            case WHITE_KNIGHT -> PieceType.W_KNIGHT;
+            case WHITE_BISHOP -> PieceType.W_BISHOP;
+            case WHITE_ROOK   -> PieceType.W_ROOK;
+            case WHITE_QUEEN  -> PieceType.W_QUEEN;
+            case WHITE_KING   -> PieceType.W_KING;
+            case BLACK_PAWN   -> PieceType.B_PAWN;
+            case BLACK_KNIGHT -> PieceType.B_KNIGHT;
+            case BLACK_BISHOP -> PieceType.B_BISHOP;
+            case BLACK_ROOK   -> PieceType.B_ROOK;
+            case BLACK_QUEEN  -> PieceType.B_QUEEN;
+            case BLACK_KING   -> PieceType.B_KING;
+            default           -> PieceType.NONE;
         };
     }
 
-    private static boolean sameColor(Piece a, Piece b) {
-        if (a == null || b == null || a == Piece.NONE || b == Piece.NONE) {
-            return false;
+    private void updateGameStateFromBoard(Game game, Board board) {
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+
+        if (board.isMated()) {
+            Side sideToMove = board.getSideToMove();
+            if (sideToMove == Side.WHITE) {
+                game.setState(GameState.BLACK_WIN);
+            } else {
+                game.setState(GameState.WHITE_WIN);
+            }
+            game.setGameend(now);
+
+        } else if (board.isDraw()) {
+            game.setState(GameState.DRAW);
+            game.setGameend(now);
+
+        } else {
+            Side stm = board.getSideToMove();
+            if (stm == Side.WHITE) {
+                game.setState(GameState.WHITE_TO_MOVE);
+            } else {
+                game.setState(GameState.BLACK_TO_MOVE);
+            }
         }
-        return isWhite(a) == isWhite(b);
     }
-
-    private static boolean isWhite(Piece p) {
-        if (p == null) return false;
-        return switch (p) {
-            case WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP,
-                 WHITE_ROOK, WHITE_QUEEN, WHITE_KING -> true;
-            default -> false;
-        };
-    }
-
 }

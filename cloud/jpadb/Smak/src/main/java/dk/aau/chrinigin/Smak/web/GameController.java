@@ -2,6 +2,7 @@ package dk.aau.chrinigin.Smak.web;
 
 import dk.aau.chrinigin.Smak.model.Game;
 import dk.aau.chrinigin.Smak.model.GameState;
+import dk.aau.chrinigin.Smak.model.Move;
 import dk.aau.chrinigin.Smak.repository.GameRepository;
 import dk.aau.chrinigin.Smak.service.MoveService;
 import org.springframework.http.HttpStatus;
@@ -24,17 +25,16 @@ public class GameController {
         this.moveService = moveService;
     }
 
-    // Simple test endpoint
-    @GetMapping("/Smak")
-    String hello() { return "Hello, Smak!"; }
+    @GetMapping("/hello")
+    String hello() {
+        return "Hello, Smak!";
+    }
 
-    // List all games
     @GetMapping("/games")
     List<Game> all() {
         return repository.findAll();
     }
 
-    // Create a new game
     @PostMapping("/games")
     Game newGame(@RequestBody Game g) {
         if (g.getGamestart() == null) {
@@ -46,22 +46,25 @@ public class GameController {
         return repository.save(g);
     }
 
-    // Get one game
     @GetMapping("/games/{id}")
     Game one(@PathVariable Long id) {
         return repository.findById(id).orElseThrow(() ->
                 new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found: " + id));
     }
 
-    // Compact "state" view used by the viewer
+    /**
+     * Small helper endpoint that returns a summary for a game.
+     * Useful if you want quick metadata (state, time, number of plies).
+     */
     @GetMapping("/games/{id}/state")
     Map<String, Object> state(@PathVariable Long id) {
         Game g = repository.findById(id).orElseThrow(() ->
                 new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found: " + id));
-        var moves = moveService.getByGameId(id);
+
+        List<Move> moves = moveService.getByGameId(id);
 
         Map<String, Object> out = new HashMap<>();
-        out.put("gameId", id);
+        out.put("gameId", g.getId());
         out.put("gamestart", g.getGamestart());
         out.put("gameend", g.getGameend());
         out.put("state", g.getState());
