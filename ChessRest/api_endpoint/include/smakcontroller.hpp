@@ -56,21 +56,17 @@ public:
         auto dto = oatpp::Vector<oatpp::Object<smak::models::MoveDTO>>::createShared();
 
         auto dto1 = smak::models::MoveDTO::createShared();
-        dto1->move_number=1;
         dto1->ply_number=0;
         dto1->piece_moved=smak::models::PiecesEnum::PAWN;
         dto1->from_square=1;
         dto1->to_square=2;
-        dto1->is_promotion = false;
         dto1->piece_captured = smak::models::PiecesEnum::BISHOP;
     
         auto dto2 = smak::models::MoveDTO::createShared();
-        dto2->move_number=1;
         dto2->ply_number=0;
         dto2->piece_moved=smak::models::PiecesEnum::BISHOP;
         dto2->from_square=1;
         dto2->to_square=2;
-        dto2->is_promotion = false;
         dto2->piece_captured = smak::models::PiecesEnum::PAWN;
 
         dto->push_back(dto1);

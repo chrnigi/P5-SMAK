@@ -31,19 +31,6 @@ add_test(
     COMMAND SerDe_test_move
 )
 
-# Test conversion from MoveDTO to SimpleMoveDTO
-add_executable(MoveDTO_test_convert
-    MoveDTO-Convert.cpp
-)
-target_link_libraries(MoveDTO_test_convert
-    PUBLIC chessclientlib
-    PRIVATE oatpp
-    PUBLIC fmt
-)
-add_test(
-    NAME MoveDTO_test_convert
-    COMMAND MoveDTO_test_convert
-)
 
 # Test deserializing a move - 1.E2E4, converting it to a SimpleMoveDTO and parsing the move to get the position after the move.
 add_executable(GetFenByPly

@@ -1,9 +1,8 @@
 #pragma once
-#include "oatpp/core/base/Environment.hpp"
+#include <oatpp/core/base/Environment.hpp>
 #include <oatpp/core/Types.hpp>
 #include <oatpp/core/macro/codegen.hpp>
-#include <chesslib.hpp>
-
+#include <chess.hpp>
 #ifndef SMAK_MOVEDTO_HPP
 #define SMAK_MOVEDTO_HPP
 
@@ -49,54 +48,12 @@ class MoveDTO : oatpp::DTO {
     DTO_INIT(MoveDTO, DTO)
 
     DTO_FIELD(Int64, id);
-    DTO_FIELD(Int32, move_number);  
     DTO_FIELD(Int32, ply_number);   
+    DTO_FIELD(Enum<MoveType>, move_type);
     DTO_FIELD(Enum<PiecesEnum>, piece_moved);
-    DTO_FIELD(Enum<PiecesEnum>, piece_captured); 
-    DTO_FIELD(Boolean, is_promotion);
-    DTO_FIELD(Boolean, is_capture);
-    DTO_FIELD(Boolean, is_enpassant);
-    DTO_FIELD(Boolean, is_castles);
+    DTO_FIELD(Enum<PiecesEnum>, piece_captured);
     DTO_FIELD(Int16, from_square);  
     DTO_FIELD(Int16, to_square);    
-
-    parsing::SimpleMoveDTO to_simple() {
-        
-        parsing::SimpleMoveDTO out = {};
-
-        if (is_promotion) {
-            if (is_castles || is_enpassant) {
-                out.type = parsing::SimpleMoveDTO::NULLMOVE;
-            } else {
-                out.type = parsing::SimpleMoveDTO::PROMOTION;
-            }
-        }
-
-        if (is_castles) {
-            if (is_promotion || is_enpassant) {
-                out.type = parsing::SimpleMoveDTO::NULLMOVE;
-            } else {
-                out.type = parsing::SimpleMoveDTO::CASTLES;
-            }
-        }
-
-        if (is_enpassant) {
-            if (is_promotion || is_castles) {
-                out.type = parsing::SimpleMoveDTO::NULLMOVE;
-            } else {
-                out.type = parsing::SimpleMoveDTO::ENPASSANT;
-            }
-
-        }
-
-        out.is_promotion = is_promotion.getValue(false);
-        out.is_capture = is_capture.getValue(false);
-        out.is_enpassant = is_enpassant.getValue(false);
-        out.from = from_square.getValue(0);
-        out.to = to_square.getValue(0);
-        
-        return out;
-    }
 
 };
 

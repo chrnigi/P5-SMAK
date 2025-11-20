@@ -6,7 +6,6 @@ int main(void) {
 
     oatpp::base::Environment::init();
 
-
     smak::controller::run_server();
 
     oatpp::base::Environment::destroy();

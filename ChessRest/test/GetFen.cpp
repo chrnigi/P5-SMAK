@@ -1,3 +1,4 @@
+#include "oatpp/core/Types.hpp"
 #include <dtos/moveDTO.hpp>
 #include <oatpp/parser/json/mapping/ObjectMapper.hpp>
 #include <cassert>
@@ -5,10 +6,9 @@
 #include <models.hpp>
 #include <clientlib.hpp>
 #include <fmt/core.h>
-#include <vector>
 
 
-#define MOVE_JSON_INPUT "{\"id\":1,\"move_number\":1,\"ply_number\":1,\"piece_moved\":\"P\",\"piece_captured\":null,\"is_promotion\":false,\"is_capture\":false,\"is_enpassant\":false,\"from_square\":12,\"to_square\":28}"
+#define MOVE_JSON_INPUT "{\"id\":1,\"ply_number\":1,\"move_type\":\"normal\",\"piece_moved\":\"P\",\"piece_captured\":null,\"from_square\":12,\"to_square\":28}"
 
 int main(void) {
 
@@ -18,9 +18,7 @@ int main(void) {
 
     auto dto = objectMapper->readFromString<oatpp::Object<smak::models::MoveDTO>>(input);
 
-    auto simpleDto = dto->to_simple();
-
-    std::vector<smak::parsing::SimpleMoveDTO> moves = {simpleDto};
+    oatpp::Vector<oatpp::Object<smak::models::MoveDTO>> moves = {dto};
 
     smak::parsing::GameOfFens gof(moves);
 
