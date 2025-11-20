@@ -10,6 +10,8 @@ namespace smak { namespace models {
 /* GameDTO BEGIN */
 #include OATPP_CODEGEN_BEGIN(DTO)
 
+// Enum values are mapped to strings, with the string being the literal variable name. E.g. WHITE_WIN has an associated string "WHITE_WIN".
+// The names MUST match the strings of the corresponding value in GameStateEnum.java
 ENUM(GameStateEnum, v_int32,
     VALUE(WHITE_WIN,        0),
     VALUE(BLACK_WIN,        1),
