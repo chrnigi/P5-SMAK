@@ -1,0 +1,36 @@
+<VirtualHost *:7080>
+    ServerName _default_
+    UseCanonicalName Off
+
+    DocumentRoot /var/www/html
+
+    <Directory /var/www/html>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+        DirectoryIndex index.php index.html
+    </Directory>
+
+    ProxyRequests Off
+    <Proxy "*">
+        Require all denied
+    </Proxy>
+
+    # If you want to reverse proxy instead of serving files,
+    # uncomment these and adjust as needed:
+    # ProxyPreserveHost On
+    # ProxyPass        / http://127.0.0.1:3000/ retry=0 timeout=30
+    # ProxyPassReverse / http://127.0.0.1:3000/
+    # ProxyPass "/ws/"        "ws://127.0.0.1:3000/ws/"
+    # ProxyPass "/socket.io/" "ws://127.0.0.1:3000/socket.io/"
+
+    RemoteIPHeader X-Forwarded-For
+
+    LogFormat "%a %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+    RequestHeader set X-Forwarded-Proto "https"
+    RequestHeader set X-Forwarded-Port "443"
+
+    ErrorLog  ${APACHE_LOG_DIR}/app_error.log
+</VirtualHost>

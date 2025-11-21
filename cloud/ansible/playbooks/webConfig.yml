@@ -1,0 +1,47 @@
+- name: AnsibleWebConfig
+  hosts: all
+  become: true
+  become_user: root
+
+  tasks:
+    - name: Remove Listen 80
+      ansible.builtin.lineinfile:
+        path: /etc/apache2/ports.conf
+        regexp: '^Listen 80'
+        state: absent
+      notify: Reload apache2
+
+    - name: Ensure Apache listens on 7080
+      ansible.builtin.lineinfile:
+        path: /etc/apache2/ports.conf
+        regexp: '^Listen 7080'
+        line: 'Listen 7080'
+        insertafter: EOF
+      notify: Reload apache2
+
+    - name: Enable reverse proxy and related modules
+      community.general.apache2_module:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - proxy
+        - proxy_http
+        - proxy_wstunnel
+        - headers
+        - remoteip
+      notify: Reload apache2
+
+    - name: Install default vhost for port 7080
+      ansible.builtin.template:
+        src: apache-default-7080.conf.j2
+        dest: /etc/apache2/sites-available/000-default.conf
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Reload apache2
+
+  handlers:
+    - name: Reload apache2
+      ansible.builtin.service:
+        name: apache2
+        state: reloaded
