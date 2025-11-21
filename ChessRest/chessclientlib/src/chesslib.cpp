@@ -2,6 +2,7 @@
 #include "oatpp/core/Types.hpp"
 #include <chesslib.hpp>
 #include <chess.hpp>
+#include <string>
 #include <vector>
 
 
@@ -20,7 +21,7 @@ GameOfFens::GameOfFens(oatpp::Vector<oatpp::Object<models::MoveDTO>>& moves) {
 
     for (auto& move : *moves) {
         
-        chess::Move mv = [&]() {
+        const chess::Move mv = [&]() {
             switch (*(move->move_type.get())) {
 
             case models::MoveType::CASTLING:
@@ -59,11 +60,10 @@ GameOfFens::GameOfFens(oatpp::Vector<oatpp::Object<models::MoveDTO>>& moves) {
 }
 
 std::string GameOfFens::getPositionByPly(size_t ply_number) {
-    std::string out("");
     if (positions.size() < ply_number)
-        return out;
+        return std::string();
 
-    out = positions.at(ply_number);
+    std::string out = positions.at(ply_number);
     return out;
 }
 
