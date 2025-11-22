@@ -19,6 +19,7 @@ FetchContent_MakeAvailable(Boost)
 set(SRC_FILES
     main.cpp
     ipc.cpp
+    uci_commands.cpp
 )
 
 setup_dir_vars()
