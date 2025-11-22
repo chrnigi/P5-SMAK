@@ -1,8 +1,9 @@
 #pragma once
 
-#include <vector>
 #ifndef UCI_COMMANDS_HPP
 #define UCI_COMMANDS_HPP
+
+#include <vector>
 #include <chess.hpp>
 #include <string_view>
 
@@ -11,12 +12,11 @@
  * @note The commands are all wrapped in "\n <command>\n", due to how Stockfish interacts with its input pipe.
  */
 struct UCIcommand {
-
 private:
     const std::string newlineify(std::string str);
     UCIcommand() {}
-public:
 
+public:
     /**
      * @brief The base UCI commands without any options.
      * 
