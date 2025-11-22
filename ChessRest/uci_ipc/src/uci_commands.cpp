@@ -13,11 +13,11 @@ const std::string UCIcommand::newlineify(std::string str) {
     return fmt::format(FMT_COMPILE("\n {}\n"), str);
 } 
 
-std::string UCIcommand::create_position_command(std::string_view fen) {
+const std::string UCIcommand::create_position_command(std::string_view fen) {
     return fmt::format(FMT_COMPILE("\n position {}\n"), fen);
 }
 
-std::string UCIcommand::create_position_command(std::string_view fen, std::vector<chess::Move> moves) {    
+const std::string UCIcommand::create_position_command(std::string_view fen, std::vector<chess::Move> moves) {    
     std::vector<std::string> mvs;
     mvs.reserve(moves.size());
 
@@ -27,11 +27,11 @@ std::string UCIcommand::create_position_command(std::string_view fen, std::vecto
     return fmt::format(FMT_COMPILE("\n position {} moves {}\n"), fen, fmt::join(mvs, " "));
 }
 
-std::string UCIcommand::append_moves_to_position_command(std::string_view pos_command, chess::Move move) {
+const std::string UCIcommand::append_moves_to_position_command(std::string_view pos_command, chess::Move move) {
     return append_moves_to_position_command(pos_command, {move});
 }
 
-std::string UCIcommand::append_moves_to_position_command(std::string_view pos_command, std::vector<chess::Move> moves) {
+const std::string UCIcommand::append_moves_to_position_command(std::string_view pos_command, std::vector<chess::Move> moves) {
     std::vector<std::string> mvs;
     mvs.reserve(moves.size());
 
@@ -43,6 +43,6 @@ std::string UCIcommand::append_moves_to_position_command(std::string_view pos_co
     return fmt::format(FMT_COMPILE("\n {} {}\n"), pos_command, fmt::join(mvs, " "));
 }
 
-std::string UCIcommand::create_go_depth_command(unsigned int depth) {
+const std::string UCIcommand::create_go_depth_command(unsigned int depth) {
     return fmt::format(FMT_COMPILE("\n go depth {}\n"), depth);
 }

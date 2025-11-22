@@ -40,7 +40,7 @@ public:
      * @param fen The FEN string to set as position.
      * @return std::string
      */
-    static std::string create_position_command(std::string_view fen);
+    static const std::string create_position_command(std::string_view fen);
     /**
      * @fn std::string create_position_command(std::string_view fen, std::vector<chess::Move> moves)
      * @brief Create a UCI command in the form of "position <fen> <moves>".
@@ -49,7 +49,7 @@ public:
      * @param moves Moves to play from the position given in the FEN string.
      * @return std::string 
      */
-    static std::string create_position_command(std::string_view fen, std::vector<chess::Move> moves);
+    static const std::string create_position_command(std::string_view fen, std::vector<chess::Move> moves);
     /**
      * @fn std::string append_moves_to_position_command(std::string_view pos_command, chess::Move move)
      * @brief Convenience overload for <tt>append_moves_to_position_command(std::string pos_command, std::vector<chess::Move> moves)</tt>
@@ -58,7 +58,7 @@ public:
      * @param move The move to append to the given position command.
      * @return std::string
      */
-    static std::string append_moves_to_position_command(std::string_view pos_command, chess::Move move);
+    static const std::string append_moves_to_position_command(std::string_view pos_command, chess::Move move);
     /**
      * @fn std::string append_moves_to_position_command(std::string_view pos_command, std::vector<chess::Move> moves)
      * @brief Appends a list of moves to an already existing UCI position command.
@@ -67,7 +67,7 @@ public:
      * @param moves @p std::vector of moves to append to the command.
      * @return std::string 
      */
-    static std::string append_moves_to_position_command(std::string_view pos_command, std::vector<chess::Move> moves);
+    static const std::string append_moves_to_position_command(std::string_view pos_command, std::vector<chess::Move> moves);
     /**
      * @brief Create a UCI "go depth" command with a given depth of @p depth
      * 
@@ -76,7 +76,7 @@ public:
      *
      * @details Depth is set at a default of 20. This is chosen arbitrarily.
      */
-    static std::string create_go_depth_command(unsigned int depth = 20);
+    static const std::string create_go_depth_command(unsigned int depth = 20);
     /**
      * @brief Get the UCI "stop" command.
      * 
