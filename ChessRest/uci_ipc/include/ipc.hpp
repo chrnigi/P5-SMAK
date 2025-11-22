@@ -1,4 +1,9 @@
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/steady_timer.hpp>
+#include <boost/process/v2.hpp>
 #include <cstdint>
+#include <exception>
+#include <memory>
 #include <string>
 #include <string_view>
 
@@ -9,7 +14,6 @@
 class alignas(64) Evaluation {
     double eval;
     std::string bestmove_ponder;
-
 public:
     /**
      * @brief Simple constructor.
@@ -39,26 +43,32 @@ public:
 
 };
 
-/** Class for starting and communicating with UCI compliant chess engines. */
+/** @brief Class for starting and communicating with UCI compliant chess engines. */
 class EngineWhisperer {
 private:
     std::string path_to_engine_executable;
     std::string current_position_fen;
+    boost::asio::io_context io;
+    boost::process::v2::popen engine_proc;
     
 public:
 
     /**
-     * @brief Constructor for @p EngineWhisperer. 
+     * @brief Constructor for @p EngineWhisperer. Attempts to launch the engine given in @p engine_path .
      * @param engine_path The path to the executable of engine.
      * If the path is not absolute, it will be searched for in the program's environment.
+     * @throws engine_not_launched_exception thrown if the given engine cannot be launched.
      */
     EngineWhisperer(std::string engine_path);
 
     /**
-     * @brief Starts a uci compliant engine, and issues the "uci" command to it.
+     * @brief Issues the "uci" command to the running engine.
      * @returns true if "uciok" is received, false if not.
+     * @throws engine_not_launched_exception thrown if called when the engine process is closed.
+     * 
+     * Explicitly issues "position startpos" command to the engine.
      */
-    bool start_engine();
+    bool start_uci();
 
     /**
      *  @brief Resets the engine with the "ucinewgame" command.
@@ -83,11 +93,48 @@ public:
 
     /**
      * @brief Kill the engine process if it still is running.
-     * - First attempt a UCI "quit" command.
-     * - Else kill the process.
+     * 
+     * First attempts a UCI "quit" command. If this fails it kills the process.
      * 
      */
     ~EngineWhisperer();
 
+};
 
+
+/**
+* @brief Exception thrown if operations that expect a running engine are done while the engine hasn't launched.
+* 
+* @details Constructed with a string to supply to @p #what for more flexibility across the entire class.
+*/
+class engine_not_launched_exception : std::exception {
+    std::string message;
+public:
+    /**
+     * @brief Constructor that takes any message to give to @p #what .
+     * 
+     * @param msg 
+     */
+    engine_not_launched_exception(std::string msg) : message(msg){}
+
+    /**
+     * @brief Get a description of what went wrong.
+     */
+    const char * what() const noexcept override {
+        return message.c_str();
+    }
+};
+/**
+ * @brief Exception thrown if the engine does not reply with "uciok" to the "uci" command.
+ * 
+ * This can be either due to the engine answering with an error, or the engine not replying with "uciok" within a certain timeframe.
+ */
+class engine_no_uci_exception : std::exception {
+    /**
+     * @brief 
+     * 
+     */
+    const char * what() const noexcept override {
+        return "No UCI available.";
+    }
 };

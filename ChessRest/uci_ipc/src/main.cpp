@@ -40,7 +40,7 @@ int main() {
     std::string line;
 
     boost::system::error_code ec;
-    asio::write(proc, "uci\n"_buf);
+    asio::write(proc, "\n uci\n"_buf);
     asio::write(proc, "position fen rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1\n"_buf, ec);
     asio::write(proc, asio::buffer("\n go depth 20\n"), ec);
     asio::read_until(proc, asio::dynamic_buffer(line), boost::regex("bestmove"));
