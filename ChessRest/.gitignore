@@ -2,3 +2,5 @@
 build/*
 .vscode/*
 chessclientlib/include/chess.hpp
+
+*/docs/*
