@@ -1,3 +1,4 @@
+#include "uci_commands.hpp"
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/write.hpp>
@@ -21,7 +22,7 @@ namespace procv2 = boost::process::v2;
 using namespace asio::buffer_literals;
 
 EngineWhisperer::EngineWhisperer(std::string engine_path) :
-    path_to_engine_executable(procv2::environment::find_executable(path_to_engine_executable).string()),
+    path_to_engine_executable(procv2::environment::find_executable(engine_path).string()),
     engine_proc(io, path_to_engine_executable, {})
 {
     
@@ -47,17 +48,19 @@ bool EngineWhisperer::start_uci() {
     bool timeout = false;
     bool finished = false;
 
-    timer.expires_after(std::chrono::seconds(5)); // Wait up to 5 sec to get "uciok"
+    // timer.expires_after(std::chrono::seconds(5)); // Wait up to 5 sec to get "uciok"
     
-    timer.async_wait([&](const boost::system::error_code ec){
-        set = true;
-        timeout = true;
-    });
+    // timer.async_wait([&](const boost::system::error_code ec){
+    //     fmt::println("Timed out!");
+    //     set = true;
+    //     timeout = true;
+    // });
 
 
 
     asio::async_read_until(engine_proc, asio::dynamic_buffer(buffer), boost::regex("uciok"), 
         [&](const boost::system::error_code& err, std::size_t bytes_transferred) {
+            fmt::println("{}", ec.what());
             if (!set) {
                 set = true;
             }
@@ -70,16 +73,20 @@ bool EngineWhisperer::start_uci() {
 
         }
     );
-
-    while (!set) {}
+    io.run_for(std::chrono::seconds(5));
+    fmt::println("{}", set);
+    while (!set) {} 
 
     if (timeout) {
         return false;
     }
-
+    
     asio::write(engine_proc, "\n position startpos\n"_buf);
     return true;
 
 }
 
 
+EngineWhisperer::~EngineWhisperer() {
+    
+}

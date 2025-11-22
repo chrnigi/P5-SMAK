@@ -10,15 +10,18 @@
 #include <boost/asio.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/system/detail/error_code.hpp>
-#include <iostream>
-#include <istream>
-#include <ostream>
+#include <ipc.hpp>
+
 
 namespace asio = boost::asio;
 namespace procv2 = boost::process::v2;
 using namespace asio::buffer_literals;
 
 int main() {
+    
+    EngineWhisperer ew("stockfish");
+    ew.start_uci();
+    return 0;
     asio::io_context io;
     asio::readable_pipe p{io};
     asio::writable_pipe wp{io};

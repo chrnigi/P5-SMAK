@@ -1,3 +1,8 @@
+#pragma once 
+
+#ifndef IPC_HPP
+#define IPC_HPP
+
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/process/v2.hpp>
@@ -6,6 +11,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <uci_commands.hpp>
 
 /**
  * Class that holds the evaluation of the position, and the "bestmove AxBy ponder CzDw" string from the engine. 
@@ -138,3 +144,5 @@ class engine_no_uci_exception : std::exception {
         return "No UCI available.";
     }
 };
+
+#endif
