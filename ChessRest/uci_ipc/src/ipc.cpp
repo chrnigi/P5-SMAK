@@ -1,3 +1,5 @@
+#include "fmt/compile.h"
+#include <fmt/format.h>
 #include "uci_commands.hpp"
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/steady_timer.hpp>
@@ -48,16 +50,6 @@ bool EngineWhisperer::start_uci() {
     bool timeout = false;
     bool finished = false;
 
-    // timer.expires_after(std::chrono::seconds(5)); // Wait up to 5 sec to get "uciok"
-    
-    // timer.async_wait([&](const boost::system::error_code ec){
-    //     fmt::println("Timed out!");
-    //     set = true;
-    //     timeout = true;
-    // });
-
-
-
     asio::async_read_until(engine_proc, asio::dynamic_buffer(buffer), boost::regex("uciok"), 
         [&](const boost::system::error_code& err, std::size_t bytes_transferred) {
             fmt::println("{}", ec.what());
@@ -73,8 +65,8 @@ bool EngineWhisperer::start_uci() {
 
         }
     );
-    io.run_for(std::chrono::seconds(5));
-    fmt::println("{}", set);
+    size_t c = io.run_for(std::chrono::seconds(5));
+    fmt::println("{}", fmt::format(FMT_COMPILE("{}, handlers: {}"), set, c)) ;
     while (!set) {} 
 
     if (timeout) {
