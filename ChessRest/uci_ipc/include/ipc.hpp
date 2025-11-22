@@ -8,7 +8,6 @@
 #include <boost/process/v2.hpp>
 #include <cstdint>
 #include <exception>
-#include <memory>
 #include <string>
 #include <string_view>
 #include <uci_commands.hpp>

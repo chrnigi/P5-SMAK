@@ -1,6 +1,7 @@
 .cache/*
 build/*
 .vscode/*
+include/*
 chessclientlib/include/chess.hpp
 
 */docs/*

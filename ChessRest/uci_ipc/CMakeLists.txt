@@ -25,5 +25,16 @@ setup_dir_vars()
 
 add_executable(uci_ipc ${SOURCES})
 
-target_link_libraries(uci_ipc PUBLIC Boost::system Boost::filesystem fmt)
-target_include_directories(uci_ipc PRIVATE ${INC_DIR})
+target_link_libraries(uci_ipc 
+    PUBLIC Boost::system 
+    PUBLIC Boost::filesystem 
+    PUBLIC fmt
+)
+
+message(STATUS "CHESS_HPP: ${CHESS_INCLUDE_DIR}" )
+
+
+target_include_directories(uci_ipc 
+    PRIVATE ${INC_DIR}
+    PRIVATE ${CHESS_INCLUDE_DIR}
+)

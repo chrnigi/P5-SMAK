@@ -43,6 +43,14 @@ macro(setup_dir_vars)
     endforeach()
 endmacro()
 
+set(CHESS_INCLUDE_DIR
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
+)
+
+file(DOWNLOAD 
+    https://github.com/Disservin/chess-library/raw/refs/heads/master/include/chess.hpp "${CHESS_INCLUDE_DIR}/chess.hpp"
+)
+
 
 add_subdirectory(chessclientlib)
 add_subdirectory(api_endpoint)
