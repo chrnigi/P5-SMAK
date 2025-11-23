@@ -9,6 +9,7 @@
 #include <boost/asio/io_context.hpp>
 #include <boost/process/v2.hpp>
 
+#include <vector>
 #include <exception>
 #include <string>
 #include <string_view>
@@ -55,6 +56,8 @@ private:
     boost::asio::io_context io;
     boost::process::v2::popen engine_proc;
     chess::Board m_board;
+    bool m_white_to_move = true;
+    int m_depth = 20;
     
 public:
     /**
@@ -87,19 +90,28 @@ public:
     /** 
      * @brief Issues a "position fen" command to the engine with the given string.
      * @param fen The FEN string to set position as.
-     * @pre @p fen Must be a valid FEN-string.
+     * @pre @p fen must be a valid FEN-string.
      * @returns true if @p fen is valid and no error is returned by the engine, otherwise false.
      */
     bool set_position(std::string_view fen);
     /**
-     * @brief Make a move from the current position.
+     * @fn bool make_moves(chess::Move move)
+     * @brief Make a move from the current position. Convenience overload for <tt>make_moves(std::vector<chess::Move>& moves)</tt>.
      * @par Side Effects: 
-     * Updates the private member @p current_position_fen to the position after the given move.
-     * @param to The square which the move is made from.
-     * @param from The square which the move goes to.
-     * @param promotion Whether the move is a promotion.
+     * Updates the private members @p current_position_fen and @p m_board to the position after the given move.
+     * @param move The move to be made.
+     * @todo Find a proper return on error.
      */
-    bool make_move(int16_t to, int16_t from, bool promotion = false);
+    bool make_moves(chess::Move move);
+    /**
+     * @fn bool make_moves(std::vector<chess::Move>& moves)
+     * @brief Make several moves from the current position.
+     * @par Side Effects:
+     * Updates the private members @p current_position_fen and @p m_board to the position after the given moves.
+     * @param moves The moves to be made.
+     * @todo Find a proper return on error.
+     */
+    bool make_moves(std::vector<chess::Move>& moves);
     /**
      * @brief Get the evaluation of the current position.
      * 
