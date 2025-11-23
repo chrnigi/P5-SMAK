@@ -28,7 +28,6 @@ EngineWhisperer::EngineWhisperer(std::string engine_path) :
     path_to_engine_executable(procv2::environment::find_executable(engine_path).string()),
     engine_proc(io, path_to_engine_executable, {})
 {
-    
     if (!engine_proc.running()) {
         throw new engine_not_launched_exception(fmt::format("Failed to launch '{}' at path '{}'.", engine_path, path_to_engine_executable));
     }

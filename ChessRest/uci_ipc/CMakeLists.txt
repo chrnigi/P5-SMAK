@@ -3,17 +3,15 @@ cmake_minimum_required(VERSION 3.30)
 include(FetchContent)
 FetchContent_Declare(
     Boost
-
-    GIT_REPOSITORY 
-    https://github.com/boostorg/boost.git
-
-    GIT_TAG
-    boost-1.89.0
-
-    GIT_SHALLOW
-    true
+    URL https://github.com/boostorg/boost/releases/download/boost-1.89.0/boost-1.89.0-cmake.tar.gz
+    DOWNLOAD_EXTRACT_TIMESTAMP ON
+    
 )
 
+
+set(BOOST_INCLUDE_LIBRARIES
+    asio filesystem system process
+)
 FetchContent_MakeAvailable(Boost)
 
 set(SRC_FILES
