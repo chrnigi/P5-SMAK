@@ -11,7 +11,7 @@
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 
-
+#include <sstream>
 #include <string_view>
 #include <string>
 #include <chrono>
@@ -187,7 +187,7 @@ bool EngineWhisperer::make_moves(std::vector<chess::Move>& moves) {
         }
     );
 
-    std::size_t handler_count = io.run_for(std::chrono::seconds(5));
+    std::size_t handler_count = io.run_for(std::chrono::seconds(search_timeout));
     fmt::println("{}", fmt::format(FMT_COMPILE("{}, handlers: {}"), set, handler_count));
     while (!set) {}
 
@@ -198,6 +198,7 @@ bool EngineWhisperer::make_moves(std::vector<chess::Move>& moves) {
 
     fmt::println("{}", read_buf);
 
+    bool is_mate = false;
     // Extract the evaluation/moves to mate from the engine's output.
     std::string last_info = read_buf.substr(read_buf.rfind("info"));
     size_t first = last_info.find("score cp");
@@ -206,15 +207,55 @@ bool EngineWhisperer::make_moves(std::vector<chess::Move>& moves) {
         if (first == std::string::npos) {
             return false;
         }
+        is_mate = true;
     }
     size_t last = last_info.find("nodes");
     
     std::string_view extracted(last_info.c_str()+first, last-first);
     fmt::println("{}, {} to move", extracted, m_board.sideToMove() ? "black" : "white");
 
+
+    std::string eval(extracted);
+    std::stringstream ss(eval);
+
+    std::string field;
+    int ev = 0;
+
+    if (is_mate) {
+        while (!ss.eof()) {
+            ss >> field;
+            if (std::stringstream(field) >> ev) {
+                //fmt::println("Eval: Mate in {}", ev);
+                m_eval.update(m_board.sideToMove(), 0.0f, chess::Move(0), chess::Move(0), true, m_board.sideToMove(), ev);
+                fmt::println("{}", m_eval.to_string());
+                return true;
+            }
+        }
+    }
+
+    while (!ss.eof()) {
+        ss >> field;
+        if (std::stringstream(field) >> ev){
+
+            double ed = static_cast<double>(ev/100.0f);
+
+            if (m_board.sideToMove() == chess::Color::BLACK) {
+                ed = -ed;
+            }
+            //std::string eval_string = fmt::format(FMT_COMPILE("Eval: {:+}"), ed);
+
+            //fmt::println("{}", eval_string);
+            m_eval.update(m_board.sideToMove(), ed, 0, 0);
+            fmt::println("{}", m_eval.to_string());
+            break;
+        }
+           
+        field.erase();
+    }
+
     return true;
 }
 
-Evaluation EngineWhisperer::getPositionEval() {
-
+double EngineWhisperer::getPositionEval() {
+    return m_eval.getEval();
 }

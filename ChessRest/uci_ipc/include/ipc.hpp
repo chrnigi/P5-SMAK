@@ -19,16 +19,27 @@
  * 
  */
 class Evaluation {
-    double eval;
+    double m_eval;
     std::string bestmove_ponder;
+    chess::Move m_bestmove;
+    chess::Move m_ponder;
+    chess::Color m_color_to_move;
+    bool m_mate = false;
+    int m_matec = 0;
+    chess::Color m_has_mate;
 public:
+    /**
+     * @brief Empty constructor.
+     * 
+     */
+    Evaluation(){}
     /**
      * @brief Simple constructor.
      * 
      * @param evaluation The evaluation of the position.
      * @param suggested_moves The engine's "bestmove" and "ponder".
      */
-    Evaluation(double evaluation, std::string suggested_moves) : eval(evaluation), bestmove_ponder(suggested_moves) {};
+    Evaluation(double evaluation, std::string suggested_moves) : m_eval(evaluation), bestmove_ponder(suggested_moves) {};
     /**
      * @brief Getter for the engine's "bestmove".
      * @return Returned as a @p std::string_view to avoid new allocations.
@@ -42,7 +53,31 @@ public:
     /**
      * @brief Getter for the evaluation of the position.
      */
-    double getEval() { return eval; }
+    double getEval() { return m_eval; }
+    /**
+     * @brief Updates the evaluation of the position.
+     * 
+     * @param color_to_move Whether it is white's turn to move.
+     * @param eval The evaluation of the position in pawns.
+     * @param best The engine's recommended best move.
+     * @param ponder The engine's pondered move.
+     * @param is_mate Whether checkmate is on the board.
+     * @param has_mate The color of the side that has checkmate.
+     * @param moves_to_mate Amount of moves to checkmate.
+     */
+    void update(chess::Color color_to_move, double eval, chess::Move best, chess::Move ponder, bool is_mate = false, chess::Color has_mate = chess::Color::NONE, int moves_to_mate = 0);
+    /**
+     * @brief Returns the evaluation in a human readable(ish) string.
+     * 
+     * @return The evaluation as a string.
+     */
+    const std::string to_string();
+    /**
+     * @brief Construct a string from an evaluation. Same as <tt>to_string()</tt>
+     * 
+     * @return The evaluation as a string.
+     */
+    operator std::string();
 };
 
 /** 
@@ -59,6 +94,7 @@ private:
     bool m_white_to_move = true;
     int m_depth = 20;
     int search_timeout = 10;
+    Evaluation m_eval;
     
 public:
     /**
@@ -116,9 +152,9 @@ public:
     /**
      * @brief Get the evaluation of the current position.
      * 
-     * @return Evaluation 
+     * @return double
      */
-    Evaluation getPositionEval();
+    double getPositionEval();
 };
 /**
 * @brief Exception thrown if operations that expect a running engine are done while the engine hasn't launched.
@@ -150,7 +186,7 @@ public:
 class engine_no_uci_exception : std::exception {
 public:
     /**
-     * @brief 
+     * @brief Says that no UCI is available.
      * 
      */
     const char * what() const noexcept override {

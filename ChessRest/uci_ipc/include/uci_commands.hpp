@@ -18,22 +18,6 @@ private:
 
 public:
     /**
-     * @brief The base UCI commands without any options.
-     * 
-     */
-    struct base_commands {
-        static constexpr std::string_view quit       = "quit";
-        static constexpr std::string_view uci        = "uci";
-        static constexpr std::string_view setoption  = "setoption";
-        static constexpr std::string_view position   = "position";
-        static constexpr std::string_view ucinewgame = "ucinewgame";
-        static constexpr std::string_view isready    = "isready";
-        static constexpr std::string_view go         = "go";
-        static constexpr std::string_view stop       = "stop";
-        static constexpr std::string_view ponderhit  = "ponderhit";
-    };
-
-    /**
      * @fn std::string create_position_command(std::string_view fen)
      * @brief Create a UCI command in the form of "position fen <fen>".
      * 

@@ -14,10 +14,14 @@ set(BOOST_INCLUDE_LIBRARIES
 )
 FetchContent_MakeAvailable(Boost)
 
+find_package(Doxygen)
+
+
 set(SRC_FILES
     main.cpp
     ipc.cpp
     uci_commands.cpp
+    evaluation.cpp
 )
 
 setup_dir_vars()
@@ -36,4 +40,9 @@ message(STATUS "CHESS_HPP: ${CHESS_INCLUDE_DIR}" )
 target_include_directories(uci_ipc 
     PRIVATE ${INC_DIR}
     PRIVATE ${CHESS_INCLUDE_DIR}
+)
+
+doxygen_add_docs(
+    uci_ipc_docs
+    CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile"
 )
