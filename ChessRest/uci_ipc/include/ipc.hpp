@@ -58,6 +58,7 @@ private:
     chess::Board m_board;
     bool m_white_to_move = true;
     int m_depth = 20;
+    int search_timeout = 10;
     
 public:
     /**
