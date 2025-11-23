@@ -35,21 +35,21 @@ public:
 
     /**
      * @fn std::string create_position_command(std::string_view fen)
-     * @brief Create a UCI command in the form of "position <fen>".
+     * @brief Create a UCI command in the form of "position fen <fen>".
      * 
      * @param fen The FEN string to set as position.
      * @return std::string
      */
     static const std::string create_position_command(std::string_view fen);
     /**
-     * @fn std::string create_position_command(std::string_view fen, std::vector<chess::Move> moves)
-     * @brief Create a UCI command in the form of "position <fen> <moves>".
+     * @fn std::string create_position_command(std::string_view fen, std::vector<chess::Move>& moves)
+     * @brief Create a UCI command in the form of "position fen <fen> <moves>".
      * 
      * @param fen The FEN string to start the moves from.
      * @param moves Moves to play from the position given in the FEN string.
      * @return std::string 
      */
-    static const std::string create_position_command(std::string_view fen, std::vector<chess::Move> moves);
+    static const std::string create_position_command(std::string_view fen, std::vector<chess::Move>& moves);
     /**
      * @fn std::string append_moves_to_position_command(std::string_view pos_command, chess::Move move)
      * @brief Convenience overload for <tt>append_moves_to_position_command(std::string pos_command, std::vector<chess::Move> moves)</tt>
@@ -60,14 +60,14 @@ public:
      */
     static const std::string append_moves_to_position_command(std::string_view pos_command, chess::Move move);
     /**
-     * @fn std::string append_moves_to_position_command(std::string_view pos_command, std::vector<chess::Move> moves)
+     * @fn std::string append_moves_to_position_command(std::string_view pos_command, std::vector<chess::Move>& moves)
      * @brief Appends a list of moves to an already existing UCI position command.
      * 
      * @param pos_command The UCI position command.
      * @param moves @p std::vector of moves to append to the command.
      * @return std::string 
      */
-    static const std::string append_moves_to_position_command(std::string_view pos_command, std::vector<chess::Move> moves);
+    static const std::string append_moves_to_position_command(std::string_view pos_command, std::vector<chess::Move>& moves);
     /**
      * @brief Create a UCI "go depth" command with a given depth of @p depth
      * 
@@ -103,11 +103,23 @@ public:
      */
     static constexpr std::string_view ponderhit()           { return "\n ponderhit\n";          }
     /**
-     * @brief Create the UCI command "position startpos"
+     * @brief Get the UCI command "position startpos"
      * 
      * @return constexpr "\n position startpos\n" 
      */
     static constexpr std::string_view position_startpos()   { return "\n position startpos\n";  }
+    /**
+     * @brief Get the UCI "isready" command.
+     * 
+     * @return constexpr "\n isready\n" 
+     */
+    static constexpr std::string_view isready()             { return "\n isready\n";            }
+    /**
+     * @brief Get the UCI "uci" command.
+     * 
+     * @return constexpr "\n uci\n"
+     */
+    static constexpr std::string_view uci()                 { return "\n uci\n";                }
 };
 
 #endif
