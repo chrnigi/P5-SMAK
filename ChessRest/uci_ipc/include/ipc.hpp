@@ -42,14 +42,14 @@ public:
     Evaluation(double evaluation, std::string suggested_moves) : m_eval(evaluation), bestmove_ponder(suggested_moves) {};
     /**
      * @brief Getter for the engine's "bestmove".
-     * @return Returned as a @p std::string_view to avoid new allocations.
+     * @return chess::Move The engine's best move.
      */
-    std::string_view getBestmove();
+    chess::Move getBestmove() { return m_bestmove; }
     /**
      * @brief Getter for the engine's "ponder".
-     * @return Returned as a @p std::string_view to avoid new allocations.
+     * @return chess::Move The engine's ponder.
      */
-    std::string_view getPonder();
+    chess::Move getPonder() { return m_ponder; }
     /**
      * @brief Getter for the evaluation of the position.
      * @return double The evaluation of the position in pawns.
@@ -79,6 +79,16 @@ public:
      * @return The evaluation as a string.
      */
     operator std::string();
+    /**
+     * @brief Setter for the engine's given best move.
+     * @param move The move to set as the best move.
+     */
+    void setBestmove(chess::Move move);
+    /**
+     * @brief Setter for the engine's given ponder.
+     * @param move The move to set as ponder.
+     */
+    void setPonder(chess::Move move);
 };
 
 /** 

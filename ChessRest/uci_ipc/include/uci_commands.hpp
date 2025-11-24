@@ -26,13 +26,25 @@ public:
          * 
          * @return constexpr "readyok"
          */
-        static constexpr std::string_view readyok() { return "readyok"; }
+        static constexpr std::string_view readyok()     { return "readyok";     }
         /**
          * @brief The UCI engine response to the "uci" command.
          * 
-         * @return constexpr std::string_view 
+         * @return constexpr "uciok"
          */
-        static constexpr std::string_view uciok()   { return "uciok";   }
+        static constexpr std::string_view uciok()       { return "uciok";       }
+        /**
+         * @brief The engine's evaluated best move.
+         * 
+         * @return constexpr "bestmove"
+         */
+        static constexpr std::string_view bestmove()    { return "bestmove";    }
+        /**
+         * @brief The engine's pondered move for the opponent.
+         * 
+         * @return constexpr "ponder"
+         */
+        static constexpr std::string_view ponder()      { return "ponder";      }
     };
     /**
      * @fn std::string create_position_command(std::string_view fen)

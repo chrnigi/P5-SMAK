@@ -10,7 +10,7 @@ FetchContent_Declare(
 
 
 set(BOOST_INCLUDE_LIBRARIES
-    asio filesystem system process
+    asio filesystem system process regex
 )
 FetchContent_MakeAvailable(Boost)
 
@@ -28,6 +28,7 @@ add_executable(uci_ipc ${SOURCES})
 target_link_libraries(uci_ipc 
     PUBLIC Boost::system 
     PUBLIC Boost::filesystem 
+    PUBLIC Boost::regex
     PUBLIC fmt
     plog::plog
 )

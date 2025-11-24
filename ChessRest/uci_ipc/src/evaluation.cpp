@@ -28,3 +28,11 @@ const std::string Evaluation::to_string() {
 Evaluation::operator std::string() {
     return to_string();
 }
+
+void Evaluation::setBestmove(chess::Move move) {
+    m_bestmove = move;
+}
+
+void Evaluation::setPonder(chess::Move move) {
+    m_ponder = move;
+}
