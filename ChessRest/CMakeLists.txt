@@ -9,6 +9,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED true)
 set(CMAKE_EXPORT_COMPILE_COMMANDS true)
 set(BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(TEST_DIR "${BASE_DIR}/test")
+set(DOCS_DIR "${BASE_DIR}/docs")
+
+find_package(Doxygen)
 
 include(FetchContent)
 

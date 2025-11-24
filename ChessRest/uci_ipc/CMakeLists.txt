@@ -14,9 +14,6 @@ set(BOOST_INCLUDE_LIBRARIES
 )
 FetchContent_MakeAvailable(Boost)
 
-find_package(Doxygen)
-
-
 set(SRC_FILES
     main.cpp
     ipc.cpp
@@ -45,5 +42,6 @@ target_include_directories(uci_ipc
 
 doxygen_add_docs(
     uci_ipc_docs
+    ALL
     CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile"
 )
