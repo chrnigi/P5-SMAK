@@ -30,6 +30,17 @@ add_compile_options("-O") # oatpp complains without -O
 set(OATPP_BUILD_TESTS false)
 FetchContent_MakeAvailable(oatpp)
 
+include(FetchContent)
+
+FetchContent_Declare(
+    plog
+    GIT_REPOSITORY https://github.com/SergiusTheBest/plog
+    GIT_TAG        1.1.10
+    GIT_SHALLOW    true
+)
+
+FetchContent_MakeAvailable(plog)
+
 macro(setup_dir_vars)
     set(SRC_DIR 
         "${CMAKE_CURRENT_SOURCE_DIR}/src"

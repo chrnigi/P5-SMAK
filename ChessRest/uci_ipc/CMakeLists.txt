@@ -32,6 +32,7 @@ target_link_libraries(uci_ipc
     PUBLIC Boost::system 
     PUBLIC Boost::filesystem 
     PUBLIC fmt
+    plog::plog
 )
 
 message(STATUS "CHESS_HPP: ${CHESS_INCLUDE_DIR}" )

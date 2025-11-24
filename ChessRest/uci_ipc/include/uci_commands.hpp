@@ -18,6 +18,24 @@ private:
 
 public:
     /**
+    * @brief Possible commands returned from the engine.
+    * 
+    */
+    struct EngineCommands {
+        /**
+         * @brief The UCI engine response to the "isready" command.
+         * 
+         * @return constexpr "readyok"
+         */
+        static constexpr std::string_view readyok() { return "readyok"; }
+        /**
+         * @brief The UCI engine response to the "uci" command.
+         * 
+         * @return constexpr std::string_view 
+         */
+        static constexpr std::string_view uciok()   { return "uciok";   }
+    };
+    /**
      * @fn std::string create_position_command(std::string_view fen)
      * @brief Create a UCI command in the form of "position fen <fen>".
      * 

@@ -94,8 +94,14 @@ private:
     bool m_white_to_move = true;
     int m_depth = 20;
     int search_timeout = 10;
+    int write_timeout = 5;
+    int read_timeout = 5;
     Evaluation m_eval;
     
+    bool check_engine_isready();
+    size_t write_engine_with_timeout(std::string_view command, int timeout = 5);
+    std::string read_engine_with_timeout(std::string_view search_string, int timeout = 5);
+
 public:
     /**
      * @brief Constructor for @p EngineWhisperer. Attempts to launch the engine given in @p engine_path .

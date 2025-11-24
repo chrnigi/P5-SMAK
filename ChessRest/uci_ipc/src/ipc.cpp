@@ -1,4 +1,5 @@
 #include <chess.hpp>
+#include <cstddef>
 #include <ipc.hpp>
 #include <uci_commands.hpp>
 
@@ -11,13 +12,15 @@
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 
+#include <plog/Log.h>
+#include <plog/Initializers/ConsoleInitializer.h>
+#include <plog/Formatters/TxtFormatter.h>
+
 #include <sstream>
 #include <string_view>
 #include <string>
 #include <chrono>
 #include <vector>
-
-
 
 namespace asio = boost::asio;
 namespace procv2 = boost::process::v2;
@@ -28,23 +31,32 @@ EngineWhisperer::EngineWhisperer(std::string engine_path) :
     path_to_engine_executable(procv2::environment::find_executable(engine_path).string()),
     engine_proc(io, path_to_engine_executable, {})
 {
+    plog::init<plog::TxtFormatter>(plog::Severity::verbose, plog::streamStdErr);
+
     if (!engine_proc.running()) {
+        PLOG_ERROR << fmt::format(FMT_COMPILE("Failed to launch executable '{}' at path '{}'."), engine_path, path_to_engine_executable);
         throw new engine_not_launched_exception(fmt::format("Failed to launch '{}' at path '{}'.", engine_path, path_to_engine_executable));
     }
 }
 
 EngineWhisperer::~EngineWhisperer() {
+    PLOG_DEBUG << fmt::format(FMT_COMPILE("Attempting exit with UCI quit."));
     asio::write(engine_proc, asio::buffer(UCIcommand::quit()));
 
     asio::steady_timer t(io);
     t.expires_after(std::chrono::seconds(5));
 
     bool term = false;
-    t.async_wait([&](const boost::system::error_code& ec) {engine_proc.terminate(); fmt::println("Engine process terminated!"); term = true;});
-
+    t.async_wait([&](const boost::system::error_code& ec) {
+        if(engine_proc.running()) {
+            engine_proc.terminate(); 
+            term = true;
+        } 
+    });
 
     io.run_for(std::chrono::seconds(5));
-
+    PLOG_DEBUG_IF(term) << "Engine did not shut down in 5 seconds, terminated instead.";
+    PLOG_DEBUG_IF(!term) << "Engine exited.";
     while (engine_proc.running()) {
         //fmt::println("Still running...");
     }
@@ -63,56 +75,110 @@ bool EngineWhisperer::start_uci() {
     }
 
     asio::write(engine_proc, asio::buffer(UCIcommand::uci()));
-
-    std::string buffer {};
-    asio::steady_timer timer(io);
     
     size_t sz = 0;
     bool set = false;
     bool timeout = false;
     bool finished = false;
 
-    if (io.stopped())
-        io.restart();
+    std::string engine_response = read_engine_with_timeout(UCIcommand::EngineCommands::uciok());
 
-    asio::async_read_until(engine_proc, asio::dynamic_buffer(buffer), boost::regex("uciok"), 
-        [&](const boost::system::error_code& err, std::size_t bytes_transferred) {
-            fmt::println("{}", err.what());
-            if (!set) {
-                set = true;
-            }
-            if (timeout) {
-                return;
-            } else {
-                sz = bytes_transferred;
-                finished = true;
-            }
-
-        }
-    );
-    size_t c = io.run_for(std::chrono::seconds(5));
-    fmt::println("{}", fmt::format(FMT_COMPILE("{}, handlers: {}"), set, c)) ;
-    while (!set) {} 
-
-    if (timeout) {
+    if (engine_response.empty()) {
+        return false;
+    }
+    if (!check_engine_isready()) {
         return false;
     }
 
-    buffer.erase();
-    asio::write(engine_proc, asio::buffer("\n isready\n"));
-    asio::read_until(engine_proc, asio::dynamic_buffer(buffer), boost::regex("readyok"));
-    fmt::println("{}", buffer);
-    asio::write(engine_proc, asio::buffer(UCIcommand::ucinewgame()));
-    asio::write(engine_proc, asio::buffer(UCIcommand::position_startpos()));
+    write_engine_with_timeout(UCIcommand::ucinewgame());
+    write_engine_with_timeout(UCIcommand::position_startpos());
     
-
     using sq = chess::Square;
     std::vector<chess::Move> moves{chess::Move::make(sq::SQ_E2, sq::SQ_E4), chess::Move::make(sq::SQ_E7, sq::SQ_E5)};
     make_moves(moves);
 
-    
+    new_game();
+
+    std::vector<chess::Move> fools_mate {
+        chess::Move::make(sq::SQ_F2, sq::SQ_F3), 
+        chess::Move::make(sq::SQ_E7, sq::SQ_E6),
+        
+        chess::Move::make(sq::SQ_G2, sq::SQ_G4)
+    };
+
+    write_engine_with_timeout(UCIcommand::position_startpos());
+    make_moves(fools_mate);
 
     return true;
+
+}
+
+size_t EngineWhisperer::write_engine_with_timeout(std::string_view command, int timeout) {
+    if(!engine_proc.running()) {
+        PLOG_ERROR << "Engine process is not running.";
+        return false;
+    }
+    if (io.stopped()) {
+        io.restart();
+    }
+
+    size_t bytes = 0;
+    asio::async_write(engine_proc, asio::buffer(command), 
+        [&](const boost::system::error_code& ec, size_t bytes_transferred) {
+            PLOG_WARNING_IF(ec) << ec.what();
+            bytes = bytes_transferred;
+        }
+    );
+    
+    size_t handler_count = io.run_for(std::chrono::seconds(timeout));
+    PLOG_DEBUG << fmt::format(FMT_COMPILE("Async write to engine complete. Handlers executed: {}"), handler_count);
+    
+    bool all_sent = bytes == command.length();
+    PLOG_WARNING_IF(!all_sent) << fmt::format(FMT_COMPILE("Wrote {} bytes to engine, but command was {} bytes."), bytes, command.length());
+
+    io.stop();
+
+    return bytes;
+}
+
+bool EngineWhisperer::check_engine_isready() {
+    PLOG_DEBUG << "Asking engine if ready";
+    bool sent = write_engine_with_timeout(UCIcommand::isready(), write_timeout);
+    if (!sent) {
+        PLOG_DEBUG << "Failed to check if engine is ready.";
+        return sent;
+    }
+    std::string ready = read_engine_with_timeout(UCIcommand::EngineCommands::readyok(),read_timeout);
+    if (ready.rfind(UCIcommand::EngineCommands::readyok()) == std::string::npos) {
+        PLOG_DEBUG << fmt::format(FMT_COMPILE("Engine not ready within {} seconds"), read_timeout);
+        return false;
+    }
+    PLOG_DEBUG << "Engine ready";
+    return true;
+}
+
+std::string EngineWhisperer::read_engine_with_timeout(std::string_view search_string, int timeout) {
+    if(!engine_proc.running()) {
+        PLOG_ERROR << "Engine process is not running.";
+        return "";
+    }
+    if (io.stopped()) {
+        io.restart();
+    }
+    std::string buf {};
+    size_t sz = 0;
+    asio::async_read_until(engine_proc, asio::dynamic_buffer(buf), boost::regex(std::string(search_string)),
+    [&](const boost::system::error_code& err, std::size_t bytes_transferred) {
+        PLOG_WARNING_IF(err) << err.what();
+        }
+    );
+
+    size_t handler_count = io.run_for(std::chrono::seconds(timeout));
+
+    PLOG_DEBUG << fmt::format(FMT_COMPILE("Async read from engine complete. Handlers executed: {}"), handler_count);
+
+    io.stop();
+    return buf;
 
 }
 
@@ -121,7 +187,8 @@ void EngineWhisperer::new_game() {
         throw new engine_not_launched_exception("Engine not running!");
     }
 
-    asio::write(engine_proc, asio::buffer(UCIcommand::ucinewgame()));
+    PLOG_DEBUG << "Starting new game.";
+    write_engine_with_timeout(UCIcommand::ucinewgame());
     m_board.setFen(chess::constants::STARTPOS);
 }
 
@@ -129,8 +196,10 @@ bool EngineWhisperer::set_position(std::string_view fen) {
     if (!engine_proc.running()) {
         throw engine_not_launched_exception("Engine not running!");
     }
+    PLOG_DEBUG << fmt::format(FMT_COMPILE("Setting engine position to FEN: {}"), fen);
+    write_engine_with_timeout(UCIcommand::create_position_command(fen));
 
-    asio::write(engine_proc, asio::buffer(UCIcommand::create_position_command(fen)));
+    //asio::write(engine_proc, asio::buffer(UCIcommand::create_position_command(fen)));
     return true;
 }
 
@@ -146,14 +215,20 @@ bool EngineWhisperer::make_moves(std::vector<chess::Move>& moves) {
     }
 
     std::string cmd = UCIcommand::append_moves_to_position_command(UCIcommand::create_position_command(m_board.getFen()), moves);
-    
+    std::vector<std::string> mvs;
+    mvs.reserve(moves.size());
     for (chess::Move m : moves) {
         m_board.makeMove(m);
+        mvs.push_back(chess::uci::moveToUci(m));
     }
 
     std::string_view cmd_view(cmd);
-    size_t bytes = asio::write(engine_proc, asio::buffer(cmd_view));
+
+    PLOG_DEBUG << fmt::format(FMT_COMPILE("Playing moves {}"), fmt::join(mvs, " "));
+    size_t bytes = write_engine_with_timeout(cmd_view);
+    //size_t bytes = asio::write(engine_proc, asio::buffer(cmd_view));
     if (bytes != cmd.length()) {
+        PLOG_DEBUG << fmt::format(FMT_COMPILE("Wrote {} bytes to engine, but command was {} bytes. Undoing moves."), bytes, cmd.length());
         for (auto it = moves.rbegin(); it != moves.rend(); it++) {
             m_board.unmakeMove(*it);
         }
@@ -161,46 +236,21 @@ bool EngineWhisperer::make_moves(std::vector<chess::Move>& moves) {
     }
     current_position_fen = m_board.getFen();
 
-    size_t sz = 0;
-    bool set = false;
-    bool timeout = false;
-    bool finished = false;
 
-    asio::write(engine_proc, asio::buffer(UCIcommand::create_go_depth_command(m_depth)));
+    bytes = write_engine_with_timeout(UCIcommand::create_go_depth_command(m_depth));
+    std::string read_buf = read_engine_with_timeout("bestmove");
 
-    if (io.stopped()) {
-        io.restart();
-    }
-
-    std::string read_buf {};
-    asio::async_read_until(engine_proc, asio::dynamic_buffer(read_buf), boost::regex("bestmove"),
-        [&](const boost::system::error_code& err, std::size_t bytes_transferred) {
-            fmt::println("{}", fmt::format(FMT_COMPILE("{}"), err.what()));
-            if (timeout) {
-                return;
-            }
-            if (!set) {
-                set = true;
-            }
-            sz = bytes_transferred;
-            finished = true;
-        }
-    );
-
-    std::size_t handler_count = io.run_for(std::chrono::seconds(search_timeout));
-    fmt::println("{}", fmt::format(FMT_COMPILE("{}, handlers: {}"), set, handler_count));
-    while (!set) {}
-
-    io.stop();
-    if (timeout) {
+    if (read_buf.empty()) {
+        PLOG_WARNING << "No best move given by engine";
         return false;
     }
-
-    fmt::println("{}", read_buf);
 
     bool is_mate = false;
     // Extract the evaluation/moves to mate from the engine's output.
     std::string last_info = read_buf.substr(read_buf.rfind("info"));
+
+    PLOG_DEBUG << fmt::format(FMT_COMPILE("End of engine output from \"go\" command: {}"), last_info); 
+
     size_t first = last_info.find("score cp");
     if (first == std::string::npos) {
         first = last_info.find("score mate");
@@ -209,11 +259,12 @@ bool EngineWhisperer::make_moves(std::vector<chess::Move>& moves) {
         }
         is_mate = true;
     }
+
+    PLOG_DEBUG_IF(is_mate) << fmt::format(FMT_COMPILE("Checkmate is on the board, in position: FEN: {}"), m_board.getFen());
+    
     size_t last = last_info.find("nodes");
     
     std::string_view extracted(last_info.c_str()+first, last-first);
-    fmt::println("{}, {} to move", extracted, m_board.sideToMove() ? "black" : "white");
-
 
     std::string eval(extracted);
     std::stringstream ss(eval);
@@ -246,7 +297,8 @@ bool EngineWhisperer::make_moves(std::vector<chess::Move>& moves) {
 
             //fmt::println("{}", eval_string);
             m_eval.update(m_board.sideToMove(), ed, 0, 0);
-            fmt::println("{}", m_eval.to_string());
+            //fmt::println("{}", m_eval.to_string());
+            PLOG_DEBUG << m_eval.to_string();
             break;
         }
            
