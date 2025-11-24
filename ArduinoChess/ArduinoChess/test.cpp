@@ -2,15 +2,6 @@
 
 static constexpr const bool up = true;
 static constexpr const bool down = false;
-	int file =  (file_char - 'a');
-	
-	char rank_char = s.at(1);
-	int rank = rank_char - '0';
-	int r = (8-rank) << 3;
-
-	return (r | file);
-}
-
 TEST(pin, pin_to_string) {
 	int p = 18;
 	EXPECT_EQ(pin(pin_to_square(p)), p);

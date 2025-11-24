@@ -270,6 +270,22 @@ static bool CanCastle(const states s, const int pin_number){
 }
 
 static void pin_change(const int pin_number, const bool is_up = false)
+
+/// <summary>
+/// Converts a pin-string to a pin-integer
+/// </summary>
+/// <param name="str">String in the format of <file char><rank char> such as 'b4'</param>
+/// <returns>uint8_t integer between 0 and 63</returns>
+static uint8_t pin(String str) {
+	char file_char = str.at(0);
+	uint8_t file = (file_char - 'a');
+
+	char rank_char = str.at(1);
+	uint8_t rank = rank_char - '0';
+	uint8_t r = (8 - rank) << 3;
+
+	return (r | file);
+}
 {
 	if (pin_number < 0 || pin_number > 63) return; // guard against out of bound pins
 
