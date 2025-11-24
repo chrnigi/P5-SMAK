@@ -130,19 +130,19 @@ enum states {
 } static state;
 
 struct chess_variables {
-	bool black_kingside = true,
-		black_queenside = true,
-		white_kingside = true,
-		white_queenside = true;
+	bool black_kingside  = true; // Can black castle kingside  i.e king hasn't moved or kingside rook hasn't moved
+	bool black_queenside = true; // Can black castle queenside i.e king hasn't moved or queenside rook hasn't moved
+	bool white_kingside  = true; // Can white castle kingside  i.e king hasn't moved or kingside rook hasn't moved
+	bool white_queenside = true; // Can white castle queenside i.e king hasn't moved or queenside rook hasn't moved
 
-	bool en_passant = false;
-	int en_passant_square = 0;
+	bool en_passant = false; // Can the next move be an passant capture
+	uint8_t en_passant_square = 0; // If en_passant then this represent the square where that can happen
 
-	int ply_since_ponr = 0;
+	uint8_t ply_since_ponr = 0; // plys since a capture or pawn move, i.e. the point of no return. Used for 50 move rule
 
-	int ply = 0;
+	uint16_t ply = 0; // plys since the game started, i.e. the number of moves made in the game
 
-	int turn() const { return (ply + 2) / 2; }
+	uint16_t turn() const { return (ply + 2) / 2; }
 	void reset() {
 		black_kingside = black_queenside = white_kingside = white_queenside = true;
 		en_passant = false;
@@ -154,10 +154,10 @@ struct chess_variables {
 } static chess_state;
 
 struct fsm_variables {
-	int x = -1;
-	int y = -1;
+	uint8_t x = 0; // Allied piece' FROM square
+	uint8_t y = 0; // Enemy piece' FROM square
 	void reset() {
-		x = y = -1;
+		x = y = 0;
 	}
 } static fsm;
 
@@ -261,6 +261,8 @@ static void setErrorAndSend()
 	state = states::error;
 	// deal with stuff
 }
+
+/// <summary>
 /// Converts a pin-string to a pin-integer
 /// </summary>
 /// <param name="str">String in the format of <file char><rank char> such as 'b4'</param>
@@ -275,8 +277,10 @@ static uint8_t pin(String str) {
 
 	return (r | file);
 }
+
+static void pin_change(const uint8_t pin_number, const bool is_up = false)
 {
-	if (pin_number < 0 || pin_number > 63) return; // guard against out of bound pins
+	if (pin_number > 63) return; // guard against out of bound pins
 
 	const bool is_down = !is_up;
 	char piece = board[pin_number];
@@ -647,7 +651,7 @@ static uint8_t pin(String str) {
 	{
 		if (is_up && board[pin_number] == p_BLACK_ROOK && pin_number == BLACK_ROOK_KINGSIDE_STARTINGSQUARE)
 			state = black_castling_kingside_kingdown_ROOKUP;
-		else state = error;
+		else setErrorAndSend();
 		break;
 	}
 	case black_castling_queenside_kingdown:
