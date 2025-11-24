@@ -250,6 +250,17 @@ static bool CanCastle(const states s, const int pin_number){
 static void pin_change(const int pin_number, const bool is_up = false)
 
 /// <summary>
+
+/// <summary>
+/// <summary>
+/// Sets the fsm state to error, so the game can't proceed.
+/// Then sends an update to the cloud.
+/// </summary>
+static void setErrorAndSend()
+{
+	state = states::error;
+	// deal with stuff
+}
 /// Converts a pin-string to a pin-integer
 /// </summary>
 /// <param name="str">String in the format of <file char><rank char> such as 'b4'</param>
@@ -277,7 +288,7 @@ static uint8_t pin(String str) {
 	{
 	case white:
 	{
-		if (is_down || is_empty_square) state = error;
+		if (is_down || is_empty_square) setErrorAndSend();
 		else if (CanCastle(state, pin_number)) {
 			state = white_castling;
 		}
@@ -312,10 +323,11 @@ static uint8_t pin(String str) {
 		}
 		else if (is_black_piece)
 		{
-			state = white_begin_capture;
+			state = white_capture;
 			fsm.y = pin_number;
 		}
-		else { state = error; }
+		else setErrorAndSend();
+
 		break;
 	}
 
@@ -337,7 +349,7 @@ static uint8_t pin(String str) {
 			WhiteCheckCastling(pin_number);
 			const bool promotion = WhiteHandlePromotion(pin_number);
 		}
-		else state = error;
+		else setErrorAndSend();
 
 		break;
 	}
@@ -345,12 +357,12 @@ static uint8_t pin(String str) {
 	case white_enemy_capture:
 	{
 		if (is_up && is_white_piece) {
-			state = white_begin_capture;
+			state = white_capture;
 			fsm.x = pin_number;
 		}
 		else if (is_up) // not white => black or blank 
 		{
-			state = error;
+			setErrorAndSend();
 		}
 		else if (pin_number == fsm.y)
 		{
@@ -358,7 +370,7 @@ static uint8_t pin(String str) {
 		}
 		else if (is_down)
 		{
-			state = error;
+			setErrorAndSend();
 		}
 		
 		break;
@@ -366,22 +378,22 @@ static uint8_t pin(String str) {
 
 	case black:
 	{
-		if (is_down || is_empty_square) state = error;
+		if (is_down || is_empty_square) setErrorAndSend();
 		else if (CanCastle(state, pin_number)) {
 			state = black_castling;
 		}
 		else if (is_black_piece) {
-			state = black_begin_move;
+			state = black_move;
 			fsm.x = pin_number;
 		}
 		else {
-			state = black_begin_enemy_capture;
+			state = black_enemy_capture;
 			fsm.y = pin_number;
 		}
 		break;
 	}
 
-	case black_begin_move:
+	case black_move:
 	{
 		auto is_x_down = is_down && fsm.x == pin_number;
 		if (is_x_down) { state = black; }
@@ -398,14 +410,14 @@ static uint8_t pin(String str) {
 			bool promotion = BlackHandlePromotion(pin_number);
 		}
 		else if (is_white_piece) {
-			state = black_begin_capture;
+			state = black_capture;
 			fsm.y = pin_number;
 		}
-		else { state = error; }
+		else setErrorAndSend();
 		break;
 	}
 
-	case black_begin_capture:
+	case black_capture:
 	{
 		bool is_y_down = (is_down && (fsm.y == pin_number));
 		bool is_en_passant = (is_down && chess_state.en_passant && chess_state.en_passant_square == pin_number);
@@ -423,20 +435,20 @@ static uint8_t pin(String str) {
 			BlackCheckCastling(pin_number);
 			const bool promotion = BlackHandlePromotion(pin_number);
 		}
-		else state = error;
+		else setErrorAndSend();
 
 		break;
 	}
 
-	case black_begin_enemy_capture:
+	case black_enemy_capture:
 	{
 		if (is_up && is_black_piece) {
-			state = black_begin_capture;
+			state = black_capture;
 			fsm.x = pin_number;
 		}
 		else if (is_up) // not white => black or blank 
 		{
-			state = error;
+			setErrorAndSend();
 		}
 		else if (pin_number == fsm.y)
 		{
@@ -444,7 +456,7 @@ static uint8_t pin(String str) {
 		}
 		else if (is_down)
 		{
-			state = error;
+			setErrorAndSend();
 		}
 
 		break;
@@ -471,16 +483,16 @@ static uint8_t pin(String str) {
 				else if (pin_number == WHITE_ROOK_QUEENSIDE_STARTINGSQUARE && chess_state.white_queenside)
 					state = white_castling_queenside_KINGUP_ROOKUP;
 				else
-					state = error;
+					setErrorAndSend();
 			}
 			else
 			{
-				state = error;
+				setErrorAndSend();
 			}
 		}
 		else if (is_black_piece)
 		{
-			state = white_begin_capture;
+			state = white_capture;
 			fsm.y = pin_number;
 			fsm.x = WHITE_KING_STARTINGSQUARE;
 		}
@@ -490,14 +502,14 @@ static uint8_t pin(String str) {
 	{
 		if (is_up && board[pin_number] == p_WHITE_ROOK && pin_number == WHITE_ROOK_KINGSIDE_STARTINGSQUARE)
 			state = white_castling_kingside_kingdown_ROOKUP;
-		else state = error;
+		else setErrorAndSend();
 		break;
 	}
 	case white_castling_queenside_kingdown:
 	{
 		if (is_up && board[pin_number] == p_WHITE_ROOK && pin_number == WHITE_ROOK_QUEENSIDE_STARTINGSQUARE)
 			state = white_castling_queenside_kingdown_ROOKUP;
-		else state = error;
+		else setErrorAndSend();
 		break;
 	}
 
@@ -516,7 +528,7 @@ static uint8_t pin(String str) {
 			board[WHITE_KING_KINGSIDE_CASTLESQUARE] = p_WHITE_KING;
 			state = black;
 		}
-		else state = error;
+		else setErrorAndSend();
 		break;
 	}
 	case white_castling_queenside_kingdown_ROOKUP:
@@ -534,7 +546,7 @@ static uint8_t pin(String str) {
 			board[WHITE_KING_QUEENSIDE_CASTLESQUARE] = p_WHITE_KING;
 			state = black;
 		}
-		else state = error;
+		else setErrorAndSend();
 		break;
 	}
 
@@ -545,7 +557,7 @@ static uint8_t pin(String str) {
 		else if (is_down && pin_number == WHITE_ROOK_KINGSIDE_CASTLESQUARE)
 			state = white_castling_kingside_KINGUP_rookdown;
 		else
-			state = error;
+			setErrorAndSend();
 		break;
 	}
 	case white_castling_queenside_KINGUP_ROOKUP:
@@ -555,7 +567,7 @@ static uint8_t pin(String str) {
 		else if (is_down && pin_number == WHITE_ROOK_QUEENSIDE_CASTLESQUARE)
 			state = white_castling_queenside_KINGUP_rookdown;
 		else
-			state = error;
+			setErrorAndSend();
 		break;
 	}
 
@@ -573,7 +585,7 @@ static uint8_t pin(String str) {
 			board[WHITE_KING_KINGSIDE_CASTLESQUARE] = p_WHITE_KING;
 			state = black;
 		}
-		else state = error;
+		else setErrorAndSend();
 		break;
 	}
 	case white_castling_queenside_KINGUP_rookdown:
@@ -591,7 +603,7 @@ static uint8_t pin(String str) {
 			board[WHITE_KING_QUEENSIDE_CASTLESQUARE] = p_WHITE_KING;
 			state = black;
 		}
-		else state = error;
+		else setErrorAndSend();
 		break;
 	}
 
@@ -616,16 +628,16 @@ static uint8_t pin(String str) {
 				else if (pin_number == BLACK_ROOK_QUEENSIDE_STARTINGSQUARE && chess_state.black_queenside)
 					state = black_castling_queenside_KINGUP_ROOKUP;
 				else
-					state = error;
+					setErrorAndSend();
 			}
 			else
 			{
-				state = error;
+				setErrorAndSend();
 			}
 		}
 		else if (is_white_piece)
 		{
-			state = black_begin_capture;
+			state = black_capture;
 			fsm.y = pin_number;
 			fsm.x = BLACK_KING_STARTINGSQUARE;
 		}
@@ -642,7 +654,7 @@ static uint8_t pin(String str) {
 	{
 		if (is_up && board[pin_number] == p_BLACK_ROOK && pin_number == BLACK_ROOK_QUEENSIDE_STARTINGSQUARE)
 			state = black_castling_queenside_kingdown_ROOKUP;
-		else state = error;
+		else setErrorAndSend();
 		break;
 	}
 
@@ -661,7 +673,7 @@ static uint8_t pin(String str) {
 			board[BLACK_KING_KINGSIDE_CASTLESQUARE] = p_BLACK_KING;
 			state = white;
 		}
-		else state = error;
+		else setErrorAndSend();
 		break;
 	}
 	case black_castling_queenside_kingdown_ROOKUP:
@@ -679,7 +691,7 @@ static uint8_t pin(String str) {
 			board[BLACK_KING_QUEENSIDE_CASTLESQUARE] = p_BLACK_KING;
 			state = white;
 		}
-		else state = error;
+		else setErrorAndSend();
 		break;
 	}
 
@@ -690,7 +702,7 @@ static uint8_t pin(String str) {
 		else if (is_down && pin_number == BLACK_ROOK_KINGSIDE_CASTLESQUARE)
 			state = black_castling_kingside_KINGUP_rookdown;
 		else
-			state = error;
+			setErrorAndSend();
 		break;
 	}
 	case black_castling_queenside_KINGUP_ROOKUP:
@@ -700,7 +712,7 @@ static uint8_t pin(String str) {
 		else if (is_down && pin_number == BLACK_ROOK_QUEENSIDE_CASTLESQUARE)
 			state = black_castling_queenside_KINGUP_rookdown;
 		else
-			state = error;
+			setErrorAndSend();
 		break;
 	}
 
@@ -718,7 +730,7 @@ static uint8_t pin(String str) {
 			board[BLACK_KING_KINGSIDE_CASTLESQUARE] = p_BLACK_KING;
 			state = white;
 		}
-		else state = error;
+		else setErrorAndSend();
 		break;
 	}
 	case black_castling_queenside_KINGUP_rookdown:
@@ -736,11 +748,12 @@ static uint8_t pin(String str) {
 			board[BLACK_KING_QUEENSIDE_CASTLESQUARE] = p_BLACK_KING;
 			state = white;
 		}
-		else state = error;
+		else setErrorAndSend();
 		break;
 	}
-	
-	default: // error
+	case error: return;
+	default: // we shouldn't be able to get here, but just in case set state to error
+		setErrorAndSend();
 		break;
 	}
 }
