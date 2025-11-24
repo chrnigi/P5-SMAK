@@ -1,9 +1,7 @@
 #include "pch.h"
-static const bool up = true;
-static const bool down = false;
 
-static int pin(std::string s) {
-	char file_char = s.at(0);
+static constexpr const bool up = true;
+static constexpr const bool down = false;
 	int file =  (file_char - 'a');
 	
 	char rank_char = s.at(1);
