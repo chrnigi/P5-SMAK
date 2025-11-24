@@ -45,27 +45,27 @@ TEST(FSM_white, WhiteTurn) {
 	int w = 31;
 	board[w] = p_WHITE_PAWN;
 	pin_change(w, true);
-	EXPECT_EQ(state, states::white_begin_move);
+	EXPECT_EQ(state, states::white_move);
 }
 TEST(FSM_white, WhiteTurnEnemy) {
 	clean_state();
 	int b = 22;
 	board[b] = p_BLACK_PAWN;
 	pin_change(b, true);
-	EXPECT_EQ(state, states::white_begin_enemy_capture);
+	EXPECT_EQ(state, states::white_enemy_capture);
 }
 
 TEST(FSM_white, UndoWhiteMove) {
 	reset();
 	pin_change(63 - 8, true);
-	EXPECT_EQ(state, states::white_begin_move);
+	EXPECT_EQ(state, states::white_move);
 	pin_change(63 - 8, false);
 	EXPECT_EQ(state, states::white);
 }
 TEST(FSM_white, FinishWhiteMove) {
 	reset();
 	pin_change(63 - 8, true);
-	EXPECT_EQ(state, states::white_begin_move);
+	EXPECT_EQ(state, states::white_move);
 	pin_change(63 - 16, false);
 	EXPECT_EQ(state, states::black);
 }
@@ -77,7 +77,7 @@ TEST(FSM_white, StartWhiteCapture) {
 	board[target] = p_BLACK_PAWN;
 	pin_change(from, true);
 	pin_change(target, true);
-	EXPECT_EQ(state, states::white_begin_capture);
+	EXPECT_EQ(state, states::white_capture);
 }
 TEST(FSM_white, StartWhiteEnemyCapture) {
 	reset();
@@ -85,17 +85,17 @@ TEST(FSM_white, StartWhiteEnemyCapture) {
 	int from = pin("b2");
 	board[target] = p_BLACK_PAWN;
 	pin_change(target, true);
-	EXPECT_EQ(state, states::white_begin_enemy_capture);
+	EXPECT_EQ(state, states::white_enemy_capture);
 	pin_change(from, true);
-	EXPECT_EQ(state, states::white_begin_capture);
+	EXPECT_EQ(state, states::white_capture);
 }
 TEST(FSM_white, FinishWhiteCapture) {
 	reset();
 	board[63 - 17] = 'p';
 	pin_change(63 - 8, true);
-	EXPECT_EQ(state, states::white_begin_move);
+	EXPECT_EQ(state, states::white_move);
 	pin_change(63 - 17, true);
-	EXPECT_EQ(state, states::white_begin_capture);
+	EXPECT_EQ(state, states::white_capture);
 	pin_change(63 - 17, false);
 	EXPECT_EQ(state, states::black);
 }
@@ -103,28 +103,28 @@ TEST(FSM_white, FinishWhiteEnemyCapture) {
 	reset();
 	board[63 - 17] = 'p';
 	pin_change(63 - 17, true);
-	EXPECT_EQ(state, states::white_begin_enemy_capture);
+	EXPECT_EQ(state, states::white_enemy_capture);
 	pin_change(63 - 8, true);
-	EXPECT_EQ(state, states::white_begin_capture);
+	EXPECT_EQ(state, states::white_capture);
 	pin_change(63 - 17, false);
 	EXPECT_EQ(state, states::black);
 }
 
-TEST(FSM_black, black_begin_move) {
+TEST(FSM_black, black_move) {
 	clean_state();
 	state = states::black;
 	int from = pin("e5");
 	board[from] = p_BLACK_PAWN;
 	pin_change(from, true);
-	EXPECT_EQ(state, states::black_begin_move);
+	EXPECT_EQ(state, states::black_move);
 }
-TEST(FSM_black, black_begin_enemy_capture) {
+TEST(FSM_black, black_enemy_capture) {
 	clean_state();
 	state = states::black;
 	int from = pin("d4");
 	board[from] = p_WHITE_PAWN;
 	pin_change(from, true);
-	EXPECT_EQ(state, states::black_begin_enemy_capture);
+	EXPECT_EQ(state, states::black_enemy_capture);
 }
 
 TEST(FSM_black, UndoBlackMove) {
@@ -147,7 +147,7 @@ TEST(FSM_black, FinalizeBlackMove) {
 	EXPECT_EQ(state, states::white);
 }
 
-TEST(FSM_black, black_begin_capture) {
+TEST(FSM_black, black_capture) {
 	reset();
 	state = states::black;
 	int target = pin("a6");
@@ -155,7 +155,7 @@ TEST(FSM_black, black_begin_capture) {
 	board[target] = p_WHITE_PAWN;
 	pin_change(from, true);
 	pin_change(target, true);
-	EXPECT_EQ(state, states::black_begin_capture);
+	EXPECT_EQ(state, states::black_capture);
 }
 TEST(FSM_black, StartBlackEnemyCapture) {
 	reset();
@@ -164,9 +164,9 @@ TEST(FSM_black, StartBlackEnemyCapture) {
 	int from = pin("b7");
 	board[target] = p_WHITE_PAWN;
 	pin_change(target, true);
-	EXPECT_EQ(state, states::black_begin_enemy_capture);
+	EXPECT_EQ(state, states::black_enemy_capture);
 	pin_change(from, true);
-	EXPECT_EQ(state, states::black_begin_capture);
+	EXPECT_EQ(state, states::black_capture);
 }
 
 TEST(FSM_black, FinishBlackCapture) {
@@ -176,9 +176,9 @@ TEST(FSM_black, FinishBlackCapture) {
 	int from = pin("b7");
 	board[target] = p_WHITE_PAWN;
 	pin_change(from, up);
-	EXPECT_EQ(state, states::black_begin_move);
+	EXPECT_EQ(state, states::black_move);
 	pin_change(target, up);
-	EXPECT_EQ(state, states::black_begin_capture);
+	EXPECT_EQ(state, states::black_capture);
 	pin_change(target, down);
 	EXPECT_EQ(state, states::white);
 }
@@ -189,9 +189,9 @@ TEST(FSM_black, FinishBlackEnemyCapture) {
 	int from = pin("b7");
 	board[target] = p_WHITE_PAWN;
 	pin_change(target, up);
-	EXPECT_EQ(state, states::black_begin_enemy_capture);
+	EXPECT_EQ(state, states::black_enemy_capture);
 	pin_change(from, up);
-	EXPECT_EQ(state, states::black_begin_capture);
+	EXPECT_EQ(state, states::black_capture);
 	pin_change(target, down);
 	EXPECT_EQ(state, states::white);
 }
@@ -266,9 +266,9 @@ TEST(FSM_promotion, WhiteEnemyCapturePromotion) {
 	board[from] = p_WHITE_PAWN;
 	board[target] = p_BLACK_PAWN;
 	pin_change(target, up);
-	EXPECT_EQ(state, states::white_begin_enemy_capture);
+	EXPECT_EQ(state, states::white_enemy_capture);
 	pin_change(from, up);
-	EXPECT_EQ(state, states::white_begin_capture);
+	EXPECT_EQ(state, states::white_capture);
 	pin_change(target, down);
 	EXPECT_EQ(state, states::black);
 	EXPECT_EQ(board[from], p_EMPTY_SQUARE);
@@ -296,9 +296,9 @@ TEST(FSM_promotion, BlackEnemyCapturePromotion) {
 	board[from] = p_BLACK_PAWN;
 	board[target] = p_WHITE_PAWN;
 	pin_change(target, up);
-	EXPECT_EQ(state, states::black_begin_enemy_capture);
+	EXPECT_EQ(state, states::black_enemy_capture);
 	pin_change(from, up);
-	EXPECT_EQ(state, states::black_begin_capture);
+	EXPECT_EQ(state, states::black_capture);
 	pin_change(target, down);
 	EXPECT_EQ(state, states::white) << "Expected turn changed from black to white";
 	EXPECT_EQ(board[from], p_EMPTY_SQUARE) << "Expected [from] square to be empty";
@@ -716,7 +716,7 @@ TEST(FSM_castling, cancel_into_capture) {
 	pin_change(pin("e1"), up);
 	ASSERT_EQ(state, states::white_castling);
 	pin_change(pin("e2"), up);
-	ASSERT_EQ(state, states::white_begin_capture);
+	ASSERT_EQ(state, states::white_capture);
 	pin_change(pin("e2"), down);
 	ASSERT_EQ(state, states::black);
 	ASSERT_EQ(board[pin("e1")], p_EMPTY_SQUARE);
@@ -730,7 +730,7 @@ TEST(FSM_castling, cancel_into_capture) {
 	pin_change(pin("e8"), up);
 	ASSERT_EQ(state, states::black_castling);
 	pin_change(pin("e7"), up);
-	ASSERT_EQ(state, states::black_begin_capture);
+	ASSERT_EQ(state, states::black_capture);
 	pin_change(pin("e7"), down);
 	ASSERT_EQ(state, states::white);
 	ASSERT_EQ(board[pin("e8")], p_EMPTY_SQUARE);

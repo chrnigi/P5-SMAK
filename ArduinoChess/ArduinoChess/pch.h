@@ -127,9 +127,9 @@ static void init_empty_board() {
 
 enum states {
 	white,
-	white_begin_move,
-	white_begin_capture,
-	white_begin_enemy_capture,
+	white_move,
+	white_capture,
+	white_enemy_capture,
 
 	white_castling,
 	white_castling_kingside_kingdown,
@@ -142,9 +142,9 @@ enum states {
 	white_castling_queenside_KINGUP_rookdown,
 
 	black,
-	black_begin_move,
-	black_begin_capture,
-	black_begin_enemy_capture,
+	black_move,
+	black_capture,
+	black_enemy_capture,
 
 	black_castling,
 	black_castling_kingside_kingdown,
@@ -304,17 +304,17 @@ static uint8_t pin(String str) {
 			state = white_castling;
 		}
 		else if (is_white_piece) {
-			state = white_begin_move;
+			state = white_move;
 			fsm.x = pin_number;
 		}
 		else {
-			state = white_begin_enemy_capture;
+			state = white_enemy_capture;
 			fsm.y = pin_number;
 		}
 		break;
 	}
 
-	case white_begin_move:
+	case white_move:
 	{
 		auto is_x_down = is_down && fsm.x == pin_number;
 		if (is_x_down) 
@@ -341,7 +341,7 @@ static uint8_t pin(String str) {
 		break;
 	}
 
-	case white_begin_capture: 
+	case white_capture: 
 	{
 		bool is_y_down = (is_down && (fsm.y == pin_number));
 		bool is_en_passant = (is_down && chess_state.en_passant && chess_state.en_passant_square == pin_number);
@@ -364,7 +364,7 @@ static uint8_t pin(String str) {
 		break;
 	}
 
-	case white_begin_enemy_capture:
+	case white_enemy_capture:
 	{
 		if (is_up && is_white_piece) {
 			state = white_begin_capture;
@@ -482,7 +482,7 @@ static uint8_t pin(String str) {
 			else if (pin_number == WHITE_KING_QUEENSIDE_CASTLESQUARE && chess_state.white_queenside)
 				state = white_castling_queenside_kingdown;
 			else {
-				state = white_begin_move;
+				state = white_move;
 				pin_change(pin_number, is_up);
 			}
 		}
@@ -627,7 +627,7 @@ static uint8_t pin(String str) {
 			else if (pin_number == BLACK_KING_QUEENSIDE_CASTLESQUARE && chess_state.black_queenside)
 				state = black_castling_queenside_kingdown;
 			else {
-				state = black_begin_move;
+				state = black_move;
 				pin_change(pin_number, is_up);
 			}
 		}
