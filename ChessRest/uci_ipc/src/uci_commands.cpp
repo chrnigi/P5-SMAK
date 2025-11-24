@@ -8,12 +8,6 @@
 #include <fmt/ranges.h>
 #include <vector>
 
-
-
-const std::string UCIcommand::newlineify(std::string str) {
-    return fmt::format(FMT_COMPILE("\n {}\n"), str);
-} 
-
 const std::string UCIcommand::create_position_command(std::string_view fen) {
     return fmt::format(FMT_COMPILE("\n position fen {}\n"), fen);
 }

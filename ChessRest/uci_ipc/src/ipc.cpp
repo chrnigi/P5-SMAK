@@ -1,5 +1,4 @@
 #include <chess.hpp>
-#include <cstddef>
 #include <ipc.hpp>
 #include <uci_commands.hpp>
 
@@ -57,9 +56,6 @@ EngineWhisperer::~EngineWhisperer() {
     io.run_for(std::chrono::seconds(5));
     PLOG_DEBUG_IF(term) << "Engine did not shut down in 5 seconds, terminated instead.";
     PLOG_DEBUG_IF(!term) << "Engine exited.";
-    while (engine_proc.running()) {
-        //fmt::println("Still running...");
-    }
 
     t.expires_after(std::chrono::seconds(0));
 
@@ -113,7 +109,7 @@ bool EngineWhisperer::start_uci() {
 
 }
 
-size_t EngineWhisperer::write_engine_with_timeout(std::string_view command, int timeout) {
+size_t EngineWhisperer::write_engine_with_timeout(std::string_view command, size_t timeout) {
     if(!engine_proc.running()) {
         PLOG_ERROR << "Engine process is not running.";
         return false;
@@ -143,21 +139,21 @@ size_t EngineWhisperer::write_engine_with_timeout(std::string_view command, int 
 
 bool EngineWhisperer::check_engine_isready() {
     PLOG_DEBUG << "Asking engine if ready";
-    size_t sent = write_engine_with_timeout(UCIcommand::isready(), write_timeout);
+    size_t sent = write_engine_with_timeout(UCIcommand::isready(), m_write_timeout);
     if (sent != UCIcommand::isready().size()) {
         PLOG_DEBUG << "Failed to check if engine is ready.";
         return sent;
     }
-    std::string ready = read_engine_with_timeout(UCIcommand::EngineCommands::readyok(),read_timeout);
+    std::string ready = read_engine_with_timeout(UCIcommand::EngineCommands::readyok(),m_read_timeout);
     if (ready.rfind(UCIcommand::EngineCommands::readyok()) == std::string::npos) {
-        PLOG_DEBUG << fmt::format(FMT_COMPILE("Engine not ready within {} seconds"), read_timeout);
+        PLOG_DEBUG << fmt::format(FMT_COMPILE("Engine not ready within {} seconds"), m_read_timeout);
         return false;
     }
     PLOG_DEBUG << "Engine ready";
     return true;
 }
 
-std::string EngineWhisperer::read_engine_with_timeout(std::string_view search_string, int timeout) {
+std::string EngineWhisperer::read_engine_with_timeout(std::string_view search_string, size_t timeout) {
     if(!engine_proc.running()) {
         PLOG_ERROR << "Engine process is not running.";
         return "";
@@ -213,6 +209,9 @@ bool EngineWhisperer::make_moves(chess::Move move) {
     return make_moves(m);
 }
 
+/**
+ * @todo Issue "stop" command on timeout, so evaluation still can be extracted, instead of undoing the moves.
+ */
 bool EngineWhisperer::make_moves(std::vector<chess::Move>& moves) {
     if (!engine_proc.running()) {
         throw new engine_not_launched_exception("Engine not running!");

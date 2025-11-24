@@ -13,7 +13,6 @@
  */
 struct UCIcommand {
 private:
-    const std::string newlineify(std::string str);
     UCIcommand() {}
 
 public:

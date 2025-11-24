@@ -44,14 +44,15 @@ public:
      * @brief Getter for the engine's "bestmove".
      * @return Returned as a @p std::string_view to avoid new allocations.
      */
-    std::string_view bestmove();
+    std::string_view getBestmove();
     /**
      * @brief Getter for the engine's "ponder".
      * @return Returned as a @p std::string_view to avoid new allocations.
      */
-    std::string_view ponder();
+    std::string_view getPonder();
     /**
      * @brief Getter for the evaluation of the position.
+     * @return double The evaluation of the position in pawns.
      */
     double getEval() { return m_eval; }
     /**
@@ -73,7 +74,7 @@ public:
      */
     const std::string to_string();
     /**
-     * @brief Construct a string from an evaluation. Same as <tt>to_string()</tt>
+     * @brief Construct a string from an evaluation. Same as <tt>to_string()</tt>.
      * 
      * @return The evaluation as a string.
      */
@@ -92,15 +93,35 @@ private:
     boost::process::v2::popen engine_proc;
     chess::Board m_board;
     bool m_white_to_move = true;
-    int m_depth = 20;
-    int search_timeout = 10;
-    int write_timeout = 5;
-    int read_timeout = 5;
+    size_t m_depth = 20;
+    size_t m_search_timeout = 10;
+    size_t m_write_timeout = 5;
+    size_t m_read_timeout = 5;
     Evaluation m_eval;
-    
+
+    /**
+     * @brief Issue the UCI command "isready" to the engine.
+     * 
+     * @return true if the engine responded with "readyok".
+     * @return false if the engine did not respond within @p m_write_timeout + @p m_read_timeout seconds.
+     */
     bool check_engine_isready();
-    size_t write_engine_with_timeout(std::string_view command, int timeout = 5);
-    std::string read_engine_with_timeout(std::string_view search_string, int timeout = 5);
+    /**
+     * @brief Write a command to the engine process' standard input.
+     * 
+     * @param command The command to give the engine.
+     * @param timeout Timeout in seconds of the write.
+     * @return size_t The amount of bytes written.
+     */
+    size_t write_engine_with_timeout(std::string_view command, size_t timeout = 5);
+    /**
+     * @brief Read from the engine's output until a specific string is matched.
+     * 
+     * @param search_string The string to match.
+     * @param timeout The maximum time for the read in seconds.
+     * @return std::string The entire string read from the engine.
+     */
+    std::string read_engine_with_timeout(std::string_view search_string, size_t timeout = 5);
 
 public:
     /**
@@ -122,7 +143,7 @@ public:
      * @returns true if "uciok" is received, false if not.
      * @throws engine_not_launched_exception thrown if called when the engine process is closed.
      * 
-     * Explicitly issues "ucinewgame" and "position startpos" commands to the engine.
+     * Explicitly issues "ucinewgame" and "position startpos" commands to the engine if "uciok" is received.
      */
     bool start_uci();
     /**
