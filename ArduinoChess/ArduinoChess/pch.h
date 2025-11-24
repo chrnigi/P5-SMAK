@@ -9,6 +9,9 @@
 #include <string>
 #include <sstream>
 
+#define String std::string
+
+#pragma region piece_types
 constexpr char p_EMPTY_SQUARE = ' ';
 constexpr char p_BLACK_PAWN = 'p', p_WHITE_PAWN = 'P';
 constexpr char p_BLACK_ROOK = 'r', p_WHITE_ROOK = 'R';
@@ -16,7 +19,9 @@ constexpr char p_BLACK_KNIGHT = 'n', p_WHITE_KNIGHT = 'N';
 constexpr char p_BLACK_BISHOP = 'b', p_WHITE_BISHOP = 'B';
 constexpr char p_BLACK_QUEEN = 'q', p_WHITE_QUEEN = 'Q';
 constexpr char p_BLACK_KING = 'k', p_WHITE_KING = 'K';
+#pragma endregion
 
+#pragma region Named squares
 constexpr const int WHITE_KING_STARTINGSQUARE = 63 - 3;
 constexpr const int BLACK_KING_STARTINGSQUARE = 0 + 4;
 
@@ -34,42 +39,7 @@ constexpr const int WHITE_ROOK_KINGSIDE_CASTLESQUARE = 63 - 2;
 constexpr const int WHITE_ROOK_QUEENSIDE_CASTLESQUARE = 63 - 4;
 constexpr const int BLACK_ROOK_KINGSIDE_CASTLESQUARE = 0 + 5;
 constexpr const int BLACK_ROOK_QUEENSIDE_CASTLESQUARE = 0 + 3;
-
-enum class piece_types : char {
-	empty = p_EMPTY_SQUARE,
-
-	w_pawn = p_WHITE_PAWN,
-	w_rook = p_WHITE_ROOK,
-	w_knight = p_WHITE_KNIGHT,
-	w_bishop = p_WHITE_BISHOP,
-	w_queen = p_WHITE_QUEEN,
-	w_king = p_WHITE_KING,
-
-	b_pawn = p_BLACK_PAWN,
-	b_rook = p_BLACK_ROOK,
-	b_knight = p_BLACK_KNIGHT,
-	b_bishop = p_BLACK_BISHOP,
-	b_queen = p_BLACK_QUEEN,
-	b_king = p_BLACK_KING,
-};
-
-static std::vector<std::string> piece_strings = {
-	"empty",
-
-	"white pawn",
-	"white rook",
-	"white rook",
-	"white bishop",
-	"white queen",
-	"white king",
-
-	"black pawn",
-	"black rook",
-	"black knight",
-	"black bishop",
-	"black queen",
-	"black king",
-};
+#pragma endregion
 
 /// <summary>
 /// Chess board, list of 64 squares with a char for each. Captital letters for white pieces.
