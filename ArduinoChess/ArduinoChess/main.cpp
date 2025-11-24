@@ -1,7 +1,6 @@
 #include "pch.h"
 #include <iostream>
 #include <string>
-#include <Windows.h>
 
 void pretty_print_board();
 
