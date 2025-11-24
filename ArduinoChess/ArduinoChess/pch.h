@@ -213,12 +213,20 @@ static void BlackHandlePONR(const int pin_number) {
 	else chess_state.ply_since_ponr++;
 }
 
-static void WhiteHandlePromotion(const int pin_number) {
-	if (board[pin_number] == p_WHITE_PAWN && pin_number < 8) board[pin_number] = p_WHITE_QUEEN;
+static bool WhiteHandlePromotion(const int pin_number) {
+	if (board[pin_number] == p_WHITE_PAWN && pin_number < 8) {
+		board[pin_number] = p_WHITE_QUEEN;
+		return true;
+}
+	return false;
 }
 
-static void BlackHandlePromotion(const int pin_number) {
-	if (board[pin_number] == p_BLACK_PAWN && pin_number > (63 - 8)) board[pin_number] = p_BLACK_QUEEN;
+static bool BlackHandlePromotion(const int pin_number) {
+	if (board[pin_number] == p_BLACK_PAWN && pin_number > (63 - 8)) {
+		board[pin_number] = p_BLACK_QUEEN;
+		return true;
+}
+	return false;
 }
 
 /// <summary>
@@ -300,7 +308,7 @@ static uint8_t pin(String str) {
 			WhiteCheckEnPassant(pin_number);
 			WhiteHandlePONR(pin_number);
 			WhiteCheckCastling(pin_number);
-			WhiteHandlePromotion(pin_number);
+			bool promotion = WhiteHandlePromotion(pin_number);
 		}
 		else if (is_black_piece)
 		{
@@ -327,7 +335,7 @@ static uint8_t pin(String str) {
 			chess_state.en_passant = false;
 
 			WhiteCheckCastling(pin_number);
-			WhiteHandlePromotion(pin_number);
+			const bool promotion = WhiteHandlePromotion(pin_number);
 		}
 		else state = error;
 
@@ -387,7 +395,7 @@ static uint8_t pin(String str) {
 			BlackCheckEnPassant(pin_number);
 			BlackHandlePONR(pin_number);
 			BlackCheckCastling(pin_number);
-			BlackHandlePromotion(pin_number);
+			bool promotion = BlackHandlePromotion(pin_number);
 		}
 		else if (is_white_piece) {
 			state = black_begin_capture;
@@ -413,7 +421,7 @@ static uint8_t pin(String str) {
 			chess_state.en_passant = false;
 
 			BlackCheckCastling(pin_number);
-			BlackHandlePromotion(pin_number);
+			const bool promotion = BlackHandlePromotion(pin_number);
 		}
 		else state = error;
 
