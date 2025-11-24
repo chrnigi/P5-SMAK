@@ -143,8 +143,8 @@ size_t EngineWhisperer::write_engine_with_timeout(std::string_view command, int 
 
 bool EngineWhisperer::check_engine_isready() {
     PLOG_DEBUG << "Asking engine if ready";
-    bool sent = write_engine_with_timeout(UCIcommand::isready(), write_timeout);
-    if (!sent) {
+    size_t sent = write_engine_with_timeout(UCIcommand::isready(), write_timeout);
+    if (sent != UCIcommand::isready().size()) {
         PLOG_DEBUG << "Failed to check if engine is ready.";
         return sent;
     }
@@ -189,17 +189,21 @@ void EngineWhisperer::new_game() {
 
     PLOG_DEBUG << "Starting new game.";
     write_engine_with_timeout(UCIcommand::ucinewgame());
+
+    check_engine_isready();
+
     m_board.setFen(chess::constants::STARTPOS);
 }
 
+/**
+ * @todo Handle possible write errors.
+ */
 bool EngineWhisperer::set_position(std::string_view fen) {
     if (!engine_proc.running()) {
         throw engine_not_launched_exception("Engine not running!");
     }
     PLOG_DEBUG << fmt::format(FMT_COMPILE("Setting engine position to FEN: {}"), fen);
     write_engine_with_timeout(UCIcommand::create_position_command(fen));
-
-    //asio::write(engine_proc, asio::buffer(UCIcommand::create_position_command(fen)));
     return true;
 }
 

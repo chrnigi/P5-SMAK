@@ -84,7 +84,6 @@ public:
      * 
      * @return constexpr "\n stop\n"
      */
-
     static constexpr std::string_view stop()                { return "\n stop\n";               }
     /**
      * @brief Get the UCI "quit" command.
