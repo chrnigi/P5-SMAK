@@ -89,6 +89,12 @@ public:
      * @param move The move to set as ponder.
      */
     void setPonder(chess::Move move);
+    /**
+     * @brief Set the engine's evaluation in pawns.
+     * 
+     * @param eval The evaluation to set.
+     */
+    void setEval(double eval) { m_eval = eval; }
 };
 
 /** 

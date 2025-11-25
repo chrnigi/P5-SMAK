@@ -231,14 +231,13 @@ bool EngineWhisperer::make_moves(std::vector<chess::Move>& moves) {
     size_t bytes = write_engine_with_timeout(cmd_view);
     //size_t bytes = asio::write(engine_proc, asio::buffer(cmd_view));
     if (bytes != cmd.length()) {
-        PLOG_DEBUG << fmt::format(FMT_COMPILE("Wrote {} bytes to engine, but command was {} bytes. Undoing moves."), bytes, cmd.length());
+        PLOG_WARNING << fmt::format(FMT_COMPILE("Wrote {} bytes to engine, but command was {} bytes. Undoing moves."), bytes, cmd.length());
         for (auto it = moves.rbegin(); it != moves.rend(); it++) {
             m_board.unmakeMove(*it);
         }
         return false;
     }
     current_position_fen = m_board.getFen();
-
 
     bytes = write_engine_with_timeout(UCIcommand::create_go_depth_command(m_depth));
     std::string read_buf = read_engine_with_timeout("bestmove");
@@ -249,88 +248,50 @@ bool EngineWhisperer::make_moves(std::vector<chess::Move>& moves) {
     }
 
     bool is_mate = false;
-    // Extract the evaluation/moves to mate from the engine's output.
-    std::string last_info = read_buf.substr(read_buf.rfind("info"));
 
-    //PLOG_DEBUG << fmt::format(FMT_COMPILE("End of engine output from \"go\" command: {}"), last_info); 
+    std::stringstream rs(read_buf);
+    std::vector<std::string> lines;
+    std::string ln {};
 
-    size_t first = last_info.find("score cp");
-    if (first == std::string::npos) {
-        first = last_info.find("score mate");
-        if (first == std::string::npos) {
-            return false;
-        }
+    while (std::getline(rs, ln)) {
+        lines.push_back(ln);
+    }
+
+    auto last_info_str = lines.end()-2;
+
+    boost::smatch eval_match;
+    boost::regex eval_regex("(?<centipawns>(cp\\s*(?<eval>\\d+)))|(?<mate>(mate\\s*(?<count>\\d+)))");
+    PLOG_DEBUG << fmt::format(FMT_COMPILE("Getting moves with regex: {}"), eval_regex.str());
+    PLOG_DEBUG << fmt::format(FMT_COMPILE("Subject string: {}"), *last_info_str);
+    bool eval_matched = boost::regex_search(std::string(*last_info_str), eval_match, eval_regex, boost::match_extra);
+
+    PLOG_DEBUG_IF(eval_match["eval"].matched) << fmt::format(FMT_COMPILE("Sub-expression \"{}\" matched with string \"{}\""), "eval", eval_match["eval"].str());
+    PLOG_DEBUG_IF(eval_match["count"].matched) << fmt::format(FMT_COMPILE("Sub-expression \"{}\" matched with string \"{}\""), "count", eval_match["count"].str());
+    PLOG_WARNING_IF(!eval_matched) << fmt::format(FMT_COMPILE("No match for regex."));
+    
+    if (eval_match["eval"].matched) {
+        m_eval.setEval(static_cast<double>(std::stoi(eval_match["eval"].str()))/100.0f);
+        
+    }
+    size_t moves_to_mate = 0;
+    if (eval_match["count"].matched) {
         is_mate = true;
+        moves_to_mate = std::stoi(eval_match["count"].str());
     }
 
-    PLOG_DEBUG_IF(is_mate) << fmt::format(FMT_COMPILE("Checkmate is on the board, in position: FEN: {}"), m_board.getFen());
-    
-    size_t last = last_info.find("nodes");
-    
-    std::string_view extracted(last_info.c_str()+first, last-first);
-
-    std::string eval(extracted);
-    std::stringstream ss(eval);
-
-    std::string field;
-    int ev = 0;
-
-    if (is_mate) {
-        while (!ss.eof()) {
-            ss >> field;
-            if (std::stringstream(field) >> ev) {
-                //fmt::println("Eval: Mate in {}", ev);
-                m_eval.update(m_board.sideToMove(), 0.0f, chess::Move(0), chess::Move(0), true, m_board.sideToMove(), ev);
-                //fmt::println("{}", m_eval.to_string());
-                return true;
-            }
-        }
-    }
-
-    while (!ss.eof()) {
-        ss >> field;
-        if (std::stringstream(field) >> ev){
-
-            double ed = static_cast<double>(ev/100.0f);
-
-            if (m_board.sideToMove() == chess::Color::BLACK) {
-                ed = -ed;
-            }
-            //std::string eval_string = fmt::format(FMT_COMPILE("Eval: {:+}"), ed);
-
-            //fmt::println("{}", eval_string);
-            m_eval.update(m_board.sideToMove(), ed, 0, 0);
-            //fmt::println("{}", m_eval.to_string());
-            PLOG_DEBUG << m_eval.to_string();
-            break;
-        }
-           
-        field.erase();
-    }
-
-
-    size_t bm_start = last_info.find(UCIcommand::EngineCommands::bestmove());
-    
-    size_t bm_end = bm_start + UCIcommand::EngineCommands::bestmove().length();
-
-    std::string bestmove;
-    std::string ponder;
-
-    std::string bm_extracted(last_info.c_str()+bm_start, last_info.length()-bm_start);
-    std::stringstream strstr(bm_extracted);
-    std::string mv {};
-
-    boost::regex rgx("bestmove\\s(?<bestmove>([a-h]\\d){2})\\sponder\\s(?<ponder>([a-h]\\d){2}\\s*)");
+    boost::regex rgx("bestmove\\s(?<bestmove>([a-h]\\d){2})\\s*(ponder\\s(?<ponder>([a-h]\\d){2}\\s*))?");
     boost::smatch match;
     
+    std::string& bestmove_str = lines.back();
     PLOG_DEBUG << fmt::format(FMT_COMPILE("Getting moves with regex: {}"), rgx.str());
+    PLOG_DEBUG << fmt::format(FMT_COMPILE("Subject string: {}"), bestmove_str);
     
-    bool test = boost::regex_match(bm_extracted, match, rgx, boost::match_extra);
-    PLOG_DEBUG << bm_extracted;
+    bool test = boost::regex_search(bestmove_str, match, rgx, boost::match_extra);
+    
     PLOG_DEBUG_IF(test) << fmt::format(FMT_COMPILE("Regex matched!"));
-
-    PLOG_DEBUG << fmt::format(FMT_COMPILE("Sub-expression \"{}\" matched with string \"{}\""), "bestmove", match["bestmove"].str());
-    PLOG_DEBUG << fmt::format(FMT_COMPILE("Sub-expression \"{}\" matched with string \"{}\""), "ponder", match["ponder"].str());
+    PLOG_WARNING_IF(!test) << fmt::format(FMT_COMPILE("No regex matches AND no error handling for this!"));
+    PLOG_DEBUG_IF(match["bestmove"].matched) << fmt::format(FMT_COMPILE("Sub-expression \"{}\" matched with string \"{}\""), "bestmove", match["bestmove"].str());
+    PLOG_DEBUG_IF(match["ponder"].matched) << fmt::format(FMT_COMPILE("Sub-expression \"{}\" matched with string \"{}\""), "ponder", match["ponder"].str());
 
     std::string sq_from(match["bestmove"], 0, 2);
     std::string sq_to(match["bestmove"],2,2);
@@ -338,17 +299,20 @@ bool EngineWhisperer::make_moves(std::vector<chess::Move>& moves) {
     chess::Square to(sq_to);
 
     chess::Move best = chess::Move::make(from, to);
-    
-    chess::Square p_from(match["ponder"].str().substr(0, 2));
-    chess::Square p_to(match["ponder"].str().substr(2, 2));
-    chess::Move p = chess::Move::make(p_from, p_to);
 
     PLOG_DEBUG << fmt::format(FMT_COMPILE("Got best move from regex: {}"), chess::uci::moveToUci(best));
-    PLOG_DEBUG << fmt::format(FMT_COMPILE("Got ponder from regex: {}"), chess::uci::moveToUci(p));
 
+    if (!is_mate) {
+        chess::Square p_from(match["ponder"].str().substr(0, 2));
+        chess::Square p_to(match["ponder"].str().substr(2, 2));
+        chess::Move p = chess::Move::make(p_from, p_to);
+        PLOG_DEBUG << fmt::format(FMT_COMPILE("Got ponder from regex: {}"), chess::uci::moveToUci(p));
+        m_eval.setPonder(p);
+    }
     m_eval.setBestmove(best);
-    m_eval.setPonder(p);
-    
+    m_eval.update(m_board.sideToMove(), m_eval.getEval(), best, is_mate ? chess::Move(0) : m_eval.getPonder(), is_mate, m_board.sideToMove(), moves_to_mate);
+    PLOG_DEBUG << fmt::format("{}", m_eval.to_string());
+
     return true;
 }
 
