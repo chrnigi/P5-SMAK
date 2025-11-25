@@ -102,7 +102,8 @@ bool EngineWhisperer::start_uci() {
         chess::Move::make(sq::SQ_F2, sq::SQ_F3), 
         chess::Move::make(sq::SQ_E7, sq::SQ_E6),
         
-        chess::Move::make(sq::SQ_G2, sq::SQ_G4)
+        chess::Move::make(sq::SQ_G2, sq::SQ_G4),
+        chess::Move::make(sq::SQ_D8, sq::SQ_H4)
     };
 
     write_engine_with_timeout(UCIcommand::position_startpos());
@@ -246,12 +247,13 @@ bool EngineWhisperer::make_moves(std::vector<chess::Move>& moves) {
             case chess::PieceType::underlying::NONE:
             default:
                 return static_cast<chess::PieceGenType>(63); // This searches for all move types. Case fallthrough to default is intentional.
+                // ideally we don't hit this, because this will generate a lot more unnessecary moves.
             }
         }();
 
         chess::movegen::legalmoves<chess::movegen::MoveGenType::ALL>(m_gen, m_board, piecetype);
 
-        std::string move_as_uci = chess::uci::moveToUci(m);
+        const std::string move_as_uci = chess::uci::moveToUci(m);
 
         auto it = std::find(m_gen.begin(), m_gen.end(), m);
         PLOG_DEBUG_IF(it != m_gen.end()) << fmt::format(FMT_COMPILE("Move {} is legal in current position {}"), move_as_uci, m_board.getFen());
@@ -309,9 +311,43 @@ bool EngineWhisperer::make_moves(std::vector<chess::Move>& moves) {
         m_eval.setEval(static_cast<double>(std::stoi(eval_match["eval"].str()))/100.0f);
         
     }
+
+    std::pair<chess::GameResultReason, chess::GameResult>is_over = m_board.isGameOver();
+
+    if (is_over.second /* if the game is over */ != chess::GameResult::NONE) {
+        
+        switch (is_over.first /* Reason game is over */) {
+
+        case chess::GameResultReason::CHECKMATE:
+            PLOGD << fmt::format(FMT_COMPILE("Game is over by checkmate!"));
+            m_eval.setMatePlayed(true);
+            break;
+        case chess::GameResultReason::STALEMATE:
+            PLOGD << fmt::format(FMT_COMPILE("Game is drawn by stalemate!"));
+            break;
+        case chess::GameResultReason::INSUFFICIENT_MATERIAL:
+            PLOGD << fmt::format(FMT_COMPILE("Game is drawn by insufficient material!"));
+            break;
+        case chess::GameResultReason::FIFTY_MOVE_RULE:
+            PLOGD << fmt::format(FMT_COMPILE("Game is drawn by the 50 move rule!"));
+            break;
+        case chess::GameResultReason::THREEFOLD_REPETITION:
+            PLOGD << fmt::format(FMT_COMPILE("Game is drawn by threefold repetition!"));
+            break;
+        case chess::GameResultReason::NONE:
+        default:
+          break;
+        }
+
+        
+        
+        return true;
+    }
+
     size_t moves_to_mate = 0;
     if (eval_match["count"].matched) {
         is_mate = true;
+        PLOGD << eval_match["count"].str();
         moves_to_mate = std::stoi(eval_match["count"].str());
     }
 
@@ -329,10 +365,8 @@ bool EngineWhisperer::make_moves(std::vector<chess::Move>& moves) {
     PLOG_DEBUG_IF(match["bestmove"].matched) << fmt::format(FMT_COMPILE("Sub-expression \"{}\" matched with string \"{}\""), "bestmove", match["bestmove"].str());
     PLOG_DEBUG_IF(match["ponder"].matched) << fmt::format(FMT_COMPILE("Sub-expression \"{}\" matched with string \"{}\""), "ponder", match["ponder"].str());
 
-    std::string sq_from(match["bestmove"], 0, 2);
-    std::string sq_to(match["bestmove"],2,2);
     chess::Square from(match["bestmove"].str().substr(0, 2));
-    chess::Square to(sq_to);
+    chess::Square to(match["bestmove"].str().substr(2,2));
 
     chess::Move best = chess::Move::make(from, to);
 

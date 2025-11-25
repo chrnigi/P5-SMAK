@@ -27,6 +27,7 @@ class Evaluation {
     bool m_mate = false;
     int m_matec = 0;
     chess::Color m_has_mate;
+    bool m_mate_played = false;
 public:
     /**
      * @brief Empty constructor.
@@ -94,7 +95,9 @@ public:
      * 
      * @param eval The evaluation to set.
      */
-    void setEval(double eval) { m_eval = eval; }
+    void setEval(double eval)       { m_eval = eval;        }
+    void setMatePlayed(bool mate)   { m_mate_played = mate; }
+    bool getMatePlayed()            { return m_mate_played; }
 };
 
 /** 
