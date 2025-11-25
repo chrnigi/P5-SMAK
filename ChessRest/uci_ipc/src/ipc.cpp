@@ -211,6 +211,7 @@ bool EngineWhisperer::make_moves(chess::Move move) {
 
 /**
  * @todo Issue "stop" command on timeout, so evaluation still can be extracted, instead of undoing the moves.
+ * @todo Use m_board to validate moves before trying to play them.
  */
 bool EngineWhisperer::make_moves(std::vector<chess::Move>& moves) {
     if (!engine_proc.running()) {
