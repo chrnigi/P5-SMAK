@@ -20,6 +20,8 @@
 #include <string>
 #include <chrono>
 #include <vector>
+#include <algorithm>
+
 
 namespace asio = boost::asio;
 namespace procv2 = boost::process::v2;
@@ -30,6 +32,7 @@ EngineWhisperer::EngineWhisperer(std::string engine_path) :
     path_to_engine_executable(procv2::environment::find_executable(engine_path).string()),
     engine_proc(io, path_to_engine_executable, {})
 {
+    m_board.setFen(chess::constants::STARTPOS);
     plog::init<plog::TxtFormatter>(plog::Severity::verbose, plog::streamStdErr);
 
     if (!engine_proc.running()) {
@@ -221,9 +224,41 @@ bool EngineWhisperer::make_moves(std::vector<chess::Move>& moves) {
     std::string cmd = UCIcommand::append_moves_to_position_command(UCIcommand::create_position_command(m_board.getFen()), moves);
     std::vector<std::string> mvs;
     mvs.reserve(moves.size());
+    
+    chess::Movelist m_gen;
     for (chess::Move m : moves) {
+        const chess::PieceGenType piecetype = [&]() {
+            chess::PieceType typ = m_board.at<chess::PieceType>(m.from());
+            // Ugly switch-case converts types.
+            switch (typ.internal()) {
+            case chess::PieceType::PAWN:
+                return chess::PieceGenType::PAWN;
+            case chess::PieceType::underlying::KNIGHT:
+                return chess::PieceGenType::KNIGHT;
+            case chess::PieceType::underlying::BISHOP:
+                return chess::PieceGenType::BISHOP;
+            case chess::PieceType::underlying::ROOK:
+                return chess::PieceGenType::ROOK;
+            case chess::PieceType::underlying::QUEEN:
+                return chess::PieceGenType::QUEEN;
+            case chess::PieceType::underlying::KING:
+                return chess::PieceGenType::KING;
+            case chess::PieceType::underlying::NONE:
+            default:
+                return static_cast<chess::PieceGenType>(63); // This searches for all move types. Case fallthrough to default is intentional.
+            }
+        }();
+
+        chess::movegen::legalmoves<chess::movegen::MoveGenType::ALL>(m_gen, m_board, piecetype);
+
+        std::string move_as_uci = chess::uci::moveToUci(m);
+
+        auto it = std::find(m_gen.begin(), m_gen.end(), m);
+        PLOG_DEBUG_IF(it != m_gen.end()) << fmt::format(FMT_COMPILE("Move {} is legal in current position {}"), move_as_uci, m_board.getFen());
+        PLOG_WARNING_IF(it == m_gen.end()) << fmt::format(FMT_COMPILE("Move {} is not legal in current position {}. This error is NOT handled."), move_as_uci, m_board.getFen());
+
         m_board.makeMove(m);
-        mvs.push_back(chess::uci::moveToUci(m));
+        mvs.push_back(move_as_uci);
     }
 
     std::string_view cmd_view(cmd);
