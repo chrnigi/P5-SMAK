@@ -44,6 +44,30 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(plog)
 
+include(FetchContent)
+FetchContent_Declare(
+    Boost
+    URL https://github.com/boostorg/boost/releases/download/boost-1.89.0/boost-1.89.0-cmake.tar.gz
+    DOWNLOAD_EXTRACT_TIMESTAMP ON
+    OVERRIDE_FIND_PACKAGE
+    
+)
+set(BOOST_PROCESS_USE_STD_FS true)
+add_compile_definitions(BOOST_PROCESS_USE_STD_FS ) 
+set(BOOST_INCLUDE_LIBRARIES
+    asio system process regex
+)
+FetchContent_MakeAvailable(Boost)
+
+# find_package(
+#     Boost
+#     1.89.0    
+#     EXACT
+#     REQUIRED
+#     COMPONENTS asio filesystem system process regex
+# )
+
+
 macro(setup_dir_vars)
     set(SRC_DIR 
         "${CMAKE_CURRENT_SOURCE_DIR}/src"

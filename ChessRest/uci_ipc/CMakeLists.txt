@@ -1,18 +1,16 @@
+set(CMAKE_POLICY_VERSION_MINIMUM 3.30.0)
 cmake_minimum_required(VERSION 3.30)
 
-include(FetchContent)
-FetchContent_Declare(
-    Boost
-    URL https://github.com/boostorg/boost/releases/download/boost-1.89.0/boost-1.89.0-cmake.tar.gz
-    DOWNLOAD_EXTRACT_TIMESTAMP ON
+# include(FetchContent)
+# FetchContent_Declare(
+#     Boost
+#     URL https://github.com/boostorg/boost/releases/download/boost-1.89.0/boost-1.89.0-cmake.tar.gz
+#     DOWNLOAD_EXTRACT_TIMESTAMP ON
     
-)
+# )
 
+#set(BOOST_ENABLE_CMAKE ON)
 
-set(BOOST_INCLUDE_LIBRARIES
-    asio filesystem system process regex
-)
-FetchContent_MakeAvailable(Boost)
 
 set(SRC_FILES
     main.cpp
@@ -27,8 +25,8 @@ add_executable(uci_ipc ${SOURCES})
 
 target_link_libraries(uci_ipc 
     PUBLIC Boost::system 
-    PUBLIC Boost::filesystem 
     PUBLIC Boost::regex
+    PUBLIC Boost::process
     PUBLIC fmt
     plog::plog
 )
@@ -43,6 +41,6 @@ target_include_directories(uci_ipc
 
 doxygen_add_docs(
     uci_ipc_docs
-    ALL
+    #ALL
     CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile"
 )

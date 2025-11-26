@@ -3,8 +3,10 @@
 #include <uci_commands.hpp>
 
 #include <boost/asio.hpp>
-#include <boost/process/v2.hpp>
+#include <boost/process/v2/process.hpp>
+#include <boost/process/popen.hpp>
 #include <boost/regex.hpp>
+#include <boost/process/v2/environment.hpp>
 
 #include <fmt/core.h>
 #include <fmt/compile.h>
@@ -24,12 +26,12 @@
 
 
 namespace asio = boost::asio;
-namespace procv2 = boost::process::v2;
+namespace proc = boost::process::v2;
 using namespace asio::buffer_literals;
 
 
 EngineWhisperer::EngineWhisperer(std::string engine_path) :
-    path_to_engine_executable(procv2::environment::find_executable(engine_path).string()),
+    path_to_engine_executable(proc::environment::find_executable(engine_path).string()),
     engine_proc(io, path_to_engine_executable, {})
 {
     m_board.setFen(chess::constants::STARTPOS);

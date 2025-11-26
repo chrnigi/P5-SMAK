@@ -7,7 +7,8 @@
 #include <chess.hpp>
 
 #include <boost/asio/io_context.hpp>
-#include <boost/process/v2.hpp>
+#include <boost/process/v2/process.hpp>
+#include <boost/process/v2/popen.hpp>
 
 #include <vector>
 #include <exception>
