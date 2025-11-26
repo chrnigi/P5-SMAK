@@ -1,5 +1,10 @@
 //
 // pch.h
+// The file needs to be named pch.h for gtest' unit testing
+// The gtest include and redefinition of std::string = String, should be removed for the MCUs
+// The entry points for working with this module on the MCUs is be contained to:
+//	sendMove(...)
+//	setErrorAndSend()
 //
 
 #pragma once
@@ -8,6 +13,9 @@
 #include <string>
 #include <sstream>
 
+#define String std::string
+
+#pragma region piece_types
 constexpr char p_EMPTY_SQUARE = ' ';
 constexpr char p_BLACK_PAWN = 'p', p_WHITE_PAWN = 'P';
 constexpr char p_BLACK_ROOK = 'r', p_WHITE_ROOK = 'R';
@@ -15,60 +23,27 @@ constexpr char p_BLACK_KNIGHT = 'n', p_WHITE_KNIGHT = 'N';
 constexpr char p_BLACK_BISHOP = 'b', p_WHITE_BISHOP = 'B';
 constexpr char p_BLACK_QUEEN = 'q', p_WHITE_QUEEN = 'Q';
 constexpr char p_BLACK_KING = 'k', p_WHITE_KING = 'K';
+#pragma endregion
 
+#pragma region Named squares
 constexpr const int WHITE_KING_STARTINGSQUARE = 63 - 3;
-constexpr const int BLACK_KING_STARTINGSQUARE = 0 + 5;
+constexpr const int BLACK_KING_STARTINGSQUARE = 0 + 4;
 
-constexpr const int WHITE_ROOK_KINGSIDE_STARTINGSQUARE = 63 - 8;
-constexpr const int WHITE_ROOK_QUEENSIDE_STARTINGSQUARE = 63 - 0;
-constexpr const int BLACK_ROOK_KINGSIDE_STARTINGSQUARE = 0;
-constexpr const int BLACK_ROOK_QUEENSIDE_STARTINGSQUARE = 0 + 8;
+constexpr const int WHITE_ROOK_KINGSIDE_STARTINGSQUARE = 63 - 0;
+constexpr const int WHITE_ROOK_QUEENSIDE_STARTINGSQUARE = 63 - 7;
+constexpr const int BLACK_ROOK_KINGSIDE_STARTINGSQUARE = 0 + 7;
+constexpr const int BLACK_ROOK_QUEENSIDE_STARTINGSQUARE = 0;
 
 constexpr const int WHITE_KING_KINGSIDE_CASTLESQUARE = 63 - 1;
 constexpr const int WHITE_KING_QUEENSIDE_CASTLESQUARE = 63 - 5;
-constexpr const int BLACK_KING_KINGSIDE_CASTLESQUARE = 0 + 2;
-constexpr const int BLACK_KING_QUEENSIDE_CASTLESQUARE = 0 + 6;
+constexpr const int BLACK_KING_KINGSIDE_CASTLESQUARE = 0 + 6;
+constexpr const int BLACK_KING_QUEENSIDE_CASTLESQUARE = 0 + 2;
 
 constexpr const int WHITE_ROOK_KINGSIDE_CASTLESQUARE = 63 - 2;
 constexpr const int WHITE_ROOK_QUEENSIDE_CASTLESQUARE = 63 - 4;
-constexpr const int BLACK_ROOK_KINGSIDE_CASTLESQUARE = 0 + 3;
-constexpr const int BLACK_ROOK_QUEENSIDE_CASTLESQUARE = 0 + 5;
-
-enum class piece_types : char {
-	empty = p_EMPTY_SQUARE,
-
-	w_pawn = p_WHITE_PAWN,
-	w_rook = p_WHITE_ROOK,
-	w_knight = p_WHITE_KNIGHT,
-	w_bishop = p_WHITE_BISHOP,
-	w_queen = p_WHITE_QUEEN,
-	w_king = p_WHITE_KING,
-
-	b_pawn = p_BLACK_PAWN,
-	b_rook = p_BLACK_ROOK,
-	b_knight = p_BLACK_KNIGHT,
-	b_bishop = p_BLACK_BISHOP,
-	b_queen = p_BLACK_QUEEN,
-	b_king = p_BLACK_KING,
-};
-
-static std::vector<std::string> piece_strings = {
-	"empty",
-
-	"white pawn",
-	"white rook",
-	"white rook",
-	"white bishop",
-	"white queen",
-	"white king",
-
-	"black pawn",
-	"black rook",
-	"black knight",
-	"black bishop",
-	"black queen",
-	"black king",
-};
+constexpr const int BLACK_ROOK_KINGSIDE_CASTLESQUARE = 0 + 5;
+constexpr const int BLACK_ROOK_QUEENSIDE_CASTLESQUARE = 0 + 3;
+#pragma endregion
 
 /// <summary>
 /// Chess board, list of 64 squares with a char for each. Captital letters for white pieces.
@@ -126,9 +101,9 @@ static void init_empty_board() {
 
 enum states {
 	white,
-	white_begin_move,
-	white_begin_capture,
-	white_begin_enemy_capture,
+	white_move,
+	white_capture,
+	white_enemy_capture,
 
 	white_castling,
 	white_castling_kingside_kingdown,
@@ -141,9 +116,9 @@ enum states {
 	white_castling_queenside_KINGUP_rookdown,
 
 	black,
-	black_begin_move,
-	black_begin_capture,
-	black_begin_enemy_capture,
+	black_move,
+	black_capture,
+	black_enemy_capture,
 
 	black_castling,
 	black_castling_kingside_kingdown,
@@ -159,19 +134,19 @@ enum states {
 } static state;
 
 struct chess_variables {
-	bool black_kingside = true,
-		black_queenside = true,
-		white_kingside = true,
-		white_queenside = true;
+	bool black_kingside  = true; // Can black castle kingside  i.e king hasn't moved or kingside rook hasn't moved
+	bool black_queenside = true; // Can black castle queenside i.e king hasn't moved or queenside rook hasn't moved
+	bool white_kingside  = true; // Can white castle kingside  i.e king hasn't moved or kingside rook hasn't moved
+	bool white_queenside = true; // Can white castle queenside i.e king hasn't moved or queenside rook hasn't moved
 
-	bool en_passant = false;
-	int en_passant_square = 0;
+	bool en_passant = false; // Can the next move be an passant capture
+	uint8_t en_passant_square = 0; // If en_passant then this represent the square where that can happen
 
-	int ply_since_ponr = 0;
+	uint8_t ply_since_ponr = 0; // plys since a capture or pawn move, i.e. the point of no return. Used for 50 move rule
 
-	int ply = 0;
+	uint16_t ply = 0; // plys since the game started, i.e. the number of moves made in the game
 
-	int turn() const { return (ply + 2) / 2; }
+	uint16_t turn() const { return (ply + 2) / 2; }
 	void reset() {
 		black_kingside = black_queenside = white_kingside = white_queenside = true;
 		en_passant = false;
@@ -183,10 +158,10 @@ struct chess_variables {
 } static chess_state;
 
 struct fsm_variables {
-	int x = -1;
-	int y = -1;
+	uint8_t x = 0; // Allied piece' FROM square
+	uint8_t y = 0; // Enemy piece' FROM square
 	void reset() {
-		x = y = -1;
+		x = y = 0;
 	}
 } static fsm;
 
@@ -242,12 +217,20 @@ static void BlackHandlePONR(const int pin_number) {
 	else chess_state.ply_since_ponr++;
 }
 
-static void WhiteHandlePromotion(const int pin_number) {
-	if (board[pin_number] == p_WHITE_PAWN && pin_number < 8) board[pin_number] = p_WHITE_QUEEN;
+static bool WhiteHandlePromotion(const int pin_number) {
+	if (board[pin_number] == p_WHITE_PAWN && pin_number < 8) {
+		board[pin_number] = p_WHITE_QUEEN;
+		return true;
+	}
+	return false;
 }
 
-static void BlackHandlePromotion(const int pin_number) {
-	if (board[pin_number] == p_BLACK_PAWN && pin_number > (63 - 8)) board[pin_number] = p_BLACK_QUEEN;
+static bool BlackHandlePromotion(const int pin_number) {
+	if (board[pin_number] == p_BLACK_PAWN && pin_number > (63 - 8)) {
+		board[pin_number] = p_BLACK_QUEEN;
+		return true;
+	}
+	return false;
 }
 
 /// <summary>
@@ -268,41 +251,103 @@ static bool CanCastle(const states s, const int pin_number){
 	else return false;
 }
 
-static void pin_change(const int pin_number, const bool is_up = false)
+/// <summary>
+/// Should be called at the end of termination state before the next turn. Sends data to the cloud
+/// </summary>
+/// <param name="ply">The current ply</param>
+/// <param name="from">The square the piece was moved from</param>
+/// <param name="to">The square the piece was moved to</param>
+/// <param name="piece">The piece that was moved in char form (see piece_types)</param>
+/// <param name="captured">The piece that was captured in char form (see piece_types), ' ' if none</param>
+/// <param name="promotion">True if a piece was promoted</param>
+/// <param name="en_passant">True if this was en passant move</param>
+/// <param name="kingside_castle">True if this was kingside castling</param>
+/// <param name="queenside_castle">True if this was queenside castling</param>
+static void sendMove(const int ply, const int from, const int to, 
+	const char piece, const char captured, 
+	const bool promotion = false, const bool en_passant = false, const bool kingside_castle = false, const bool queenside_castle = false);
+
+/// <summary>
+/// Passes a queenside castling move to sendMove
+/// </summary>
+/// <param name="ply">The current ply</param>
+/// <param name="is_white">Whether this was white's move</param>
+static void sendCastleQueenside(const int ply, const int from, const int to, const bool is_white) {
+	if (is_white)
+		sendMove(ply, WHITE_KING_STARTINGSQUARE, WHITE_KING_QUEENSIDE_CASTLESQUARE, p_WHITE_KING, p_WHITE_ROOK, false, false, false, true);
+	else
+		sendMove(ply, BLACK_KING_STARTINGSQUARE, BLACK_KING_QUEENSIDE_CASTLESQUARE, p_BLACK_KING, p_BLACK_ROOK, false, false, false, true);
+}
+
+/// <summary>
+/// Passes a kingside castling move to sendMove
+/// </summary>
+/// <param name="ply">The current ply</param>
+/// <param name="is_white">Whether this was white's move</param>
+static void sendCastleKingside(const int ply, const bool is_white) {
+	if (is_white)
+		sendMove(ply, WHITE_KING_STARTINGSQUARE, WHITE_KING_KINGSIDE_CASTLESQUARE, p_WHITE_KING, p_WHITE_ROOK, false, false, true, false);
+	else
+		sendMove(ply, BLACK_KING_STARTINGSQUARE, BLACK_KING_KINGSIDE_CASTLESQUARE, p_BLACK_KING, p_BLACK_ROOK, false, false, true, false);
+}
+
+/// <summary>
+/// Sets the fsm state to error, so the game can't proceed.
+/// Then sends an update to the cloud.
+/// </summary>
+static void setErrorAndSend();
+
+/// <summary>
+/// Converts a pin-string to a pin-integer
+/// </summary>
+/// <param name="str">String in the format of <file char><rank char> such as 'b4'</param>
+/// <returns>uint8_t integer between 0 and 63</returns>
+static uint8_t pin(String str) {
+	char file_char = str.at(0);
+	uint8_t file = (file_char - 'a');
+
+	char rank_char = str.at(1);
+	uint8_t rank = rank_char - '0';
+	uint8_t r = (8 - rank) << 3;
+
+	return (r | file);
+}
+
+static void pin_change(const uint8_t pin_number, const bool is_up = false)
 {
-	if (pin_number < 0 || pin_number > 63) return; // guard against out of bound pins
+	if (pin_number > 63) return; // guard against out of bound pins
 
 	const bool is_down = !is_up;
 	char piece = board[pin_number];
 	bool is_empty_square = (piece == ' ');
-	bool is_black_piece = !(!is_empty_square && piece < 'a');
-	bool is_white_piece = !(!is_empty_square && piece > 'a');
+	bool is_black_piece = !is_empty_square && !(piece < 'a');
+	bool is_white_piece = !is_empty_square && !(piece > 'a');
 	
 	switch (state)
 	{
 	case white:
 	{
-		if (is_down) state = error;
+		if (is_down || is_empty_square) setErrorAndSend();
 		else if (CanCastle(state, pin_number)) {
 			state = white_castling;
 		}
 		else if (is_white_piece) {
-			state = white_begin_move;
+			state = white_move;
 			fsm.x = pin_number;
 		}
 		else {
-			state = white_begin_enemy_capture;
+			state = white_enemy_capture;
 			fsm.y = pin_number;
 		}
 		break;
 	}
 
-	case white_begin_move:
+	case white_move:
 	{
 		auto is_x_down = is_down && fsm.x == pin_number;
-		if (is_x_down) 
+		if (is_x_down)
 		{ state = white; }
-		else if (is_down) 
+		else if (is_down)
 		{
 			// SEND MOVE
 			state = black;
@@ -313,49 +358,55 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			WhiteCheckEnPassant(pin_number);
 			WhiteHandlePONR(pin_number);
 			WhiteCheckCastling(pin_number);
-			WhiteHandlePromotion(pin_number);
+			bool promotion = WhiteHandlePromotion(pin_number);
+
+			sendMove(chess_state.ply, fsm.x, pin_number, board[pin_number], p_EMPTY_SQUARE, promotion);
 		}
 		else if (is_black_piece)
 		{
-			state = white_begin_capture;
+			state = white_capture;
 			fsm.y = pin_number;
 		}
-		else { state = error; }
+		else setErrorAndSend();
+
 		break;
 	}
 
-	case white_begin_capture: 
+	case white_capture: 
 	{
 		bool is_y_down = (is_down && (fsm.y == pin_number));
 		bool is_en_passant = (is_down && chess_state.en_passant && chess_state.en_passant_square == pin_number);
-		if (is_y_down) {
+		if (is_y_down || is_en_passant) {
 			// SEND CAPTURE
 			state = black;
-			board[fsm.y] = board[fsm.x];
+			const char captured = board[fsm.y];
+			board[pin_number] = board[fsm.x];
 			board[fsm.x] = p_EMPTY_SQUARE;
-			if (is_en_passant) board[fsm.y + 8] = p_EMPTY_SQUARE;
+			if (is_en_passant) board[fsm.y] = p_EMPTY_SQUARE;
 			chess_state.ply_since_ponr = 0;
 			chess_state.ply++;
 
 			chess_state.en_passant = false;
 
 			WhiteCheckCastling(pin_number);
-			WhiteHandlePromotion(pin_number);
+			const bool promotion = WhiteHandlePromotion(pin_number);
+
+			sendMove(chess_state.ply, fsm.x, pin_number, board[pin_number], captured, promotion, is_en_passant);
 		}
-		else state = error;
+		else setErrorAndSend();
 
 		break;
 	}
 
-	case white_begin_enemy_capture:
+	case white_enemy_capture:
 	{
 		if (is_up && is_white_piece) {
-			state = white_begin_capture;
+			state = white_capture;
 			fsm.x = pin_number;
 		}
 		else if (is_up) // not white => black or blank 
 		{
-			state = error;
+			setErrorAndSend();
 		}
 		else if (pin_number == fsm.y)
 		{
@@ -363,7 +414,7 @@ static void pin_change(const int pin_number, const bool is_up = false)
 		}
 		else if (is_down)
 		{
-			state = error;
+			setErrorAndSend();
 		}
 		
 		break;
@@ -371,19 +422,22 @@ static void pin_change(const int pin_number, const bool is_up = false)
 
 	case black:
 	{
-		if (is_down) state = error;
+		if (is_down || is_empty_square) setErrorAndSend();
+		else if (CanCastle(state, pin_number)) {
+			state = black_castling;
+		}
 		else if (is_black_piece) {
-			state = black_begin_move;
+			state = black_move;
 			fsm.x = pin_number;
 		}
 		else {
-			state = black_begin_enemy_capture;
+			state = black_enemy_capture;
 			fsm.y = pin_number;
 		}
 		break;
 	}
 
-	case black_begin_move:
+	case black_move:
 	{
 		auto is_x_down = is_down && fsm.x == pin_number;
 		if (is_x_down) { state = black; }
@@ -397,48 +451,53 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			BlackCheckEnPassant(pin_number);
 			BlackHandlePONR(pin_number);
 			BlackCheckCastling(pin_number);
-			BlackHandlePromotion(pin_number);
+			bool promotion = BlackHandlePromotion(pin_number);
+
+			sendMove(chess_state.ply, fsm.x, pin_number, board[pin_number], p_EMPTY_SQUARE, promotion);
 		}
 		else if (is_white_piece) {
-			state = black_begin_capture;
+			state = black_capture;
 			fsm.y = pin_number;
 		}
-		else { state = error; }
+		else setErrorAndSend();
 		break;
 	}
 
-	case black_begin_capture:
+	case black_capture:
 	{
 		bool is_y_down = (is_down && (fsm.y == pin_number));
 		bool is_en_passant = (is_down && chess_state.en_passant && chess_state.en_passant_square == pin_number);
-		if (is_y_down) {
+		if (is_y_down || is_en_passant) {
 			// SEND CAPTURE
 			state = white;
-			board[fsm.y] = board[fsm.x];
+			const char captured = board[fsm.y];
+			board[pin_number] = board[fsm.x];
 			board[fsm.x] = p_EMPTY_SQUARE;
-			if (is_en_passant) board[fsm.y - 8] = p_EMPTY_SQUARE;
+			if (is_en_passant) board[fsm.y] = p_EMPTY_SQUARE;
 			chess_state.ply_since_ponr = 0;
 			chess_state.ply++;
 
 			chess_state.en_passant = false;
 
 			BlackCheckCastling(pin_number);
-			BlackHandlePromotion(pin_number);
+			const bool promotion = BlackHandlePromotion(pin_number);
+
+			sendMove(chess_state.ply, fsm.x, pin_number, board[pin_number], captured, promotion, is_en_passant);
 		}
-		else state = error;
+		else setErrorAndSend();
 
 		break;
 	}
 
-	case black_begin_enemy_capture:
+	case black_enemy_capture:
 	{
 		if (is_up && is_black_piece) {
-			state = black_begin_capture;
+			state = black_capture;
 			fsm.x = pin_number;
 		}
 		else if (is_up) // not white => black or blank 
 		{
-			state = error;
+			setErrorAndSend();
 		}
 		else if (pin_number == fsm.y)
 		{
@@ -446,7 +505,7 @@ static void pin_change(const int pin_number, const bool is_up = false)
 		}
 		else if (is_down)
 		{
-			state = error;
+			setErrorAndSend();
 		}
 
 		break;
@@ -455,12 +514,14 @@ static void pin_change(const int pin_number, const bool is_up = false)
 	case white_castling: // entry for castling, king moved
 	{
 		if (is_down) {
-			if (pin_number == WHITE_KING_KINGSIDE_CASTLESQUARE && chess_state.white_kingside)
+			if (pin_number == WHITE_KING_STARTINGSQUARE)
+				state = white; // undo move
+			else if (pin_number == WHITE_KING_KINGSIDE_CASTLESQUARE && chess_state.white_kingside)
 				state = white_castling_kingside_kingdown;
 			else if (pin_number == WHITE_KING_QUEENSIDE_CASTLESQUARE && chess_state.white_queenside)
 				state = white_castling_queenside_kingdown;
 			else {
-				state = white_begin_move;
+				state = white_move;
 				pin_change(pin_number, is_up);
 			}
 		}
@@ -471,32 +532,33 @@ static void pin_change(const int pin_number, const bool is_up = false)
 				else if (pin_number == WHITE_ROOK_QUEENSIDE_STARTINGSQUARE && chess_state.white_queenside)
 					state = white_castling_queenside_KINGUP_ROOKUP;
 				else
-					state = error;
+					setErrorAndSend();
 			}
 			else
 			{
-				state = error;
+				setErrorAndSend();
 			}
 		}
 		else if (is_black_piece)
 		{
-			state = white_begin_capture;
+			state = white_capture;
 			fsm.y = pin_number;
+			fsm.x = WHITE_KING_STARTINGSQUARE;
 		}
 		break;
 	}
 	case white_castling_kingside_kingdown:
 	{
-		if (is_down && board[pin_number] == p_WHITE_ROOK && pin_number == WHITE_ROOK_KINGSIDE_STARTINGSQUARE)
+		if (is_up && board[pin_number] == p_WHITE_ROOK && pin_number == WHITE_ROOK_KINGSIDE_STARTINGSQUARE)
 			state = white_castling_kingside_kingdown_ROOKUP;
-		else state = error;
+		else setErrorAndSend();
 		break;
 	}
 	case white_castling_queenside_kingdown:
 	{
-		if (is_down && board[pin_number] == p_WHITE_ROOK && pin_number == WHITE_ROOK_QUEENSIDE_STARTINGSQUARE)
+		if (is_up && board[pin_number] == p_WHITE_ROOK && pin_number == WHITE_ROOK_QUEENSIDE_STARTINGSQUARE)
 			state = white_castling_queenside_kingdown_ROOKUP;
-		else state = error;
+		else setErrorAndSend();
 		break;
 	}
 
@@ -507,14 +569,17 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			// end castling
 			chess_state.white_kingside = chess_state.white_queenside = false;
 			chess_state.ply++;
+			chess_state.en_passant = false;
 			//chess_state.ply_since_ponr = 0;
 			board[WHITE_ROOK_KINGSIDE_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[WHITE_ROOK_KINGSIDE_CASTLESQUARE] = p_WHITE_ROOK;
 			board[WHITE_KING_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[WHITE_KING_KINGSIDE_CASTLESQUARE] = p_WHITE_KING;
 			state = black;
+
+			sendCastleKingside(chess_state.ply, true);
 		}
-		else state = error;
+		else setErrorAndSend();
 		break;
 	}
 	case white_castling_queenside_kingdown_ROOKUP:
@@ -524,14 +589,17 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			// end castling
 			chess_state.white_kingside = chess_state.white_queenside = false;
 			chess_state.ply++;
+			chess_state.en_passant = false;
 			//chess_state.ply_since_ponr = 0;
 			board[WHITE_ROOK_QUEENSIDE_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[WHITE_ROOK_QUEENSIDE_CASTLESQUARE] = p_WHITE_ROOK;
 			board[WHITE_KING_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[WHITE_KING_QUEENSIDE_CASTLESQUARE] = p_WHITE_KING;
 			state = black;
+
+			sendCastleQueenside(chess_state.ply, WHITE_KING_STARTINGSQUARE, WHITE_KING_QUEENSIDE_CASTLESQUARE, true);
 		}
-		else state == error;
+		else setErrorAndSend();
 		break;
 	}
 
@@ -542,7 +610,7 @@ static void pin_change(const int pin_number, const bool is_up = false)
 		else if (is_down && pin_number == WHITE_ROOK_KINGSIDE_CASTLESQUARE)
 			state = white_castling_kingside_KINGUP_rookdown;
 		else
-			state = error;
+			setErrorAndSend();
 		break;
 	}
 	case white_castling_queenside_KINGUP_ROOKUP:
@@ -552,7 +620,7 @@ static void pin_change(const int pin_number, const bool is_up = false)
 		else if (is_down && pin_number == WHITE_ROOK_QUEENSIDE_CASTLESQUARE)
 			state = white_castling_queenside_KINGUP_rookdown;
 		else
-			state = error;
+			setErrorAndSend();
 		break;
 	}
 
@@ -562,43 +630,51 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			// end castling
 			chess_state.white_kingside = chess_state.white_queenside = false;
 			chess_state.ply++;
+			chess_state.en_passant = false;
 			//chess_state.ply_since_ponr = 0;
 			board[WHITE_ROOK_KINGSIDE_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[WHITE_ROOK_KINGSIDE_CASTLESQUARE] = p_WHITE_ROOK;
 			board[WHITE_KING_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[WHITE_KING_KINGSIDE_CASTLESQUARE] = p_WHITE_KING;
 			state = black;
+
+			sendCastleKingside(chess_state.ply, true);
 		}
-		else state = error;
+		else setErrorAndSend();
 		break;
 	}
 	case white_castling_queenside_KINGUP_rookdown:
 	{
-		if (is_down && pin_number == WHITE_ROOK_QUEENSIDE_CASTLESQUARE)
+		if (is_down && pin_number == WHITE_KING_QUEENSIDE_CASTLESQUARE)
 		{
 			// end castling
 			chess_state.white_kingside = chess_state.white_queenside = false;
 			chess_state.ply++;
+			chess_state.en_passant = false;
 			//chess_state.ply_since_ponr = 0;
 			board[WHITE_ROOK_QUEENSIDE_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[WHITE_ROOK_QUEENSIDE_CASTLESQUARE] = p_WHITE_ROOK;
 			board[WHITE_KING_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[WHITE_KING_QUEENSIDE_CASTLESQUARE] = p_WHITE_KING;
 			state = black;
+
+			sendCastleQueenside(chess_state.ply, WHITE_KING_STARTINGSQUARE, WHITE_KING_QUEENSIDE_CASTLESQUARE, true);
 		}
-		else state == error;
+		else setErrorAndSend();
 		break;
 	}
 
 	case black_castling: // entry for castling, king moved
 	{
 		if (is_down) {
-			if (pin_number == BLACK_KING_KINGSIDE_CASTLESQUARE && chess_state.black_kingside)
+			if (pin_number == BLACK_KING_STARTINGSQUARE)
+				state = black; // undo move
+			else if (pin_number == BLACK_KING_KINGSIDE_CASTLESQUARE && chess_state.black_kingside)
 				state = black_castling_kingside_kingdown;
 			else if (pin_number == BLACK_KING_QUEENSIDE_CASTLESQUARE && chess_state.black_queenside)
 				state = black_castling_queenside_kingdown;
 			else {
-				state = black_begin_move;
+				state = black_move;
 				pin_change(pin_number, is_up);
 			}
 		}
@@ -609,32 +685,33 @@ static void pin_change(const int pin_number, const bool is_up = false)
 				else if (pin_number == BLACK_ROOK_QUEENSIDE_STARTINGSQUARE && chess_state.black_queenside)
 					state = black_castling_queenside_KINGUP_ROOKUP;
 				else
-					state = error;
+					setErrorAndSend();
 			}
 			else
 			{
-				state = error;
+				setErrorAndSend();
 			}
 		}
 		else if (is_white_piece)
 		{
-			state = black_begin_capture;
+			state = black_capture;
 			fsm.y = pin_number;
+			fsm.x = BLACK_KING_STARTINGSQUARE;
 		}
 		break;
 	}
 	case black_castling_kingside_kingdown:
 	{
-		if (is_down && board[pin_number] == p_BLACK_ROOK && pin_number == BLACK_ROOK_KINGSIDE_STARTINGSQUARE)
+		if (is_up && board[pin_number] == p_BLACK_ROOK && pin_number == BLACK_ROOK_KINGSIDE_STARTINGSQUARE)
 			state = black_castling_kingside_kingdown_ROOKUP;
-		else state = error;
+		else setErrorAndSend();
 		break;
 	}
 	case black_castling_queenside_kingdown:
 	{
-		if (is_down && board[pin_number] == p_BLACK_ROOK && pin_number == BLACK_ROOK_QUEENSIDE_STARTINGSQUARE)
+		if (is_up && board[pin_number] == p_BLACK_ROOK && pin_number == BLACK_ROOK_QUEENSIDE_STARTINGSQUARE)
 			state = black_castling_queenside_kingdown_ROOKUP;
-		else state = error;
+		else setErrorAndSend();
 		break;
 	}
 
@@ -645,14 +722,17 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			// end castling
 			chess_state.black_kingside = chess_state.black_queenside = false;
 			chess_state.ply++;
+			chess_state.en_passant = false;
 			//chess_state.ply_since_ponr = 0;
 			board[BLACK_ROOK_KINGSIDE_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[BLACK_ROOK_KINGSIDE_CASTLESQUARE] = p_BLACK_ROOK;
 			board[BLACK_KING_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[BLACK_KING_KINGSIDE_CASTLESQUARE] = p_BLACK_KING;
-			state = black;
+			state = white;
+
+			sendCastleKingside(chess_state.ply, false);
 		}
-		else state = error;
+		else setErrorAndSend();
 		break;
 	}
 	case black_castling_queenside_kingdown_ROOKUP:
@@ -662,14 +742,17 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			// end castling
 			chess_state.black_kingside = chess_state.black_queenside = false;
 			chess_state.ply++;
+			chess_state.en_passant = false;
 			//chess_state.ply_since_ponr = 0;
 			board[BLACK_ROOK_QUEENSIDE_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[BLACK_ROOK_QUEENSIDE_CASTLESQUARE] = p_BLACK_ROOK;
 			board[BLACK_KING_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[BLACK_KING_QUEENSIDE_CASTLESQUARE] = p_BLACK_KING;
-			state = black;
+			state = white;
+
+			sendCastleQueenside(chess_state.ply, BLACK_KING_STARTINGSQUARE, BLACK_KING_QUEENSIDE_CASTLESQUARE, false);
 		}
-		else state == error;
+		else setErrorAndSend();
 		break;
 	}
 
@@ -680,7 +763,7 @@ static void pin_change(const int pin_number, const bool is_up = false)
 		else if (is_down && pin_number == BLACK_ROOK_KINGSIDE_CASTLESQUARE)
 			state = black_castling_kingside_KINGUP_rookdown;
 		else
-			state = error;
+			setErrorAndSend();
 		break;
 	}
 	case black_castling_queenside_KINGUP_ROOKUP:
@@ -690,7 +773,7 @@ static void pin_change(const int pin_number, const bool is_up = false)
 		else if (is_down && pin_number == BLACK_ROOK_QUEENSIDE_CASTLESQUARE)
 			state = black_castling_queenside_KINGUP_rookdown;
 		else
-			state = error;
+			setErrorAndSend();
 		break;
 	}
 
@@ -700,35 +783,42 @@ static void pin_change(const int pin_number, const bool is_up = false)
 			// end castling
 			chess_state.black_kingside = chess_state.black_queenside = false;
 			chess_state.ply++;
+			chess_state.en_passant = false;
 			//chess_state.ply_since_ponr = 0;
 			board[BLACK_ROOK_KINGSIDE_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[BLACK_ROOK_KINGSIDE_CASTLESQUARE] = p_BLACK_ROOK;
 			board[BLACK_KING_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[BLACK_KING_KINGSIDE_CASTLESQUARE] = p_BLACK_KING;
-			state = black;
+			state = white;
+
+			sendCastleKingside(chess_state.ply, false);
 		}
-		else state = error;
+		else setErrorAndSend();
 		break;
 	}
 	case black_castling_queenside_KINGUP_rookdown:
 	{
-		if (is_down && pin_number == BLACK_ROOK_QUEENSIDE_CASTLESQUARE)
+		if (is_down && pin_number == BLACK_KING_QUEENSIDE_CASTLESQUARE)
 		{
 			// end castling
 			chess_state.black_kingside = chess_state.black_queenside = false;
 			chess_state.ply++;
+			chess_state.en_passant = false;
 			//chess_state.ply_since_ponr = 0;
 			board[BLACK_ROOK_QUEENSIDE_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[BLACK_ROOK_QUEENSIDE_CASTLESQUARE] = p_BLACK_ROOK;
 			board[BLACK_KING_STARTINGSQUARE] = p_EMPTY_SQUARE;
 			board[BLACK_KING_QUEENSIDE_CASTLESQUARE] = p_BLACK_KING;
-			state = black;
+			state = white;
+
+			sendCastleQueenside(chess_state.ply, BLACK_KING_STARTINGSQUARE, BLACK_KING_QUEENSIDE_CASTLESQUARE, false);
 		}
-		else state == error;
+		else setErrorAndSend();
 		break;
 	}
-	
-	default: // error
+	case error: return;
+	default: // we shouldn't be able to get here, but just in case set state to error
+		setErrorAndSend();
 		break;
 	}
 }
@@ -820,6 +910,9 @@ static std::string print_fen_string() {
 	return ss.str();
 }
 
+/// <summary>
+/// Reset the state of chess_state and fsm, initializes the board to the starting position
+/// </summary>
 static void reset() {
 	state = white;
 	init_starting_board();
@@ -827,6 +920,9 @@ static void reset() {
 	fsm.reset();
 }
 
+/// <summary>
+/// Reset the state of chess_state and fsm, initializes the board to an empty position
+/// </summary>
 static void clean_state() {
 	state = white;
 	init_empty_board();

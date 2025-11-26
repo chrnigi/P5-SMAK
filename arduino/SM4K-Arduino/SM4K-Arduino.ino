@@ -13,6 +13,8 @@ const bool USE_PULLUPS  = true;
 
 unsigned long time;
 
+String commands;
+
 // 64 DIGITAL INPUT PINS
 const int inputPins[64] = {
   A0, A1, A2, A3, 21, 20 ,19 ,18,
@@ -50,6 +52,10 @@ void command(String command){
     delay(500);
     resetFunc();
   }
+  else if (command == "resetChess\n"){
+    Serial.println("Resetting chess game!");
+    Serial3.print("resetChess");
+  }
 }
 
 void readESPserial(){
@@ -76,7 +82,12 @@ void setup() {
 void loop() {
  // scan every SCAN_EVERY_MS using millis()
   unsigned long now = millis();
-  
+
+  while (Serial.available() > 0) {
+  commands = Serial.readString();
+  command(commands);
+  }
+
   // Read serial
   readESPserial();
 

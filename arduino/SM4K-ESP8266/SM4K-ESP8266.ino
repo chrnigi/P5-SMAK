@@ -45,31 +45,12 @@ String endpoint(String newServer, String newPort, String newPath){
   return endpoint();
 }
 
-struct gamestate_struct{
-  int turn_counter;
-  int x_board;
-  int y_board;
-  enum result_enum{X_WON, O_WON, DRAW, IN_PROGRESS, } result = IN_PROGRESS;
-  int64_t GameID = 0;
-} gamestate;
+int64_t GameID = 0;
 
 struct gameChange_struct{
   int pinChanged;
   bool state;
 } gameChange;
-
-String resultAsString(int input){
-  switch (input){
-    case gamestate_struct::result_enum::X_WON:
-      return "xwin";
-    case gamestate_struct::result_enum::O_WON:
-      return "owin";
-    case gamestate_struct::result_enum::DRAW:
-      return "draw";
-    default:
-      return "inprogress";    
-  }
-}
 
 bool readPinChange(String message){
   std::stringstream messageStream(message.c_str());
@@ -85,14 +66,6 @@ bool readPinChange(String message){
       return true;
    }
    return false;
-}
-
-bool isGameNewGame(){
-  return (gamestate.turn_counter == 1);
-}
-
-bool isGameInProgress(){
-  return (gamestate.result == gamestate_struct::IN_PROGRESS);
 }
 
 void createNewGame(){   
@@ -123,27 +96,33 @@ void createNewGame(){
   }
   http.end();
 
-
   JsonDocument doc;
   deserializeJson(doc, payload);
   
-  gamestate.GameID = doc["id"];
+  GameID = doc["id"];
 }
-/* skal ændres
+
+
 void updateGame(){
   WiFiClient client;
   HTTPClient http;
-  http.begin(client, endpoint("/games/" + String(gamestate.GameID)));
+  http.begin(client, endpoint("/games/" + String(GameID))); 
 
   http.addHeader("Content-Type", "application/json");
 
-  String payload = "{\"result\":\"" + resultAsString(gamestate.result) + "\", \"id\" : " + gamestate.GameID +" }";
+  String payload;
+  JsonDocument doc;
+  doc["id"] = GameID;
+  doc["result"] = "inprogress";
+
+
+  serializeJson(doc, payload);
 
   Serial.println("updateGame: " + endpoint() + "   " + payload);
 
   int httpResponseCode = http.PATCH(payload);
 
-  if (httpResponseCode>0) {
+  http.begin(client, endpoint("/games/" + String(GameID))); 
     Serial.print("HTTP Response code: ");
     Serial.println(httpResponseCode);
   }
@@ -153,46 +132,10 @@ void updateGame(){
   }
   http.end();
 }
-*/
 
-/* Skal ændres til skak
-void sendTurn(){
-  WiFiClient client;
-  HTTPClient http;
-  http.begin(client, endpoint("/boardstates"));
-  //Serial.print("Send turn: ");
-  //Serial.println(endpoint("/boardstates"));
-
-  http.addHeader("Content-Type", "application/json");
-  
-  String payload;
-  JsonDocument doc;
-  doc["id"] = gamestate.GameID;
-  doc["x_placement"] = gamestate.x_board;
-  doc["o_placement"] = gamestate.y_board;
-  doc["moveno"] = gamestate.turn_counter;
-
-  serializeJson(doc, payload);
-
-  Serial.println("sendTurn: " + endpoint() + "  " + payload);
-
-  int httpResponseCode = http.POST(payload);
-
-  if (httpResponseCode>0) {
-    Serial.print("HTTP Response code: ");
-    Serial.println(httpResponseCode);
-  }
-  else {
-    Serial.print("Error code: ");
-    Serial.println(httpResponseCode);
-  }
-  http.end();
-
-}
-*/
+//Start wifi setup
 void wifiSetup(){
   // Documentation: https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/generic-class.html
-
   WiFi.begin(ssid, password); 
   WiFi.mode(WIFI_STA);
 
@@ -209,14 +152,23 @@ void wifiSetup(){
     delay(500);
     Serial.print(".");
   }
-
   connectedToWifi = true;
   Serial.println("success!");
   Serial.print("Local IP Address is: ");
   Serial.println(WiFi.localIP());
 }
 
-
+//clear serial buffer
+void clearSerialInput() {
+  for (int i = 0; i < 50; i++) {
+    while (Serial.available() > 0)
+      {
+      char k = Serial.read();
+      delay(1);
+      }
+    delay(1);
+  }
+}
 void setup() {
   Serial.begin(9600);   //Initialize hardware serial with baudrate of 9600
   //Serial.begin(9600);    //Initialize software serial with baudrate of 9600
@@ -225,44 +177,48 @@ void setup() {
   wifiSetup();
   //delay(500);
   Serial.println("\n################################################################################\n");
-  init_starting_board();
+  //init_starting_board();
+
+  //initialize test board with pawns in each corner
+  clean_state();
+  board[63] = p_WHITE_PAWN; 
+  board[56] = p_WHITE_PAWN;
+  board[0] =  p_BLACK_PAWN;
+  board[7] = p_BLACK_PAWN;
   std::string printBoard=print_board();
   Serial.println(printBoard.c_str());
+  clearSerialInput();
+  //createNewGame();
 }
 
 void loop() {
   while (Serial.available() > 0) {  //wait for data at software serial
     serial = Serial.readStringUntil('\n');
-    Serial.println(serial);
 
-    if (readPinChange(serial)){ //returns true if serial is a gamestate
-      pin_change(gameChange.pinChanged,gameChange.state);
+    if (readPinChange(serial)){ //returns true if serial is a pin change
+      pin_change(gameChange.pinChanged,!gameChange.state);
+      Serial.print(gameChange.pinChanged);
+      Serial.print(" Is up: ");
+      Serial.println(!gameChange.state);
       std::string printBoard=print_board();
       Serial.println(printBoard.c_str());
-    }
-/*
-      if (isGameNewGame()) createNewGame();
-      sendTurn();
-      if (!isGameInProgress()) updateGame();
-*/
 
-/*
+      // Control wifi status
       if(WiFi.status()== WL_CONNECTED){
-
-        if (isGameNewGame()) createNewGame();
-        sendTurn();
+        //if (isGameNewGame()) createNewGame();
+        //sendMove();
         if (!isGameInProgress()) updateGame();
-
       } else {
-        Serial.println("Failed to send gamestate, wifi disconnected");}
+        Serial.println("Failed to send gamestate, wifi disconnected");
+      }
+      
     }
-  */
-    //Serial.write(Serial.read()); //Send data recived from software serial to hardware serial    
+    if (serial=="resetChess") {
+      Serial.println("ESP: Resetting chess game!");
+      reset();
+      Serial.println("ESP: Chess game has been reset!");
+    }
   }
-  /*while (Serial.available() > 0) { //wait for data at hardware serial
-    Serial.write(Serial.read());     //send data received from hardware serial to software serial
-  }
-  */
 
   // Prints WiFi status if it has changed
   if (connectedToWifi != (WiFi.status()== WL_CONNECTED)){
@@ -273,5 +229,56 @@ void loop() {
       Serial.println("WiFi disconnected");
     }
   }
+}
+
+
+void sendMove(const int ply, const int from, const int to, 
+	const char piece, const char captured, 
+	const bool promotion = false, const bool en_passant = false, const bool kingside_castle = false, const bool queenside_castle = false)
+{
+  WiFiClient client;
+  HTTPClient http;
+  http.begin(client, endpoint("/boardstates"));
+
+  http.addHeader("Content-Type", "application/json");
+  
+  String payload;
+  JsonDocument doc;
+  doc["id"] = GameID;
+  doc["ply_number"] = ply;
+  if (en_passant) {
+    doc["move_type"] = "enpassant";
+  } else if (kingside_castle | queenside_castle) {
+    doc["move_type"] = "castling";
+  } else if (promotion) {
+    doc["move_type"] = "promotion";
+  } else {
+    doc["move_type"] = "normal";
+  }
+  doc["piece_moved"] = toupper(piece);
+  doc["piece_captured"] = captured;
+  doc["from_square"] = from;
+  doc["to_square"] = to;
+
+  serializeJson(doc, payload);
+
+  Serial.println("sendMove: " + endpoint() + "  " + payload);
+
+  int httpResponseCode = http.POST(payload);
+
+  if (httpResponseCode>0) {
+    Serial.print("HTTP Response code: ");
+    Serial.println(httpResponseCode);
+  }
+  else {
+    Serial.print("Error code: ");
+    Serial.println(httpResponseCode);
+  }
+  http.end();
+}
+
+  static void setErrorAndSend()
+{
+	state = states::error;
 
 }
