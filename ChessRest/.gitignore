@@ -5,3 +5,4 @@ include/*
 chessclientlib/include/chess.hpp
 
 */docs/*
+uci_ipc/Doxyfile
