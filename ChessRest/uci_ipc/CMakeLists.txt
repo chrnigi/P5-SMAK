@@ -11,7 +11,6 @@ cmake_minimum_required(VERSION 3.30)
 
 #set(BOOST_ENABLE_CMAKE ON)
 
-
 set(SRC_FILES
     main.cpp
     ipc.cpp
@@ -38,6 +37,8 @@ target_include_directories(uci_ipc
     PRIVATE ${INC_DIR}
     PRIVATE ${CHESS_INCLUDE_DIR}
 )
+
+make_directory(${CMAKE_CURRENT_SOURCE_DIR}/docs)
 
 doxygen_add_docs(
     uci_ipc_docs

@@ -26,6 +26,9 @@ const std::string UCIcommand::append_moves_to_position_command(std::string_view 
     return append_moves_to_position_command(pos_command, {move});
 }
 
+/**
+ * @todo fix bug with excessive moves.
+ */
 const std::string UCIcommand::append_moves_to_position_command(std::string_view pos_command, std::vector<chess::Move>& moves) {
     std::vector<std::string> mvs;
     mvs.reserve(moves.size());

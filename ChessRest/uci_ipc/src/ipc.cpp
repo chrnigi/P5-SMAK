@@ -224,11 +224,10 @@ bool EngineWhisperer::make_moves(std::vector<chess::Move>& moves) {
         throw new engine_not_launched_exception("Engine not running!");
     }
 
-    std::string cmd = UCIcommand::append_moves_to_position_command(UCIcommand::create_position_command(m_board.getFen()), moves);
     std::vector<std::string> mvs;
     mvs.reserve(moves.size());
     
-    chess::Movelist m_gen;
+    
     for (chess::Move m : moves) {
         const chess::PieceGenType piecetype = [&]() {
             chess::PieceType typ = m_board.at<chess::PieceType>(m.from());
@@ -253,6 +252,7 @@ bool EngineWhisperer::make_moves(std::vector<chess::Move>& moves) {
             }
         }();
 
+        chess::Movelist m_gen;
         chess::movegen::legalmoves<chess::movegen::MoveGenType::ALL>(m_gen, m_board, piecetype);
 
         const std::string move_as_uci = chess::uci::moveToUci(m);
@@ -265,6 +265,7 @@ bool EngineWhisperer::make_moves(std::vector<chess::Move>& moves) {
         mvs.push_back(move_as_uci);
     }
 
+    std::string cmd = UCIcommand::append_moves_to_position_command(UCIcommand::create_position_command(m_board.getFen()), moves);
     std::string_view cmd_view(cmd);
 
     PLOG_DEBUG << fmt::format(FMT_COMPILE("Playing moves {}"), fmt::join(mvs, " "));
@@ -311,7 +312,6 @@ bool EngineWhisperer::make_moves(std::vector<chess::Move>& moves) {
     
     if (eval_match["eval"].matched) {
         m_eval.setEval(static_cast<double>(std::stoi(eval_match["eval"].str()))/100.0f);
-        
     }
 
     std::pair<chess::GameResultReason, chess::GameResult>is_over = m_board.isGameOver();

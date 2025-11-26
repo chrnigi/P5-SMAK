@@ -20,7 +20,7 @@
  * 
  */
 class Evaluation {
-    double m_eval;
+    double m_eval; 
     std::string bestmove_ponder;
     chess::Move m_bestmove;
     chess::Move m_ponder;
@@ -197,7 +197,7 @@ public:
      */
     bool make_moves(std::vector<chess::Move>& moves);
     /**
-     * @brief Get the evaluation of the current position.
+     * @brief Get the evaluation of the current position in pawns.
      * 
      * @return double
      */
