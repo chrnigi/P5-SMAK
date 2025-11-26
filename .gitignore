@@ -44,6 +44,11 @@ cloud/db-connection/*
 *.dwo
 .vscode/*
 
+# ansible
+.ansible
+.password
+cloud/ansible/.password
+
 # Files generated when compiling in Visual Studio
 /ArduinoChess/ArduinoChess/.vs
 /ArduinoChess/ArduinoChess/ArduinoChess/x64/Debug

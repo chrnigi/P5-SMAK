@@ -1,0 +1,30 @@
+- name: TTTDBsetup
+  hosts: all
+  become: true
+  become_user: root
+
+  vars_files:
+    - ./tictactoeVault
+
+  tasks:
+    - name: Create a new database with name 'ttt'
+      community.mysql.mysql_db:
+        name: '{{ db_name }}'
+        state: present
+        login_unix_socket: /run/mysqld/mysqld.sock
+
+    - name: Create database user for ttt webUI
+      community.mysql.mysql_user:
+        name: '{{ webui_username }}'
+        password: '{{ webui_password }}'
+        priv: 'ttt.*:ALL'
+        state: present
+        login_unix_socket: /run/mysqld/mysqld.sock
+
+    - name: Create database user for ttt API
+      community.mysql.mysql_user:
+        name: '{{ db_username }}'
+        password: '{{ db_password }}'
+        priv: 'ttt.*:ALL'
+        state: present
+        login_unix_socket: /run/mysqld/mysqld.sock

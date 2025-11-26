@@ -1,0 +1,16 @@
+packages:
+  - curl
+  - docker-ce 
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+  - git
+  - mariadb-server
+  - openjdk-17-jdk
+  - php
+  - php-mysql
+  - screen
+  - python3-pymysql
+  - zip
+  - unzip
