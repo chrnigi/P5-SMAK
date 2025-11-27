@@ -446,22 +446,6 @@ std::optional<Evaluation> EngineWhisperer::naive_eval_from_position(std::string_
         eval_out->setBestmove(best);
     }
 
-    // switch (bestmoveponder->index()) {
-    //     case 0: { /* Variant is type std::pair<chess::Move, chess::Move> */
-    //         eval_out.emplace();
-    //         auto best_ponder = std::get<std::pair<chess::Move, chess::Move>>(bestmoveponder.value());
-    //         eval_out->setBestmove(best_ponder.first);
-    //         eval_out->setPonder(best_ponder.second);
-    //     }
-    //     case 1: { /* Variant is type chess::Move */
-    //         eval_out.emplace();
-    //         auto best = std::get<chess::Move>(bestmoveponder.value());
-    //         eval_out->setBestmove(best);
-    //     }
-    //     default:
-    //         break;
-    // }
-    
     auto eval = extractEvalFromRegex(std::string_view(*last_info_str));
 
     if (!eval) {
