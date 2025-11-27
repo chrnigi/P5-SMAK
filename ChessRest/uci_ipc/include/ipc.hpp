@@ -1,5 +1,6 @@
 #pragma once 
 
+
 #ifndef IPC_HPP
 #define IPC_HPP
 
@@ -186,6 +187,14 @@ private:
      * @return std::optional<std::variant<double, size_t>> returns a double if evaluation is in centipawns, or a size_t if in moves to a forced checkmate.
      */
     std::optional<std::variant<double, size_t>> extractEvalFromRegex(std::string& input);
+    /**
+     * @brief Validates whether a series of moves all are legal from the given board's current state.
+     * 
+     * @param moves The moves to validate.
+     * @param board The board holding the state the moves are to be played from.
+     * @return size_t The index in the vector to the first illegal move. Returns -1 (UINT64_MAX) if no moves were illegal.
+     */
+    size_t validate_moves(const std::vector<chess::Move>& moves, chess::Board board);
 
 public:
     /**
@@ -239,7 +248,7 @@ public:
      * @param moves The moves to be made.
      * @todo Find a proper return on error.
      */
-    bool make_moves(std::vector<chess::Move>& moves);
+    bool make_moves(const std::vector<chess::Move>& moves);
     /**
      * @brief Get the evaluation of the current position in pawns.
      * 

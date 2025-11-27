@@ -26,10 +26,8 @@
 #include <vector>
 #include <algorithm>
 
-
 namespace asio = boost::asio;
 namespace proc = boost::process;
-using namespace asio::buffer_literals;
 using MovePair = std::pair<chess::Move, chess::Move>; 
 
 EngineWhisperer::EngineWhisperer(std::string engine_path) :
@@ -146,7 +144,7 @@ size_t EngineWhisperer::write_engine_with_timeout(std::string_view command, size
 }
 
 bool EngineWhisperer::check_engine_isready() {
-    PLOG_DEBUG << "Asking engine if ready";
+    PLOG_DEBUG << "Asking engine if ready.";
     size_t sent = write_engine_with_timeout(UCIcommand::isready(), m_write_timeout);
     if (sent != UCIcommand::isready().size()) {
         PLOG_DEBUG << "Failed to check if engine is ready.";
@@ -157,7 +155,7 @@ bool EngineWhisperer::check_engine_isready() {
         PLOG_DEBUG << fmt::format(FMT_COMPILE("Engine not ready within {} seconds"), m_read_timeout);
         return false;
     }
-    PLOG_DEBUG << "Engine ready";
+    PLOG_DEBUG << "Engine ready.";
     return true;
 }
 
@@ -221,57 +219,39 @@ bool EngineWhisperer::make_moves(chess::Move move) {
  * @todo Issue "stop" command on timeout, so evaluation still can be extracted, instead of undoing the moves.
  * @todo Use m_board to validate moves before trying to play them.
  */
-bool EngineWhisperer::make_moves(std::vector<chess::Move>& moves) {
+bool EngineWhisperer::make_moves(const std::vector<chess::Move>& moves) {
+    
     if (!engine_proc.running()) {
         throw new engine_not_launched_exception("Engine not running!");
     }
 
-    std::vector<std::string> mvs;
-    mvs.reserve(moves.size());
-    
-    for (chess::Move m : moves) {
-        const chess::PieceGenType piecetype = [&]() {
-            chess::PieceType typ = m_board.at<chess::PieceType>(m.from());
-            // Ugly switch-case converts types.
-            switch (typ.internal()) {
-            case chess::PieceType::PAWN:
-                return chess::PieceGenType::PAWN;
-            case chess::PieceType::underlying::KNIGHT:
-                return chess::PieceGenType::KNIGHT;
-            case chess::PieceType::underlying::BISHOP:
-                return chess::PieceGenType::BISHOP;
-            case chess::PieceType::underlying::ROOK:
-                return chess::PieceGenType::ROOK;
-            case chess::PieceType::underlying::QUEEN:
-                return chess::PieceGenType::QUEEN;
-            case chess::PieceType::underlying::KING:
-                return chess::PieceGenType::KING;
-            case chess::PieceType::underlying::NONE:
-            default:
-                return static_cast<chess::PieceGenType>(63); // This searches for all move types. Case fallthrough to default is intentional.
-                // ideally we don't hit this, because this will generate a lot more unnessecary moves.
-            }
-        }();
-
-        chess::Movelist m_gen;
-        chess::movegen::legalmoves<chess::movegen::MoveGenType::ALL>(m_gen, m_board, piecetype);
-
-        const std::string move_as_uci = chess::uci::moveToUci(m);
-
-        auto it = std::find(m_gen.begin(), m_gen.end(), m);
-        PLOG_DEBUG_IF(it != m_gen.end()) << fmt::format(FMT_COMPILE("Move {} is legal in current position {}"), move_as_uci, m_board.getFen());
-        PLOG_WARNING_IF(it == m_gen.end()) << fmt::format(FMT_COMPILE("Move {} is not legal in current position {}. This error is NOT handled."), move_as_uci, m_board.getFen());
-
-        m_board.makeMove(m);
-        mvs.push_back(move_as_uci);
+    if (validate_moves(moves, m_board) == -1) {
+        PLOG_DEBUG << "All moves were legal.";
+        for (auto& m : moves) {
+            m_board.makeMove(m);
+        }
+    } else {
+        // In this path it "doesn't matter" if the moves are legal.
+        PLOG_WARNING << "Not all moves were legal, trying naive evalution from resulting FEN. This could cause errors.";
+        chess::Board b = m_board;
+        for (auto& m : moves) {
+            b.makeMove(m);
+        }
+        auto ev = naive_eval_from_position(b.getFen());
+        if (!ev) {
+            m_eval = Evaluation{};
+            return false;
+        }
+        m_eval = ev.value();
+        return true;
     }
 
-    std::string cmd = UCIcommand::append_moves_to_position_command(UCIcommand::create_position_command(m_board.getFen()), moves);
+    //std::string cmd = UCIcommand::append_moves_to_position_command(UCIcommand::create_position_command(m_board.getFen()), moves);
+    std::string cmd = UCIcommand::create_position_command(m_board.getFen(), moves);
     std::string_view cmd_view(cmd);
 
-    PLOG_DEBUG << fmt::format(FMT_COMPILE("Playing moves {}"), fmt::join(mvs, " "));
+    //PLOG_DEBUG << fmt::format(FMT_COMPILE("Playing moves {}"), fmt::join(mvs, " "));
     size_t bytes = write_engine_with_timeout(cmd_view);
-    //size_t bytes = asio::write(engine_proc, asio::buffer(cmd_view));
     if (bytes != cmd.length()) {
         PLOG_WARNING << fmt::format(FMT_COMPILE("Wrote {} bytes to engine, but command was {} bytes. Undoing moves."), bytes, cmd.length());
         for (auto it = moves.rbegin(); it != moves.rend(); it++) {
@@ -308,9 +288,9 @@ bool EngineWhisperer::make_moves(std::vector<chess::Move>& moves) {
             m_eval.setEval(eval);
         }
         if (std::holds_alternative<size_t>(cp_or_m.value())) {
-            size_t mtm = std::get<size_t>(cp_or_m.value());
-            PLOG_DEBUG << fmt::format(FMT_COMPILE("Checkmate forced in {} moves."), mtm);
-            m_eval.setMateCount(mtm);
+            size_t movestomate = std::get<size_t>(cp_or_m.value());
+            PLOG_DEBUG << fmt::format(FMT_COMPILE("Checkmate forced in {} moves."), movestomate);
+            m_eval.setMateCount(movestomate);
             is_mate = true;
         }
     }
@@ -449,7 +429,7 @@ std::optional<Evaluation> EngineWhisperer::naive_eval_from_position(std::string_
 
 }
 
-std::optional<std::variant<std::pair<chess::Move, chess::Move>, chess::Move>> EngineWhisperer::extractBestmoveFromRegex(std::string& input) {
+std::optional<std::variant<MovePair, chess::Move>> EngineWhisperer::extractBestmoveFromRegex(std::string& input) {
     boost::regex rgx("bestmove\\s(?<bestmove>([a-h]\\d){2})\\s*(ponder\\s(?<ponder>([a-h]\\d){2}\\s*))?");
 
     PLOG_DEBUG << fmt::format(FMT_COMPILE("Getting moves with regex: {}"), rgx.str());
@@ -461,14 +441,14 @@ std::optional<std::variant<std::pair<chess::Move, chess::Move>, chess::Move>> En
     bool bestmove_matched = matches["bestmove"].matched;
     bool ponder_matched   = matches["ponder"].matched;
 
-    PLOG_DEBUG_IF(matched_all) << fmt::format(FMT_COMPILE("Regex matched!"));
-    PLOG_WARNING_IF(!matched_all) << fmt::format(FMT_COMPILE("No regex matches. Returning empty optional."));
+    PLOG_DEBUG_IF(matched_all)      << fmt::format(FMT_COMPILE("Regex matched!"));
+    PLOG_WARNING_IF(!matched_all)   << fmt::format(FMT_COMPILE("No regex matches. Returning empty optional."));
     PLOG_DEBUG_IF(bestmove_matched) << fmt::format(FMT_COMPILE("Sub-expression \"{}\" matched with string \"{}\""), "bestmove", matches["bestmove"].str());
-    PLOG_DEBUG_IF(ponder_matched) << fmt::format(FMT_COMPILE("Sub-expression \"{}\" matched with string \"{}\""), "ponder", matches["ponder"].str());
+    PLOG_DEBUG_IF(ponder_matched)   << fmt::format(FMT_COMPILE("Sub-expression \"{}\" matched with string \"{}\""), "ponder", matches["ponder"].str());
 
 
     bool both_matched = ponder_matched && bestmove_matched;
-    if (!both_matched) {
+    if (!matched_all) {
         return {};
     }
     if (bestmove_matched) {
@@ -503,8 +483,8 @@ std::optional<std::variant<double, size_t>> EngineWhisperer::extractEvalFromRege
     bool eval_matched = matches["eval"].matched;
     bool mate_matched = matches["count"].matched;
 
-    PLOG_DEBUG_IF(match) << fmt::format(FMT_COMPILE("Regex matched!"));
-    PLOG_WARNING_IF(!match) << fmt::format(FMT_COMPILE("No regex matches. Returning empty optional."));
+    PLOG_DEBUG_IF(match)        << fmt::format(FMT_COMPILE("Regex matched!"));
+    PLOG_WARNING_IF(!match)     << fmt::format(FMT_COMPILE("No regex matches. Returning empty optional."));
     PLOG_DEBUG_IF(eval_matched) << fmt::format(FMT_COMPILE("Sub-expression \"{}\" matched with string \"{}\""), "eval", matches["eval"].str());
     PLOG_DEBUG_IF(mate_matched) << fmt::format(FMT_COMPILE("Sub-expression \"{}\" matched with string \"{}\""), "count", matches["count"].str());
 
@@ -521,6 +501,50 @@ std::optional<std::variant<double, size_t>> EngineWhisperer::extractEvalFromRege
         return std::make_optional(count);
     }
     return {};
+}
+
+size_t EngineWhisperer::validate_moves(const std::vector<chess::Move>& moves, chess::Board board) {
+    size_t idx = 0;
+    for (auto& m : moves) {
+        const chess::PieceGenType piecetype = [&]() {
+            chess::PieceType typ = board.at<chess::PieceType>(m.from());
+            // Ugly switch-case converts types.
+            switch (typ.internal()) {
+                using namespace chess;
+            case PieceType::PAWN:
+                return PieceGenType::PAWN;
+            case PieceType::KNIGHT:
+                return PieceGenType::KNIGHT;
+            case PieceType::BISHOP:
+                return PieceGenType::BISHOP;
+            case PieceType::ROOK:
+                return PieceGenType::ROOK;
+            case PieceType::QUEEN:
+                return PieceGenType::QUEEN;
+            case PieceType::KING:
+                return PieceGenType::KING;
+            case PieceType::NONE:
+            default:
+                return static_cast<PieceGenType>(63); // This searches for all move types. Case fallthrough to default is intentional.
+                // ideally we don't hit this, because this will generate a lot more unnessecary moves.
+            }
+        }();
+        
+        chess::Movelist m_gen;
+        chess::movegen::legalmoves<chess::movegen::MoveGenType::ALL>(m_gen, board, piecetype);
+
+        const std::string move_as_uci = chess::uci::moveToUci(m);
+
+        auto it = std::find(m_gen.begin(), m_gen.end(), m);
+        PLOG_DEBUG_IF(it != m_gen.end()) << fmt::format(FMT_COMPILE("Move {} is legal in current position {}"), move_as_uci, board.getFen());
+        PLOG_WARNING_IF(it == m_gen.end()) << fmt::format(FMT_COMPILE("Move {} is not legal in current position {}. This error is NOT handled."), move_as_uci, board.getFen());
+        if (it == m_gen.end()) {
+            return idx;
+        }
+        idx++;
+        board.makeMove(m);
+    }
+    return -1;
 }
 
 double EngineWhisperer::getPositionEval() {

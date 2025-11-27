@@ -62,7 +62,7 @@ public:
      * @param moves Moves to play from the position given in the FEN string.
      * @return std::string 
      */
-    static const std::string create_position_command(std::string_view fen, std::vector<chess::Move>& moves);
+    static const std::string create_position_command(std::string_view fen, const std::vector<chess::Move>& moves);
     /**
      * @fn std::string append_moves_to_position_command(std::string_view pos_command, chess::Move move)
      * @brief Convenience overload for <tt>append_moves_to_position_command(std::string pos_command, std::vector<chess::Move> moves)</tt>
@@ -80,7 +80,7 @@ public:
      * @param moves @p std::vector of moves to append to the command.
      * @return std::string 
      */
-    static const std::string append_moves_to_position_command(std::string_view pos_command, std::vector<chess::Move>& moves);
+    static const std::string append_moves_to_position_command(std::string_view pos_command, const std::vector<chess::Move>& moves);
     /**
      * @brief Create a UCI "go depth" command with a given depth of @p depth
      * 
