@@ -301,21 +301,20 @@ bool EngineWhisperer::make_moves(std::vector<chess::Move>& moves) {
     }
 
     auto last_info_str = lines.end()-2;
-
-    boost::smatch eval_match;
-    boost::regex eval_regex("(?<centipawns>(cp\\s*(?<eval>\\d+)))|(?<mate>(mate\\s*(?<count>\\d+)))");
-    PLOG_DEBUG << fmt::format(FMT_COMPILE("Getting moves with regex: {}"), eval_regex.str());
-    PLOG_DEBUG << fmt::format(FMT_COMPILE("Subject string: {}"), *last_info_str);
-    bool eval_matched = boost::regex_search(std::string(*last_info_str), eval_match, eval_regex, boost::match_extra);
-
-    PLOG_DEBUG_IF(eval_match["eval"].matched) << fmt::format(FMT_COMPILE("Sub-expression \"{}\" matched with string \"{}\""), "eval", eval_match["eval"].str());
-    PLOG_DEBUG_IF(eval_match["count"].matched) << fmt::format(FMT_COMPILE("Sub-expression \"{}\" matched with string \"{}\""), "count", eval_match["count"].str());
-    PLOG_WARNING_IF(!eval_matched) << fmt::format(FMT_COMPILE("No match for regex."));
-    
-    if (eval_match["eval"].matched) {
-        m_eval.setEval(static_cast<double>(std::stoi(eval_match["eval"].str()))/100.0f);
+    auto cp_or_m = extractEvalFromRegex(*last_info_str);
+    if(cp_or_m) {
+        if (std::holds_alternative<double>(cp_or_m.value())) {
+            double eval = std::get<double>(cp_or_m.value()); 
+            PLOG_DEBUG << fmt::format(FMT_COMPILE("Position has evaluation {:+.2f}."), eval);
+            m_eval.setEval(eval);
+        }
+        if (std::holds_alternative<size_t>(cp_or_m.value())) {
+            size_t mtm = std::get<size_t>(cp_or_m.value());
+            PLOG_DEBUG << fmt::format(FMT_COMPILE("Checkmate forced in {} moves."), mtm);
+            m_eval.setMateCount(mtm);
+            is_mate = true;
+        }
     }
-
     std::pair<chess::GameResultReason, chess::GameResult>is_over = m_board.isGameOver();
 
     if (is_over.second /* if the game is over */ != chess::GameResult::NONE) {
@@ -346,43 +345,26 @@ bool EngineWhisperer::make_moves(std::vector<chess::Move>& moves) {
         return true;
     }
 
-    size_t moves_to_mate = 0;
-    if (eval_match["count"].matched) {
-        is_mate = true;
-        PLOGD << eval_match["count"].str();
-        moves_to_mate = std::stoi(eval_match["count"].str());
-    }
-
-    boost::regex rgx("bestmove\\s(?<bestmove>([a-h]\\d){2})\\s*(ponder\\s(?<ponder>([a-h]\\d){2}\\s*))?");
-    boost::smatch match;
-    
     std::string& bestmove_str = lines.back();
-    PLOG_DEBUG << fmt::format(FMT_COMPILE("Getting moves with regex: {}"), rgx.str());
-    PLOG_DEBUG << fmt::format(FMT_COMPILE("Subject string: {}"), bestmove_str);
-    
-    bool test = boost::regex_search(bestmove_str, match, rgx, boost::match_extra);
-    
-    PLOG_DEBUG_IF(test) << fmt::format(FMT_COMPILE("Regex matched!"));
-    PLOG_WARNING_IF(!test) << fmt::format(FMT_COMPILE("No regex matches AND no error handling for this!"));
-    PLOG_DEBUG_IF(match["bestmove"].matched) << fmt::format(FMT_COMPILE("Sub-expression \"{}\" matched with string \"{}\""), "bestmove", match["bestmove"].str());
-    PLOG_DEBUG_IF(match["ponder"].matched) << fmt::format(FMT_COMPILE("Sub-expression \"{}\" matched with string \"{}\""), "ponder", match["ponder"].str());
-
-    chess::Square from(match["bestmove"].str().substr(0, 2));
-    chess::Square to(match["bestmove"].str().substr(2,2));
-
-    chess::Move best = chess::Move::make(from, to);
-
-    PLOG_DEBUG << fmt::format(FMT_COMPILE("Got best move from regex: {}"), chess::uci::moveToUci(best));
-
-    if (!is_mate) {
-        chess::Square p_from(match["ponder"].str().substr(0, 2));
-        chess::Square p_to(match["ponder"].str().substr(2, 2));
-        chess::Move p = chess::Move::make(p_from, p_to);
-        PLOG_DEBUG << fmt::format(FMT_COMPILE("Got ponder from regex: {}"), chess::uci::moveToUci(p));
-        m_eval.setPonder(p);
+    auto bm_or_p = extractBestmoveFromRegex(bestmove_str);
+    if(bm_or_p) {
+        PLOG_DEBUG << "Optional has a value.";
+        if (std::holds_alternative<TwoMoves>(bm_or_p.value())) {
+            chess::Move best    = std::get<TwoMoves>(bm_or_p.value()).first;
+            chess::Move ponder  = std::get<TwoMoves>(bm_or_p.value()).second;
+            PLOG_DEBUG << fmt::format(FMT_COMPILE("Return is of variant TwoMoves. Best move: {} Ponder: {}"), chess::uci::moveToUci(best), chess::uci::moveToUci(ponder));
+            m_eval.setBestmove(best);
+            m_eval.setPonder(ponder);
+        }
+        if (std::holds_alternative<chess::Move>(bm_or_p.value())) {
+            chess::Move best = std::get<chess::Move>(bm_or_p.value());
+            PLOG_DEBUG << fmt::format(FMT_COMPILE("Return is of variant Move. Best move: {}"), chess::uci::moveToUci(best));
+            m_eval.setBestmove(best);
+        }
+        
     }
-    m_eval.setBestmove(best);
-    m_eval.update(m_board.sideToMove(), m_eval.getEval(), best, is_mate ? chess::Move(0) : m_eval.getPonder(), is_mate, m_board.sideToMove(), moves_to_mate);
+
+    m_eval.update(m_board.sideToMove(), m_eval.getEval(), m_eval.getBestmove(), is_mate ? chess::Move(0) : m_eval.getPonder(), is_mate, m_board.sideToMove(), m_eval.getMateCount());
     PLOG_DEBUG << fmt::format("{}", m_eval.to_string());
 
     return true;
@@ -432,9 +414,6 @@ std::optional<Evaluation> EngineWhisperer::naive_eval_from_position(std::string_
     if (!bestmoveponder) {
         return eval_out;
     }
-
-    
-
     if (std::holds_alternative<TwoMoves>(bestmoveponder.value())) {
         eval_out.emplace();
         TwoMoves best_ponder = std::get<TwoMoves>(bestmoveponder.value());
@@ -446,7 +425,7 @@ std::optional<Evaluation> EngineWhisperer::naive_eval_from_position(std::string_
         eval_out->setBestmove(best);
     }
 
-    auto eval = extractEvalFromRegex(std::string_view(*last_info_str));
+    auto eval = extractEvalFromRegex(*last_info_str);
 
     if (!eval) {
         return eval_out;
@@ -471,60 +450,76 @@ std::optional<Evaluation> EngineWhisperer::naive_eval_from_position(std::string_
 
 }
 
-std::optional<std::variant<std::pair<chess::Move, chess::Move>, chess::Move>> EngineWhisperer::extractBestmoveFromRegex(std::string_view input) {
-
-    const std::string bestmove_capture = "bestmove";
-    const std::string ponder_capture = "ponder";
+std::optional<std::variant<std::pair<chess::Move, chess::Move>, chess::Move>> EngineWhisperer::extractBestmoveFromRegex(std::string& input) {
     boost::regex rgx("bestmove\\s(?<bestmove>([a-h]\\d){2})\\s*(ponder\\s(?<ponder>([a-h]\\d){2}\\s*))?");
 
     PLOG_DEBUG << fmt::format(FMT_COMPILE("Getting moves with regex: {}"), rgx.str());
     PLOG_DEBUG << fmt::format(FMT_COMPILE("Subject string: {}"), input);
 
     boost::smatch matches;
-    bool matched_all = boost::regex_search(std::string(input), matches, rgx, boost::match_extra);
+    bool matched_all = boost::regex_search(input, matches, rgx, boost::match_extra);
 
-    bool bestmove_matched = matches[bestmove_capture].matched;
-    bool ponder_matched   = matches[ponder_capture].matched;
+    bool bestmove_matched = matches["bestmove"].matched;
+    bool ponder_matched   = matches["ponder"].matched;
+
+    PLOG_DEBUG_IF(matched_all) << fmt::format(FMT_COMPILE("Regex matched!"));
+    PLOG_WARNING_IF(!matched_all) << fmt::format(FMT_COMPILE("No regex matches. Returning empty optional."));
+    PLOG_DEBUG_IF(bestmove_matched) << fmt::format(FMT_COMPILE("Sub-expression \"{}\" matched with string \"{}\""), "bestmove", matches["bestmove"].str());
+    PLOG_DEBUG_IF(ponder_matched) << fmt::format(FMT_COMPILE("Sub-expression \"{}\" matched with string \"{}\""), "ponder", matches["ponder"].str());
+
 
     bool both_matched = ponder_matched && bestmove_matched;
     if (!both_matched) {
         return {};
     }
     if (bestmove_matched) {
-        chess::Square from(matches[bestmove_capture].str().substr(0, 2));
-        chess::Square to(matches[bestmove_capture].str().substr(2,2));
+        chess::Square from(matches["bestmove"].str().substr(0, 2));
+        chess::Square to(matches["bestmove"].str().substr(2,2));
         chess::Move best = chess::Move::make(from, to);
+        PLOG_DEBUG << fmt::format(FMT_COMPILE("Got best move from regex: {}"), chess::uci::moveToUci(best));
 
         if (ponder_matched) {
             chess::Square p_from(matches["ponder"].str().substr(0, 2));
             chess::Square p_to(matches["ponder"].str().substr(2, 2));
             chess::Move p = chess::Move::make(p_from, p_to);
-            return std::pair<chess::Move, chess::Move>(best, p);
+            PLOG_DEBUG << fmt::format(FMT_COMPILE("Got ponder from regex: {}"), chess::uci::moveToUci(p));
+            return std::make_optional<TwoMoves>(best, p);;
         }
-        return best;
+        return std::make_optional<chess::Move>(best);
     } 
     return {};
 }
 
-std::optional<std::variant<double, size_t>> EngineWhisperer::extractEvalFromRegex(std::string_view input) {
+std::optional<std::variant<double, size_t>> EngineWhisperer::extractEvalFromRegex(std::string& input) {
     const std::string eval_cap = "eval";
     const std::string mate_cap = "count";
 
-    boost::regex eval_rgx("(?<centipawns>(cp\\s*(?<eval>\\d+)))|(?<mate>(mate\\s*(?<count>\\d+)))");
     boost::smatch matches;
+    boost::regex eval_rgx("(?<centipawns>(cp\\s*(?<eval>\\d+)))|(?<mate>(mate\\s*(?<count>\\d+)))");
 
-    bool match = boost::regex_search(std::string(input), matches, eval_rgx, boost::match_extra);
-    bool eval_matched = matches[eval_cap].matched;
-    bool mate_matched = matches[mate_cap].matched;
+    PLOG_DEBUG << fmt::format(FMT_COMPILE("Getting moves with regex: {}"), eval_rgx.str());
+    PLOG_DEBUG << fmt::format(FMT_COMPILE("Subject string: {}"), input);
+
+    bool match = boost::regex_search(input, matches, eval_rgx, boost::match_extra);
+    bool eval_matched = matches["eval"].matched;
+    bool mate_matched = matches["count"].matched;
+
+    PLOG_DEBUG_IF(match) << fmt::format(FMT_COMPILE("Regex matched!"));
+    PLOG_WARNING_IF(!match) << fmt::format(FMT_COMPILE("No regex matches. Returning empty optional."));
+    PLOG_DEBUG_IF(eval_matched) << fmt::format(FMT_COMPILE("Sub-expression \"{}\" matched with string \"{}\""), "eval", matches["eval"].str());
+    PLOG_DEBUG_IF(mate_matched) << fmt::format(FMT_COMPILE("Sub-expression \"{}\" matched with string \"{}\""), "count", matches["count"].str());
 
     if (eval_matched & mate_matched) {
+        PLOG_WARNING << fmt::format(FMT_COMPILE("Unexpected match of both subexpressions. Returning empty optional."));
         return {};
     }
     if (eval_matched) {
-        return static_cast<double>(std::stoi(matches[eval_cap].str())/100.0f);
+        double val = static_cast<double>(std::stoi(matches["eval"].str())/100.0f);
+        return std::make_optional(val);
     }
     if (mate_matched) {
-        return std::stoul(matches[mate_cap].str());
+        size_t count = std::stoul(matches["count"].str());
+        return std::make_optional(count);
     }
     return {};
 }

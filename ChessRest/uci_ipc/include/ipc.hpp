@@ -172,8 +172,21 @@ private:
      * @return std::pair<size_t, std::string> A pair of the return value of write_engine_with_timeout and read_engine_with_timeout.
      */
     std::pair<size_t, std::string> write_and_read_with_timeout(std::string_view command, std::string_view search_string, size_t timeout = 5);
-    std::optional<std::variant<std::pair<chess::Move, chess::Move>, chess::Move>> extractBestmoveFromRegex(std::string_view input);
-    std::optional<std::variant<double, size_t>> extractEvalFromRegex(std::string_view input);
+    /**
+     * @brief Get an optional of either two moves or a single move from the engine's "bestmove ..." output. 
+     * @details If the engine outputs both a bestmove and a ponder, the variant of the return will be a <tt>std::pair<chess::Move, chess::Move></tt>. 
+     * If no ponder is given by the engine, the variant will be a single @p chess::Move . 
+     * @param input The engine's "bestmove ..." string.
+     * @return std::optional<std::variant<std::pair<chess::Move, chess::Move>, chess::Move>> If an error occurs, the returned optional will be empty
+     */
+    std::optional<std::variant<std::pair<chess::Move, chess::Move>, chess::Move>> extractBestmoveFromRegex(std::string& input);
+    /**
+     * @brief Get an optional of a @p double or a @p size_t from the engine's evaluation output.
+     * 
+     * @param input The last "info ..." string from the engine.
+     * @return std::optional<std::variant<double, size_t>> returns a double if evaluation is in centipawns, or a size_t if in moves to a forced checkmate.
+     */
+    std::optional<std::variant<double, size_t>> extractEvalFromRegex(std::string& input);
 
 public:
     /**
