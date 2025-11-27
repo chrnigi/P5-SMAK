@@ -13,8 +13,6 @@
 #include <string>
 #include <sstream>
 
-#define String std::string
-
 #pragma region piece_types
 constexpr char p_EMPTY_SQUARE = ' ';
 constexpr char p_BLACK_PAWN = 'p', p_WHITE_PAWN = 'P';
@@ -303,10 +301,10 @@ static void setErrorAndSend();
 /// <param name="str">String in the format of <file char><rank char> such as 'b4'</param>
 /// <returns>uint8_t integer between 0 and 63</returns>
 static uint8_t pin(String str) {
-	char file_char = str.at(0);
+	char file_char = str.charAt(0);
 	uint8_t file = (file_char - 'a');
 
-	char rank_char = str.at(1);
+	char rank_char = str.charAt(1);
 	uint8_t rank = rank_char - '0';
 	uint8_t r = (8 - rank) << 3;
 
@@ -928,4 +926,12 @@ static void clean_state() {
 	init_empty_board();
 	chess_state.reset();
 	fsm.reset();
+}
+
+static uint16_t returnPly() {
+	return chess_state.ply;
+}
+
+static int returnState() {
+	return state;
 }

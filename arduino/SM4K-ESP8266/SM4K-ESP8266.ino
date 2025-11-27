@@ -45,11 +45,11 @@ String endpoint(String newServer, String newPort, String newPath){
   return endpoint();
 }
 
-int64_t GameID = 0;
-
 struct gameChange_struct{
   int pinChanged;
   bool state;
+  int64_t GameID = 0;
+  String result = "inprogress";
 } gameChange;
 
 bool readPinChange(String message){
@@ -99,21 +99,21 @@ void createNewGame(){
   JsonDocument doc;
   deserializeJson(doc, payload);
   
-  GameID = doc["id"];
+  gameChange.GameID = doc["id"];
 }
 
 
 void updateGame(){
   WiFiClient client;
   HTTPClient http;
-  http.begin(client, endpoint("/games/" + String(GameID))); 
+  http.begin(client, endpoint("/games/" + String(gameChange.GameID))); 
 
   http.addHeader("Content-Type", "application/json");
 
   String payload;
   JsonDocument doc;
-  doc["id"] = GameID;
-  doc["result"] = "inprogress";
+  doc["id"] = gameChange.GameID;
+  doc["result"] = gameChange.result;
 
 
   serializeJson(doc, payload);
@@ -122,7 +122,7 @@ void updateGame(){
 
   int httpResponseCode = http.PATCH(payload);
 
-  http.begin(client, endpoint("/games/" + String(GameID))); 
+  if (httpResponseCode>0) {
     Serial.print("HTTP Response code: ");
     Serial.println(httpResponseCode);
   }
@@ -160,10 +160,10 @@ void wifiSetup(){
 
 //clear serial buffer
 void clearSerialInput() {
-  for (int i = 0; i < 50; i++) {
-    while (Serial.available() > 0)
-      {
-      char k = Serial.read();
+  for (int i = 0; i < 1000; i++) {
+  while (Serial.available() > 0) {  //wait for data at software serial
+    String trash;
+    trash = Serial.readStringUntil('\n');
       delay(1);
       }
     delay(1);
@@ -171,8 +171,6 @@ void clearSerialInput() {
 }
 void setup() {
   Serial.begin(9600);   //Initialize hardware serial with baudrate of 9600
-  //Serial.begin(9600);    //Initialize software serial with baudrate of 9600
-  //delay(1000);
   Serial.println("\n################################################################################\n");
   wifiSetup();
   //delay(500);
@@ -188,35 +186,39 @@ void setup() {
   std::string printBoard=print_board();
   Serial.println(printBoard.c_str());
   clearSerialInput();
-  //createNewGame();
+  createNewGame();
 }
 
 void loop() {
   while (Serial.available() > 0) {  //wait for data at software serial
     serial = Serial.readStringUntil('\n');
+    Serial.println(serial);
 
     if (readPinChange(serial)){ //returns true if serial is a pin change
-      pin_change(gameChange.pinChanged,!gameChange.state);
       Serial.print(gameChange.pinChanged);
       Serial.print(" Is up: ");
       Serial.println(!gameChange.state);
-      std::string printBoard=print_board();
-      Serial.println(printBoard.c_str());
+      Serial.println(returnState());
 
       // Control wifi status
-      if(WiFi.status()== WL_CONNECTED){
-        //if (isGameNewGame()) createNewGame();
-        //sendMove();
-        if (!isGameInProgress()) updateGame();
-      } else {
-        Serial.println("Failed to send gamestate, wifi disconnected");
-      }
+      if(WiFi.status()== WL_CONNECTED && returnPly()==1){ createNewGame();} 
+      else {Serial.println("Failed to send gamestate, wifi disconnected");}
+        pin_change(gameChange.pinChanged,!gameChange.state);
+        //if (!isGameInProgress()) updateGame();      Shouldnt be necessary anymore since its only done on error, which is handled by setErrorAndSend
+      Serial.println(returnState());
+      std::string printBoard=print_board();
+      Serial.println(printBoard.c_str());
       
     }
     if (serial=="resetChess") {
       Serial.println("ESP: Resetting chess game!");
-      reset();
+      clean_state();
+      board[63] = p_WHITE_ROOK; 
+      board[60] = p_WHITE_KING;
+      board[37] =  p_BLACK_PAWN;
+      board[39] = p_BLACK_PAWN;
       Serial.println("ESP: Chess game has been reset!");
+      Serial.println(returnState());
     }
   }
 
@@ -234,29 +236,29 @@ void loop() {
 
 void sendMove(const int ply, const int from, const int to, 
 	const char piece, const char captured, 
-	const bool promotion = false, const bool en_passant = false, const bool kingside_castle = false, const bool queenside_castle = false)
+	const bool promotion, const bool en_passant, const bool kingside_castle, const bool queenside_castle)
 {
   WiFiClient client;
   HTTPClient http;
-  http.begin(client, endpoint("/boardstates"));
+  http.begin(client, endpoint("/moves/" + String(gameChange.GameID)));
 
   http.addHeader("Content-Type", "application/json");
   
   String payload;
   JsonDocument doc;
-  doc["id"] = GameID;
+  doc["id"] = gameChange.GameID;
   doc["ply_number"] = ply;
   if (en_passant) {
     doc["move_type"] = "enpassant";
-  } else if (kingside_castle | queenside_castle) {
+  } else if (kingside_castle || queenside_castle) {
     doc["move_type"] = "castling";
   } else if (promotion) {
     doc["move_type"] = "promotion";
   } else {
     doc["move_type"] = "normal";
   }
-  doc["piece_moved"] = toupper(piece);
-  doc["piece_captured"] = captured;
+  doc["piece_moved"] = String(piece);
+  doc["piece_captured"] = String(captured);
   doc["from_square"] = from;
   doc["to_square"] = to;
 
@@ -279,6 +281,7 @@ void sendMove(const int ply, const int from, const int to,
 
   static void setErrorAndSend()
 {
-	state = states::error;
-
+  state = states::error;
+	gameChange.result = "error";
+  updateGame();
 }
