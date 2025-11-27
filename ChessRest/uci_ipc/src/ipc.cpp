@@ -21,6 +21,9 @@
 #include <string_view>
 #include <string>
 #include <chrono>
+#include <utility>
+#include <variant>
+#include <optional>
 #include <vector>
 #include <algorithm>
 
@@ -28,7 +31,7 @@
 namespace asio = boost::asio;
 namespace proc = boost::process::v2;
 using namespace asio::buffer_literals;
-
+using TwoMoves = std::pair<chess::Move, chess::Move>; 
 
 EngineWhisperer::EngineWhisperer(std::string engine_path) :
     path_to_engine_executable(proc::environment::find_executable(engine_path).string()),
@@ -386,6 +389,163 @@ bool EngineWhisperer::make_moves(std::vector<chess::Move>& moves) {
     PLOG_DEBUG << fmt::format("{}", m_eval.to_string());
 
     return true;
+}
+
+std::pair<size_t, std::string> EngineWhisperer::write_and_read_with_timeout(std::string_view command, std::string_view search_string, size_t timeout) {
+    size_t sz = write_engine_with_timeout(command, timeout);
+    if (sz != command.length()) {
+        return {sz, ""};
+    }
+    std::string read = read_engine_with_timeout(search_string, timeout);
+    return {sz, read};
+}
+
+/**
+ * @todo Return an error state in Evaluation struct on empty return string or wrong amount of bytes written.
+ */
+std::optional<Evaluation> EngineWhisperer::naive_eval_from_position(std::string_view fen) {
+
+    std::optional<Evaluation> eval_out;
+    new_game();
+
+    std::string cmd = UCIcommand::create_position_command(fen);
+
+    std::pair<size_t, std::string> result = write_and_read_with_timeout(
+        cmd,
+        UCIcommand::EngineCommands::bestmove()
+    );
+    if (result.first != cmd.length()) {
+        return eval_out;
+    }
+    if (result.second.empty()) {
+        return eval_out;
+    }
+
+    std::vector<std::string> lines;
+    std::stringstream ss(result.second);
+    std::string line{};
+    while (std::getline(ss, line)) {
+        lines.push_back(line);
+    }
+
+    std::string& bestmove_str = lines.back();
+    auto last_info_str = lines.end()-2;
+    auto bestmoveponder = extractBestmoveFromRegex(bestmove_str);
+
+    if (!bestmoveponder) {
+        return eval_out;
+    }
+
+    
+
+    if (std::holds_alternative<TwoMoves>(bestmoveponder.value())) {
+        eval_out.emplace();
+        TwoMoves best_ponder = std::get<TwoMoves>(bestmoveponder.value());
+        eval_out->setBestmove(best_ponder.first);
+        eval_out->setPonder(best_ponder.second);
+    } else if (std::holds_alternative<chess::Move>(bestmoveponder.value())) {
+        eval_out.emplace();
+        chess::Move best = std::get<chess::Move>(bestmoveponder.value());
+        eval_out->setBestmove(best);
+    }
+
+    // switch (bestmoveponder->index()) {
+    //     case 0: { /* Variant is type std::pair<chess::Move, chess::Move> */
+    //         eval_out.emplace();
+    //         auto best_ponder = std::get<std::pair<chess::Move, chess::Move>>(bestmoveponder.value());
+    //         eval_out->setBestmove(best_ponder.first);
+    //         eval_out->setPonder(best_ponder.second);
+    //     }
+    //     case 1: { /* Variant is type chess::Move */
+    //         eval_out.emplace();
+    //         auto best = std::get<chess::Move>(bestmoveponder.value());
+    //         eval_out->setBestmove(best);
+    //     }
+    //     default:
+    //         break;
+    // }
+    
+    auto eval = extractEvalFromRegex(std::string_view(*last_info_str));
+
+    if (!eval) {
+        return eval_out;
+    }
+
+    if (std::holds_alternative<double>(eval.value())) {
+        if (!eval_out) {
+            eval_out.emplace();
+        }
+        double centipawns = std::get<double>(eval.value());
+        eval_out->setEval(centipawns);
+    } else if (std::holds_alternative<size_t>(eval.value())) {
+        if (!eval_out) {
+            eval_out.emplace();
+        }
+        size_t moves_to_mate = std::get<size_t>(eval.value());
+        eval_out->setMateCount(moves_to_mate);
+        eval_out->setMate(true);
+    }
+
+    return eval_out;
+
+}
+
+std::optional<std::variant<std::pair<chess::Move, chess::Move>, chess::Move>> extractBestmoveFromRegex(std::string_view input) {
+
+    const std::string bestmove_capture = "bestmove";
+    const std::string ponder_capture = "ponder";
+    boost::regex rgx("bestmove\\s(?<bestmove>([a-h]\\d){2})\\s*(ponder\\s(?<ponder>([a-h]\\d){2}\\s*))?");
+
+    PLOG_DEBUG << fmt::format(FMT_COMPILE("Getting moves with regex: {}"), rgx.str());
+    PLOG_DEBUG << fmt::format(FMT_COMPILE("Subject string: {}"), input);
+
+    boost::smatch matches;
+    bool matched_all = boost::regex_search(std::string(input), matches, rgx, boost::match_extra);
+
+    bool bestmove_matched = matches[bestmove_capture].matched;
+    bool ponder_matched   = matches[ponder_capture].matched;
+
+    bool both_matched = ponder_matched && bestmove_matched;
+    if (!both_matched) {
+        return {};
+    }
+    if (bestmove_matched) {
+        chess::Square from(matches[bestmove_capture].str().substr(0, 2));
+        chess::Square to(matches[bestmove_capture].str().substr(2,2));
+        chess::Move best = chess::Move::make(from, to);
+
+        if (ponder_matched) {
+            chess::Square p_from(matches["ponder"].str().substr(0, 2));
+            chess::Square p_to(matches["ponder"].str().substr(2, 2));
+            chess::Move p = chess::Move::make(p_from, p_to);
+            return std::pair<chess::Move, chess::Move>(best, p);
+        }
+        return best;
+    } 
+    return {};
+}
+
+std::optional<std::variant<double, size_t>> extractEvalFromRegex(std::string_view input) {
+    const std::string eval_cap = "eval";
+    const std::string mate_cap = "count";
+
+    boost::regex eval_rgx("(?<centipawns>(cp\\s*(?<eval>\\d+)))|(?<mate>(mate\\s*(?<count>\\d+)))");
+    boost::smatch matches;
+
+    bool match = boost::regex_search(std::string(input), matches, eval_rgx, boost::match_extra);
+    bool eval_matched = matches[eval_cap].matched;
+    bool mate_matched = matches[mate_cap].matched;
+
+    if (eval_matched & mate_matched) {
+        return {};
+    }
+    if (eval_matched) {
+        return static_cast<double>(std::stoi(matches[eval_cap].str())/100.0f);
+    }
+    if (mate_matched) {
+        return std::stoul(matches[mate_cap].str());
+    }
+    return {};
 }
 
 double EngineWhisperer::getPositionEval() {

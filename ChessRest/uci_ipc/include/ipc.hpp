@@ -14,6 +14,9 @@
 #include <exception>
 #include <string>
 #include <string_view>
+#include <optional>
+#include <utility>
+#include <variant>
 
 /**
  * Class that holds the evaluation of the position, and the "bestmove AxBy ponder CzDw" string from the engine. 
@@ -97,8 +100,23 @@ public:
      * @param eval The evaluation to set.
      */
     void setEval(double eval)       { m_eval = eval;        }
+    /**
+     * @brief Set whether checkmate has been played.
+     * 
+     * @param mate Whether checkmate has been played. 
+     */
     void setMatePlayed(bool mate)   { m_mate_played = mate; }
+    /**
+     * @brief Get whether checkmate has been played.
+     * 
+     * @return true Checkmate has been played.
+     * @return false Checkmate has not been played.
+     */
     bool getMatePlayed()            { return m_mate_played; }
+    void setMateCount(size_t mc)    { m_matec = mc;         }
+    size_t getMateCount()           { return m_matec;       }
+    void setMate(bool mate)         { m_mate = mate;        }
+    bool isMate()                   { return m_mate;        }
 };
 
 /** 
@@ -142,6 +160,20 @@ private:
      * @return std::string The entire string read from the engine.
      */
     std::string read_engine_with_timeout(std::string_view search_string, size_t timeout = 5);
+
+    /**
+     * @brief Equivalent to calling write_engine_with_timeout() followed by read_engine_with_time_out()
+     * @details The total timeout of the function will be two times the given @p timeout parameter. 
+     * The function can return early with an empty string, and only the amount of bytes sent in case of an error. 
+     * The caller should check if the string is empty on return.
+     * @param command The command to write to the engine.
+     * @param search_string The string to match in the read operation.
+     * @param timeout The timeout of read/write operations in seconds.
+     * @return std::pair<size_t, std::string> A pair of the return value of write_engine_with_timeout and read_engine_with_timeout.
+     */
+    std::pair<size_t, std::string> write_and_read_with_timeout(std::string_view command, std::string_view search_string, size_t timeout = 5);
+    std::optional<std::variant<std::pair<chess::Move, chess::Move>, chess::Move>> extractBestmoveFromRegex(std::string_view input);
+    std::optional<std::variant<double, size_t>> extractEvalFromRegex(std::string_view input);
 
 public:
     /**
@@ -202,6 +234,14 @@ public:
      * @return double
      */
     double getPositionEval();
+
+    /**
+     * @brief Get an optional Evaluation from a FEN string without any context of previous moves.
+     * 
+     * @param fen The position to get the evaluation from.
+     * @return std::optional<Evaluation> 
+     */
+    std::optional<Evaluation> naive_eval_from_position(std::string_view fen);
 };
 /**
 * @brief Exception thrown if operations that expect a running engine are done while the engine hasn't launched.
