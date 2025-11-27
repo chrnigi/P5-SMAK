@@ -3,10 +3,9 @@
 #include <uci_commands.hpp>
 
 #include <boost/asio.hpp>
-#include <boost/process/v2/process.hpp>
-#include <boost/process/popen.hpp>
+#include <boost/process.hpp>
 #include <boost/regex.hpp>
-#include <boost/process/v2/environment.hpp>
+
 
 #include <fmt/core.h>
 #include <fmt/compile.h>
@@ -29,9 +28,9 @@
 
 
 namespace asio = boost::asio;
-namespace proc = boost::process::v2;
+namespace proc = boost::process;
 using namespace asio::buffer_literals;
-using TwoMoves = std::pair<chess::Move, chess::Move>; 
+using MovePair = std::pair<chess::Move, chess::Move>; 
 
 EngineWhisperer::EngineWhisperer(std::string engine_path) :
     path_to_engine_executable(proc::environment::find_executable(engine_path).string()),
@@ -349,9 +348,9 @@ bool EngineWhisperer::make_moves(std::vector<chess::Move>& moves) {
     auto bm_or_p = extractBestmoveFromRegex(bestmove_str);
     if(bm_or_p) {
         PLOG_DEBUG << "Optional has a value.";
-        if (std::holds_alternative<TwoMoves>(bm_or_p.value())) {
-            chess::Move best    = std::get<TwoMoves>(bm_or_p.value()).first;
-            chess::Move ponder  = std::get<TwoMoves>(bm_or_p.value()).second;
+        if (std::holds_alternative<MovePair>(bm_or_p.value())) {
+            chess::Move best    = std::get<MovePair>(bm_or_p.value()).first;
+            chess::Move ponder  = std::get<MovePair>(bm_or_p.value()).second;
             PLOG_DEBUG << fmt::format(FMT_COMPILE("Return is of variant TwoMoves. Best move: {} Ponder: {}"), chess::uci::moveToUci(best), chess::uci::moveToUci(ponder));
             m_eval.setBestmove(best);
             m_eval.setPonder(ponder);
@@ -414,9 +413,9 @@ std::optional<Evaluation> EngineWhisperer::naive_eval_from_position(std::string_
     if (!bestmoveponder) {
         return eval_out;
     }
-    if (std::holds_alternative<TwoMoves>(bestmoveponder.value())) {
+    if (std::holds_alternative<MovePair>(bestmoveponder.value())) {
         eval_out.emplace();
-        TwoMoves best_ponder = std::get<TwoMoves>(bestmoveponder.value());
+        MovePair best_ponder = std::get<MovePair>(bestmoveponder.value());
         eval_out->setBestmove(best_ponder.first);
         eval_out->setPonder(best_ponder.second);
     } else if (std::holds_alternative<chess::Move>(bestmoveponder.value())) {
@@ -483,7 +482,7 @@ std::optional<std::variant<std::pair<chess::Move, chess::Move>, chess::Move>> En
             chess::Square p_to(matches["ponder"].str().substr(2, 2));
             chess::Move p = chess::Move::make(p_from, p_to);
             PLOG_DEBUG << fmt::format(FMT_COMPILE("Got ponder from regex: {}"), chess::uci::moveToUci(p));
-            return std::make_optional<TwoMoves>(best, p);;
+            return std::make_optional<MovePair>(best, p);;
         }
         return std::make_optional<chess::Move>(best);
     } 

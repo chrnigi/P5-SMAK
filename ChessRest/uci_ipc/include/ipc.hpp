@@ -7,8 +7,7 @@
 #include <chess.hpp>
 
 #include <boost/asio/io_context.hpp>
-#include <boost/process/v2/process.hpp>
-#include <boost/process/v2/popen.hpp>
+#include <boost/process.hpp>
 
 #include <vector>
 #include <exception>
@@ -128,7 +127,7 @@ private:
     std::string path_to_engine_executable;
     std::string current_position_fen;
     boost::asio::io_context io;
-    boost::process::v2::popen engine_proc;
+    boost::process::popen engine_proc;
     chess::Board m_board;
     bool m_white_to_move = true;
     size_t m_depth = 20;
