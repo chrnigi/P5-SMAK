@@ -230,7 +230,6 @@ bool EngineWhisperer::make_moves(std::vector<chess::Move>& moves) {
     std::vector<std::string> mvs;
     mvs.reserve(moves.size());
     
-    
     for (chess::Move m : moves) {
         const chess::PieceGenType piecetype = [&]() {
             chess::PieceType typ = m_board.at<chess::PieceType>(m.from());
@@ -344,8 +343,6 @@ bool EngineWhisperer::make_moves(std::vector<chess::Move>& moves) {
           break;
         }
 
-        
-        
         return true;
     }
 
@@ -490,7 +487,7 @@ std::optional<Evaluation> EngineWhisperer::naive_eval_from_position(std::string_
 
 }
 
-std::optional<std::variant<std::pair<chess::Move, chess::Move>, chess::Move>> extractBestmoveFromRegex(std::string_view input) {
+std::optional<std::variant<std::pair<chess::Move, chess::Move>, chess::Move>> EngineWhisperer::extractBestmoveFromRegex(std::string_view input) {
 
     const std::string bestmove_capture = "bestmove";
     const std::string ponder_capture = "ponder";
@@ -525,7 +522,7 @@ std::optional<std::variant<std::pair<chess::Move, chess::Move>, chess::Move>> ex
     return {};
 }
 
-std::optional<std::variant<double, size_t>> extractEvalFromRegex(std::string_view input) {
+std::optional<std::variant<double, size_t>> EngineWhisperer::extractEvalFromRegex(std::string_view input) {
     const std::string eval_cap = "eval";
     const std::string mate_cap = "count";
 
