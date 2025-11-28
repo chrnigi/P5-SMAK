@@ -29,7 +29,7 @@ class SmakController : public oatpp::web::server::api::ApiController {
 
 public:
     SmakController(OATPP_COMPONENT(std::shared_ptr<ObjectMapper>, objectMapper)) : oatpp::web::server::api::ApiController(objectMapper)  {
-        auto connectionProvider = oatpp::network::tcp::client::ConnectionProvider::createShared({"130.225.39.244", 8080});
+        auto connectionProvider = oatpp::network::tcp::client::ConnectionProvider::createShared({"localhost", 8080});
         auto requestExecutor = oatpp::web::client::HttpRequestExecutor::createShared(connectionProvider);
         auto clientObjectMapper = oatpp::parser::json::mapping::ObjectMapper::createShared();
         cl = smak::client::SmakClient::createShared(requestExecutor, clientObjectMapper);
@@ -147,6 +147,7 @@ public:
         Evaluation ev = ew.getPositionEval();
         
         /* Validate moves */
+        return createResponse(Status::CODE_501, "Doesn't work yet :/");
     }
 
 };
