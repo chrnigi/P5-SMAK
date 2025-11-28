@@ -5,5 +5,6 @@
 
 #include <dtos/gameDTO.hpp>
 #include <dtos/moveDTO.hpp>
+#include <dtos/evalDTO.hpp>
 
 #endif

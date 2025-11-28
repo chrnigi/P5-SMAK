@@ -1,7 +1,9 @@
 #pragma once
 #include "chess.hpp"
+#include "dtos/evalDTO.hpp"
 #include "dtos/moveDTO.hpp"
 #include <memory>
+#include <optional>
 #include <vector>
 #ifndef SMAK_SMAKCONTROLLER_HPP
 #define SMAK_SMAKCONTROLLER_HPP
@@ -20,6 +22,8 @@
 
 
 namespace smak { namespace controller {
+
+oatpp::Object<models::EvalDTO> evalToDto(Evaluation e);
 
 #include OATPP_CODEGEN_BEGIN(ApiController)
 
@@ -141,13 +145,24 @@ public:
         
         */
 
-        if (!ew.make_moves(chess_moves)) {
-            return createResponse(Status::CODE_503, "Playing moves failed.");
-        }
-        Evaluation ev = ew.getPositionEval();
+        std::vector<std::optional<Evaluation>> evals = ew.getEvalsFromGame(chess_moves);
+
+        oatpp::Vector<Object<models::EvalDTO>> eval_dtos{};
         
-        /* Validate moves */
-        return createResponse(Status::CODE_501, "Doesn't work yet :/");
+        for (auto& e : evals) {
+            size_t idx = eval_dtos->size();
+            if (e) {
+                auto dto = evalToDto(e.value());
+                dto->ply = idx;
+                dto->id = id;
+                eval_dtos->push_back(dto);
+            }
+            eval_dtos->push_back({});
+        }
+        eval_dtos->reserve(chess_moves.size());
+
+
+        return createDtoResponse(Status::CODE_501, eval_dtos);
     }
 
 };
@@ -155,6 +170,8 @@ public:
 #include OATPP_CODEGEN_END(ApiController)
 
 void run_server();
+
+
 
 }/* namespace controller */ }/* namespace smak */
 
