@@ -1,6 +1,10 @@
 .cache/*
 build/*
 .vscode/*
+include/*
 chessclientlib/include/chess.hpp
 uci_ipc/docs/*
 include/*
+
+*/docs/*
+uci_ipc/Doxyfile

@@ -46,6 +46,7 @@ GameOfFens::GameOfFens(oatpp::Vector<oatpp::Object<models::MoveDTO>>& moves) {
                     getVal(move->to_square));
                 break;
             case models::MoveType::NULLMOVE:
+            default:
                 return chess::Move::make<chess::Move::NULL_MOVE>(
                     getVal(move->from_square),
                     getVal(move->to_square));
