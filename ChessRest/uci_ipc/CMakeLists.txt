@@ -12,7 +12,6 @@ cmake_minimum_required(VERSION 3.30)
 #set(BOOST_ENABLE_CMAKE ON)
 
 set(SRC_FILES
-    main.cpp
     ipc.cpp
     uci_commands.cpp
     evaluation.cpp
@@ -20,7 +19,7 @@ set(SRC_FILES
 
 setup_dir_vars()
 
-add_executable(uci_ipc ${SOURCES})
+add_library(uci_ipc ${SOURCES})
 
 target_link_libraries(uci_ipc 
     PUBLIC Boost::system 
@@ -34,8 +33,8 @@ message(STATUS "CHESS_HPP: ${CHESS_INCLUDE_DIR}" )
 
 
 target_include_directories(uci_ipc 
-    PRIVATE ${INC_DIR}
-    PRIVATE ${CHESS_INCLUDE_DIR}
+    PUBLIC ${INC_DIR}
+    PUBLIC ${CHESS_INCLUDE_DIR}
 )
 
 make_directory(${CMAKE_CURRENT_SOURCE_DIR}/docs)

@@ -1,8 +1,9 @@
 #pragma once
+#include "dtos/gameDTO.hpp"
 #ifndef SMAK_SMAKCONTROLLER_HPP
 #define SMAK_SMAKCONTROLLER_HPP
 
-#include "oatpp/parser/json/mapping/ObjectMapper.hpp"
+#include <oatpp/parser/json/mapping/ObjectMapper.hpp>
 #include <oatpp/core/Types.hpp>
 #include <oatpp/core/base/Environment.hpp>
 #include <clientlib.hpp>
@@ -82,6 +83,18 @@ public:
         OATPP_LOGD("/moves/{id}?ply=", " Incoming query for Ply %i, in game %li", ply_number.getValue(0), id.getValue(0));
 
         return createResponse(Status::CODE_200, "nej");
+    }
+
+public:
+
+    ENDPOINT("GET", "/games/eval/{id}", getGameEval, PATH(Int64, id)) {
+        /* EngineWhisperer ew("stockfish") */
+        using namespace smak;
+        auto incoming_game = cl->getGameById(id);
+        auto dto = incoming_game->readBodyToDto<oatpp::Object<models::GameDTO>>(getDefaultObjectMapper());
+        
+        auto moves = cl->getMovesByGameId(id);
+
     }
 
 };

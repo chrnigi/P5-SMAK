@@ -45,3 +45,17 @@ add_test(
     NAME GetFenByPly
     COMMAND GetFenByPly
 )
+
+add_executable(chesstest
+    chesstest.cpp
+)
+target_link_libraries(chesstest
+    PUBLIC uci_ipc
+    PUBLIC plog::plog
+    PUBLIC fmt
+)
+
+add_test(
+    NAME chesstest
+    COMMAND chesstest
+)
