@@ -119,12 +119,34 @@ public:
         }
 
         Evaluation eval;
-        if (ew.start_uci()) {
-            ew.make_moves(chess_moves);
-            double ev = ew.getPositionEval();
+        if (!ew.start_uci()) {
+            return createResponse(Status::CODE_503, "Engine could not start. Analysis unavailable.");
         } 
-        
 
+        // make_moves should probably return a vector of Evaluation
+
+        /*
+            std::optional<std::vector<Evaluation>> evals = ew.make_moves(chess_moves);
+            if(!evals) {
+                return createRespone(Status::CODE_503, "Playing moves failed.");
+            }
+            
+            oatpp::Vector<Object<EvalDTO>> eval_dtos;
+            
+            for (auto& e : evals.value()) {
+                eval_dtos.push_back(Object<EvalDTO>(eval_dto::from_eval(e)));    
+            }
+
+            return createDTOResponse(Status::CODE_200, eval_dtos);
+        
+        */
+
+        if (!ew.make_moves(chess_moves)) {
+            return createResponse(Status::CODE_503, "Playing moves failed.");
+        }
+        Evaluation ev = ew.getPositionEval();
+        
+        /* Validate moves */
     }
 
 };

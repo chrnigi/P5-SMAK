@@ -229,11 +229,11 @@ public:
      */
     bool make_moves(std::vector<chess::Move>& moves);
     /**
-     * @brief Get the evaluation of the current position in pawns.
+     * @brief Get the evaluation of the current position.
      * 
-     * @return double
+     * @return Evaluation
      */
-    double getPositionEval();
+    Evaluation getPositionEval();
 
     /**
      * @brief Get an optional Evaluation from a FEN string without any context of previous moves.

@@ -529,6 +529,6 @@ std::optional<std::variant<double, size_t>> EngineWhisperer::extractEvalFromRege
     return {};
 }
 
-double EngineWhisperer::getPositionEval() {
-    return m_eval.getEval();
+Evaluation EngineWhisperer::getPositionEval() {
+    return m_eval;
 }
