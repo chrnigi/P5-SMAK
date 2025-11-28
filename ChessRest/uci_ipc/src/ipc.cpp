@@ -30,6 +30,7 @@ namespace asio = boost::asio;
 namespace proc = boost::process;
 using MovePair = std::pair<chess::Move, chess::Move>; 
 
+/* constructor. Launch engine with given path */
 EngineWhisperer::EngineWhisperer(std::string engine_path) :
     path_to_engine_executable(proc::environment::find_executable(engine_path).string()),
     engine_proc(io, path_to_engine_executable, {})
@@ -43,6 +44,7 @@ EngineWhisperer::EngineWhisperer(std::string engine_path) :
     }
 }
 
+/* destructor. Kill engine process */
 EngineWhisperer::~EngineWhisperer() {
     PLOG_DEBUG << fmt::format(FMT_COMPILE("Attempting exit with UCI quit."));
     asio::write(engine_proc, asio::buffer(UCIcommand::quit()));
@@ -67,7 +69,7 @@ EngineWhisperer::~EngineWhisperer() {
     io.stop();
 }
 
-
+/* start uci with engine*/
 bool EngineWhisperer::start_uci() {
     boost::system::error_code ec;
 
@@ -114,7 +116,7 @@ bool EngineWhisperer::start_uci() {
     return true;
 
 }
-
+/* Blocking async write to engine's standard input */
 size_t EngineWhisperer::write_engine_with_timeout(std::string_view command, size_t timeout) {
     if(!engine_proc.running()) {
         PLOG_ERROR << "Engine process is not running.";
@@ -143,6 +145,7 @@ size_t EngineWhisperer::write_engine_with_timeout(std::string_view command, size
     return bytes;
 }
 
+/* check if engine is ready to proceed */
 bool EngineWhisperer::check_engine_isready() {
     PLOG_DEBUG << "Asking engine if ready.";
     size_t sent = write_engine_with_timeout(UCIcommand::isready(), m_write_timeout);
@@ -159,6 +162,7 @@ bool EngineWhisperer::check_engine_isready() {
     return true;
 }
 
+/* blocking async read from engine's standard output */
 std::string EngineWhisperer::read_engine_with_timeout(std::string_view search_string, size_t timeout) {
     if(!engine_proc.running()) {
         PLOG_ERROR << "Engine process is not running.";
@@ -184,6 +188,8 @@ std::string EngineWhisperer::read_engine_with_timeout(std::string_view search_st
 
 }
 
+
+/* start a new game and reset position */
 void EngineWhisperer::new_game() {
     if (!engine_proc.running()) {
         throw new engine_not_launched_exception("Engine not running!");
@@ -215,9 +221,9 @@ bool EngineWhisperer::make_moves(chess::Move move) {
     return make_moves(m);
 }
 
+/* Take a vector of moves and validate them, then play them. */
 /**
  * @todo Issue "stop" command on timeout, so evaluation still can be extracted, instead of undoing the moves.
- * @todo Use m_board to validate moves before trying to play them.
  */
 bool EngineWhisperer::make_moves(const std::vector<chess::Move>& moves) {
     
@@ -349,6 +355,7 @@ bool EngineWhisperer::make_moves(const std::vector<chess::Move>& moves) {
     return true;
 }
 
+/* blocking async read and write to/from engine */
 std::pair<size_t, std::string> EngineWhisperer::write_and_read_with_timeout(std::string_view command, std::string_view search_string, size_t timeout) {
     size_t sz = write_engine_with_timeout(command, timeout);
     if (sz != command.length()) {
@@ -358,9 +365,7 @@ std::pair<size_t, std::string> EngineWhisperer::write_and_read_with_timeout(std:
     return {sz, read};
 }
 
-/**
- * @todo Return an error state in Evaluation struct on empty return string or wrong amount of bytes written.
- */
+/* Get an evaluation from a position only with no context of moves */
 std::optional<Evaluation> EngineWhisperer::naive_eval_from_position(std::string_view fen) {
 
     std::optional<Evaluation> eval_out;
@@ -429,6 +434,7 @@ std::optional<Evaluation> EngineWhisperer::naive_eval_from_position(std::string_
 
 }
 
+/* Get bestmove/ponder values from the engines evaluation output */
 std::optional<std::variant<MovePair, chess::Move>> EngineWhisperer::extractBestmoveFromRegex(std::string& input) {
     boost::regex rgx("bestmove\\s(?<bestmove>([a-h]\\d){2})\\s*(ponder\\s(?<ponder>([a-h]\\d){2}\\s*))?");
 
@@ -469,6 +475,7 @@ std::optional<std::variant<MovePair, chess::Move>> EngineWhisperer::extractBestm
     return {};
 }
 
+/* get evaluation in centipawns or moves to mate from the engines evaluation output */
 std::optional<std::variant<double, size_t>> EngineWhisperer::extractEvalFromRegex(std::string& input) {
     const std::string eval_cap = "eval";
     const std::string mate_cap = "count";
@@ -503,6 +510,7 @@ std::optional<std::variant<double, size_t>> EngineWhisperer::extractEvalFromRege
     return {};
 }
 
+/* check if a vector of moves are valid in the current position */
 size_t EngineWhisperer::validate_moves(const std::vector<chess::Move>& moves, chess::Board board) {
     size_t idx = 0;
     for (auto& m : moves) {
