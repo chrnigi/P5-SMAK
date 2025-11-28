@@ -23,6 +23,7 @@ target_include_directories(PGNdpoint
 
 target_link_libraries(PGNdpoint 
     PUBLIC chessclientlib
+    PUBLIC uci_ipc
 )
 
 

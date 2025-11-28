@@ -1,5 +1,8 @@
 #pragma once
-#include "dtos/gameDTO.hpp"
+#include "chess.hpp"
+#include "dtos/moveDTO.hpp"
+#include <memory>
+#include <vector>
 #ifndef SMAK_SMAKCONTROLLER_HPP
 #define SMAK_SMAKCONTROLLER_HPP
 
@@ -13,6 +16,7 @@
 #include <oatpp/web/server/api/ApiController.hpp>
 #include <oatpp/core/macro/codegen.hpp>
 #include <oatpp/core/macro/component.hpp>
+#include <ipc.hpp>
 
 
 namespace smak { namespace controller {
@@ -88,12 +92,38 @@ public:
 public:
 
     ENDPOINT("GET", "/games/eval/{id}", getGameEval, PATH(Int64, id)) {
-        /* EngineWhisperer ew("stockfish") */
+        EngineWhisperer ew("stockfish");
         using namespace smak;
         auto incoming_game = cl->getGameById(id);
-        auto dto = incoming_game->readBodyToDto<oatpp::Object<models::GameDTO>>(getDefaultObjectMapper());
+        auto dto = incoming_game->readBodyToDto<Object<models::GameDTO>>(getDefaultObjectMapper());
         
-        auto moves = cl->getMovesByGameId(id);
+        auto incoming_moves = cl->getMovesByGameId(id);
+        auto move_dtos = incoming_moves->readBodyToDto<oatpp::Vector<Object<models::MoveDTO>>>(getDefaultObjectMapper());
+        
+        std::vector<chess::Move> chess_moves; 
+        chess_moves.reserve(move_dtos->size());
+        
+        auto int_to_square = [](int sq){
+            chess::Rank r = 8-(sq >> 3);
+            chess::File f = sq & 7;
+
+            return chess::Square(r, f);
+        };
+        
+        for (auto& m_dto : *move_dtos) {
+            
+            auto from = int_to_square(m_dto->from_square.getValue(0));
+            auto to = int_to_square(m_dto->to_square.getValue(0));
+
+            chess_moves.push_back(chess::Move::make(from, to));
+        }
+
+        Evaluation eval;
+        if (ew.start_uci()) {
+            ew.make_moves(chess_moves);
+            double ev = ew.getPositionEval();
+        } 
+        
 
     }
 
