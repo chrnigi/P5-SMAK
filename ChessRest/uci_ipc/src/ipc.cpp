@@ -368,7 +368,7 @@ std::pair<size_t, std::string> EngineWhisperer::write_and_read_with_timeout(std:
 /* Get an evaluation from a position only with no context of moves */
 std::optional<Evaluation> EngineWhisperer::naive_eval_from_position(std::string_view fen) {
 
-    std::optional<Evaluation> eval_out;
+    std::optional<Evaluation> eval_out{};
     new_game();
 
     std::string cmd = UCIcommand::create_position_command(fen);

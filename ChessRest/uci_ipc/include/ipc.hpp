@@ -23,6 +23,7 @@
  * 
  */
 class Evaluation {
+public:
     double m_eval; 
     std::string bestmove_ponder;
     chess::Move m_bestmove;
@@ -32,7 +33,9 @@ class Evaluation {
     int m_matec = 0;
     chess::Color m_has_mate;
     bool m_mate_played = false;
-public:
+    chess::GameResultReason reason;
+    chess::GameResult res;
+
     /**
      * @brief Empty constructor.
      * 
@@ -263,6 +266,8 @@ public:
      * @return std::optional<Evaluation> 
      */
     std::optional<Evaluation> naive_eval_from_position(std::string_view fen);
+
+    std::vector<std::optional<Evaluation>> getEvalsFromGame(const std::vector<chess::Move>& moves);
 };
 /**
 * @brief Exception thrown if operations that expect a running engine are done while the engine hasn't launched.

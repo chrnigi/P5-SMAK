@@ -1,0 +1,82 @@
+#include <chess.hpp>
+#include <ipc.hpp>
+#include <optional>
+#include <utility>
+#include <vector>
+
+/**
+ * @todo Set all moves' promotion type to be Queen.
+ */
+std::vector<std::optional<Evaluation>> EngineWhisperer::getEvalsFromGame(const std::vector<chess::Move>& moves) {
+    
+    using namespace chess;
+
+    if (!engine_proc.running()) {
+        throw new engine_not_launched_exception("Engine not running.");
+    }
+    Board game_board{};
+
+    std::vector<std::optional<Evaluation>> evals_out{};
+    evals_out.reserve(moves.size());
+
+    new_game();
+
+    for (auto& m : moves) {
+        Movelist legal;
+        
+        const PieceGenType piecetype = [&]() {
+            PieceType typ = game_board.at<PieceType>(m.from());
+            // Ugly switch-case converts types.
+            switch (typ.internal()) {
+                using pt = PieceType;
+            case pt::PAWN:
+                return PAWN;
+            case pt::KNIGHT:
+                return KNIGHT;
+            case pt::BISHOP:
+                return BISHOP;
+            case pt::ROOK:
+                return ROOK;
+            case pt::QUEEN:
+                return QUEEN;
+            case pt::KING:
+                return KING;
+            case pt::NONE:
+            default:
+                return static_cast<PieceGenType>(63); // This searches for all move types. Case fallthrough to default is intentional.
+                // ideally we don't hit this, because this will generate a lot more unnessecary moves.
+            }
+        }();
+
+        movegen::legalmoves<movegen::MoveGenType::ALL>(legal, game_board, piecetype);
+        auto it = std::find(legal.begin(), legal.end(), m);
+
+        if (it == legal.end() /* Move was illegal*/) {
+            evals_out.push_back({});
+            game_board.makeNullMove();
+            continue;            
+        }
+
+        game_board.makeMove(m);
+        
+        auto ev = naive_eval_from_position(game_board.getFen());
+
+        if(!ev) {
+            evals_out.push_back(ev);
+            continue;
+        }
+        
+        std::pair<GameResultReason, GameResult> result = game_board.isGameOver();
+        ev->reason = result.first;
+        ev->res = result.second;
+        
+        evals_out.push_back(ev);
+
+        /* if game_board says we are done, we are done. */
+        if (ev->res != GameResult::NONE) {
+            break;
+        }
+    }
+
+    return evals_out;
+}
