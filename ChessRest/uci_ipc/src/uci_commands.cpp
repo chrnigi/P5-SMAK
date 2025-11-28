@@ -12,7 +12,7 @@ const std::string UCIcommand::create_position_command(std::string_view fen) {
     return fmt::format(FMT_COMPILE("\n position fen {}\n"), fen);
 }
 
-const std::string UCIcommand::create_position_command(std::string_view fen, std::vector<chess::Move>& moves) {    
+const std::string UCIcommand::create_position_command(std::string_view fen, const std::vector<chess::Move>& moves) {    
     std::vector<std::string> mvs;
     mvs.reserve(moves.size());
 
@@ -29,12 +29,10 @@ const std::string UCIcommand::append_moves_to_position_command(std::string_view 
 /**
  * @todo fix bug with excessive moves.
  */
-const std::string UCIcommand::append_moves_to_position_command(std::string_view pos_command, std::vector<chess::Move>& moves) {
+const std::string UCIcommand::append_moves_to_position_command(std::string_view pos_command, const std::vector<chess::Move>& moves) {
     std::vector<std::string> mvs;
     mvs.reserve(moves.size());
-
-
-    for (auto m : moves) {
+    for (auto& m : moves) {
         mvs.push_back(chess::uci::moveToUci(m));
     }
 

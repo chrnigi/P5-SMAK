@@ -1,5 +1,6 @@
 #pragma once 
 
+
 #ifndef IPC_HPP
 #define IPC_HPP
 
@@ -7,8 +8,7 @@
 #include <chess.hpp>
 
 #include <boost/asio/io_context.hpp>
-#include <boost/process/v2/process.hpp>
-#include <boost/process/v2/popen.hpp>
+#include <boost/process.hpp>
 
 #include <vector>
 #include <exception>
@@ -128,7 +128,7 @@ private:
     std::string path_to_engine_executable;
     std::string current_position_fen;
     boost::asio::io_context io;
-    boost::process::v2::popen engine_proc;
+    boost::process::popen engine_proc;
     chess::Board m_board;
     bool m_white_to_move = true;
     size_t m_depth = 20;
@@ -172,8 +172,29 @@ private:
      * @return std::pair<size_t, std::string> A pair of the return value of write_engine_with_timeout and read_engine_with_timeout.
      */
     std::pair<size_t, std::string> write_and_read_with_timeout(std::string_view command, std::string_view search_string, size_t timeout = 5);
-    std::optional<std::variant<std::pair<chess::Move, chess::Move>, chess::Move>> extractBestmoveFromRegex(std::string_view input);
-    std::optional<std::variant<double, size_t>> extractEvalFromRegex(std::string_view input);
+    /**
+     * @brief Get an optional of either two moves or a single move from the engine's "bestmove ..." output. 
+     * @details If the engine outputs both a bestmove and a ponder, the variant of the return will be a <tt>std::pair<chess::Move, chess::Move></tt>. 
+     * If no ponder is given by the engine, the variant will be a single @p chess::Move . 
+     * @param input The engine's "bestmove ..." string.
+     * @return std::optional<std::variant<std::pair<chess::Move, chess::Move>, chess::Move>> If an error occurs, the returned optional will be empty
+     */
+    std::optional<std::variant<std::pair<chess::Move, chess::Move>, chess::Move>> extractBestmoveFromRegex(std::string& input);
+    /**
+     * @brief Get an optional of a @p double or a @p size_t from the engine's evaluation output.
+     * 
+     * @param input The last "info ..." string from the engine.
+     * @return std::optional<std::variant<double, size_t>> returns a double if evaluation is in centipawns, or a size_t if in moves to a forced checkmate.
+     */
+    std::optional<std::variant<double, size_t>> extractEvalFromRegex(std::string& input);
+    /**
+     * @brief Validates whether a series of moves all are legal from the given board's current state.
+     * 
+     * @param moves The moves to validate.
+     * @param board The board holding the state the moves are to be played from.
+     * @return size_t The index in the vector to the first illegal move. Returns -1 (UINT64_MAX) if no moves were illegal.
+     */
+    size_t validate_moves(const std::vector<chess::Move>& moves, chess::Board board);
 
 public:
     /**
@@ -227,7 +248,7 @@ public:
      * @param moves The moves to be made.
      * @todo Find a proper return on error.
      */
-    bool make_moves(std::vector<chess::Move>& moves);
+    bool make_moves(const std::vector<chess::Move>& moves);
     /**
      * @brief Get the evaluation of the current position.
      * 
