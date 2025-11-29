@@ -124,8 +124,8 @@ public:
         
         for (auto& m_dto : *move_dtos) {
             
-            auto from = int_to_square(m_dto->from_square.getValue(0));
-            auto to = int_to_square(m_dto->to_square.getValue(0));
+            auto from   = int_to_square(m_dto->from_square.getValue(0));
+            auto to     = int_to_square(m_dto->to_square.getValue(0));
 
             chess_moves.push_back(chess::Move::make(from, to));
         }
@@ -147,8 +147,9 @@ public:
                 dto->ply = idx;
                 dto->id = id;
                 eval_dtos->push_back(dto);
+            } else {
+                eval_dtos->push_back({});
             }
-            eval_dtos->push_back({});
         }
 
 
