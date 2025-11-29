@@ -127,28 +127,11 @@ public:
             return createResponse(Status::CODE_503, "Engine could not start. Analysis unavailable.");
         } 
 
-        // make_moves should probably return a vector of Evaluation
-
-        /*
-            std::optional<std::vector<Evaluation>> evals = ew.make_moves(chess_moves);
-            if(!evals) {
-                return createRespone(Status::CODE_503, "Playing moves failed.");
-            }
-            
-            oatpp::Vector<Object<EvalDTO>> eval_dtos;
-            
-            for (auto& e : evals.value()) {
-                eval_dtos.push_back(Object<EvalDTO>(eval_dto::from_eval(e)));    
-            }
-
-            return createDTOResponse(Status::CODE_200, eval_dtos);
-        
-        */
-
         std::vector<std::optional<Evaluation>> evals = ew.getEvalsFromGame(chess_moves);
 
         oatpp::Vector<Object<models::EvalDTO>> eval_dtos{};
-        
+        eval_dtos->reserve(chess_moves.size());
+
         for (auto& e : evals) {
             size_t idx = eval_dtos->size();
             if (e) {
@@ -159,10 +142,9 @@ public:
             }
             eval_dtos->push_back({});
         }
-        eval_dtos->reserve(chess_moves.size());
 
 
-        return createDtoResponse(Status::CODE_501, eval_dtos);
+        return createDtoResponse(Status::CODE_200, eval_dtos);
     }
 
 };

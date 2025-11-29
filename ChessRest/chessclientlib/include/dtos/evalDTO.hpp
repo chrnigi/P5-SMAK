@@ -44,12 +44,12 @@ class EvalDTO : public oatpp::DTO {
 
     DTO_FIELD(Float64, pawn_eval);
     DTO_FIELD_INFO(bestmove){
-        info->description = "Engine's bestmove. square_from in upper 8 bits, square to in lower 8 bits.";
+        info->description = "Engine's bestmove. square_from in upper 8 bits, square_to in lower 8 bits.";
     }
     DTO_FIELD(Int16, bestmove);
 
     DTO_FIELD_INFO(ponder) {
-        info->description = "Engine's ponder move. square_from in upper 8 bits, square to in lower 8 bits.";
+        info->description = "Engine's ponder move. square_from in upper 8 bits, square_to in lower 8 bits.";
         info->required = false;
     }
     DTO_FIELD(Int16, ponder);
