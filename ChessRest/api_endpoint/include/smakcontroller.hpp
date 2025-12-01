@@ -99,6 +99,8 @@ public:
     ENDPOINT("GET", "/games/eval/{id}", getGameEval, PATH(Int64, id)) {
         EngineWhisperer ew("stockfish");
         using namespace smak;
+        using namespace chess;
+
         auto incoming_game = cl->getGameById(id);
         auto dto = incoming_game->readBodyToDto<Object<models::GameDTO>>(getDefaultObjectMapper());
         
@@ -113,7 +115,7 @@ public:
             return createResponse(Status::CODE_503, "Unable to retrieve moves from database.");
         }
 
-        std::vector<chess::Move> chess_moves; 
+        std::vector<chess::Move> chess_moves{}; 
         chess_moves.reserve(move_dtos->size());
         
         auto int_to_square = [](int sq){
@@ -138,7 +140,7 @@ public:
 
         std::vector<std::optional<Evaluation>> evals = ew.getEvalsFromGame(chess_moves);
 
-        oatpp::Vector<Object<models::EvalDTO>> eval_dtos{};
+        auto eval_dtos = oatpp::Vector<Object<models::EvalDTO>>::createShared(); 
         eval_dtos->reserve(chess_moves.size());
 
         for (auto& e : evals) {

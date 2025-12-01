@@ -96,22 +96,22 @@ bool EngineWhisperer::start_uci() {
     write_engine_with_timeout(UCIcommand::ucinewgame());
     write_engine_with_timeout(UCIcommand::position_startpos());
     
-    using sq = chess::Square;
-    std::vector<chess::Move> moves{chess::Move::make(sq::SQ_E2, sq::SQ_E4), chess::Move::make(sq::SQ_E7, sq::SQ_E5)};
-    make_moves(moves);
+    // using sq = chess::Square;
+    // std::vector<chess::Move> moves{chess::Move::make(sq::SQ_E2, sq::SQ_E4), chess::Move::make(sq::SQ_E7, sq::SQ_E5)};
+    // make_moves(moves);
 
-    new_game();
+    // new_game();
 
-    std::vector<chess::Move> fools_mate {
-        chess::Move::make(sq::SQ_F2, sq::SQ_F3), 
-        chess::Move::make(sq::SQ_E7, sq::SQ_E6),
+    // std::vector<chess::Move> fools_mate {
+    //     chess::Move::make(sq::SQ_F2, sq::SQ_F3), 
+    //     chess::Move::make(sq::SQ_E7, sq::SQ_E6),
         
-        chess::Move::make(sq::SQ_G2, sq::SQ_G4),
-        chess::Move::make(sq::SQ_D8, sq::SQ_H4)
-    };
+    //     chess::Move::make(sq::SQ_G2, sq::SQ_G4),
+    //     chess::Move::make(sq::SQ_D8, sq::SQ_H4)
+    // };
 
-    write_engine_with_timeout(UCIcommand::position_startpos());
-    make_moves(fools_mate);
+    // write_engine_with_timeout(UCIcommand::position_startpos());
+    // make_moves(fools_mate);
 
     return true;
 
@@ -362,6 +362,7 @@ std::pair<size_t, std::string> EngineWhisperer::write_and_read_with_timeout(std:
         return {sz, ""};
     }
     std::string read = read_engine_with_timeout(search_string, timeout);
+    PLOGD << fmt::format(FMT_COMPILE("Read from engine:\n {}"), read);
     return {sz, read};
 }
 
@@ -371,27 +372,30 @@ std::optional<Evaluation> EngineWhisperer::naive_eval_from_position(std::string_
     std::optional<Evaluation> eval_out{};
 
     std::string cmd = UCIcommand::create_position_command(fen);
+    write_engine_with_timeout(cmd);
 
     std::pair<size_t, std::string> result = write_and_read_with_timeout(
-        cmd,
-        UCIcommand::EngineCommands::bestmove()
+        UCIcommand::create_go_depth_command(),
+        UCIcommand::EngineCommands::bestmove(),
+        m_search_timeout
     );
-    if (result.first != cmd.length()) {
-        return eval_out;
-    }
+
     if (result.second.empty()) {
         return eval_out;
     }
+    PLOG_DEBUG << "Are we?";
 
     std::vector<std::string> lines;
     std::stringstream ss(result.second);
     std::string line{};
     while (std::getline(ss, line)) {
         lines.push_back(line);
+        PLOGD << fmt::format("Line: {}", line);
     }
 
     std::string& bestmove_str = lines.back();
     auto last_info_str = lines.end()-2;
+    PLOGD << fmt::format(FMT_COMPILE("bestmove_str = {}"), bestmove_str);
     auto bestmoveponder = extractBestmoveFromRegex(bestmove_str);
 
     if (!bestmoveponder) {
@@ -480,7 +484,7 @@ std::optional<std::variant<double, size_t>> EngineWhisperer::extractEvalFromRege
     const std::string mate_cap = "count";
 
     boost::smatch matches;
-    boost::regex eval_rgx("(?<centipawns>(cp\\s*(?<eval>\\d+)))|(?<mate>(mate\\s*(?<count>\\d+)))");
+    boost::regex eval_rgx("(?<centipawns>(cp\\s*(?<eval>-?\\d+)))|(?<mate>(mate\\s*(?<count>\\d+)))");
 
     PLOG_DEBUG << fmt::format(FMT_COMPILE("Getting moves with regex: {}"), eval_rgx.str());
     PLOG_DEBUG << fmt::format(FMT_COMPILE("Subject string: {}"), input);

@@ -135,7 +135,7 @@ private:
     chess::Board m_board;
     bool m_white_to_move = true;
     size_t m_depth = 20;
-    size_t m_search_timeout = 10;
+    size_t m_search_timeout = 20;
     size_t m_write_timeout = 5;
     size_t m_read_timeout = 5;
     Evaluation m_eval;
