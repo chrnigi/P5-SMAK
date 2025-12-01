@@ -1,24 +1,25 @@
 #pragma once
-#include "chess.hpp"
-#include "dtos/evalDTO.hpp"
-#include "dtos/moveDTO.hpp"
-#include <memory>
-#include <optional>
-#include <vector>
+
 #ifndef SMAK_SMAKCONTROLLER_HPP
 #define SMAK_SMAKCONTROLLER_HPP
 
+#include <memory>
+#include <optional>
+#include <vector>
+
+#include <chess.hpp>
+#include <clientlib.hpp>
+#include <models.hpp>
+#include <ipc.hpp>
+
+#include <oatpp/network/tcp/client/ConnectionProvider.hpp>
 #include <oatpp/parser/json/mapping/ObjectMapper.hpp>
 #include <oatpp/core/Types.hpp>
 #include <oatpp/core/base/Environment.hpp>
-#include <clientlib.hpp>
-#include <models.hpp>
-#include <oatpp/network/tcp/client/ConnectionProvider.hpp>
 #include <oatpp/web/client/HttpRequestExecutor.hpp>
 #include <oatpp/web/server/api/ApiController.hpp>
 #include <oatpp/core/macro/codegen.hpp>
 #include <oatpp/core/macro/component.hpp>
-#include <ipc.hpp>
 
 
 namespace smak { namespace controller {
@@ -151,7 +152,6 @@ public:
                 eval_dtos->push_back({});
             }
         }
-
 
         return createDtoResponse(Status::CODE_200, eval_dtos);
     }

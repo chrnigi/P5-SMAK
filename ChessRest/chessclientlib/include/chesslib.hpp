@@ -1,8 +1,8 @@
 #pragma once
-#include "dtos/moveDTO.hpp"
-#include "oatpp/core/Types.hpp"
+
 #ifndef SMAK_CHESSLIB_HPP
 #define SMAK_CHESSLIB_HPP
+
 #include <string>
 #include <vector>
 #include <chess.hpp>

@@ -1,5 +1,5 @@
-#include "dtos/moveDTO.hpp"
-#include "oatpp/core/Types.hpp"
+#include <models.hpp>
+#include <oatpp/core/Types.hpp>
 #include <chesslib.hpp>
 #include <chess.hpp>
 #include <string>

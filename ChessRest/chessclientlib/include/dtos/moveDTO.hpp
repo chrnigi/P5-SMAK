@@ -1,10 +1,12 @@
 #pragma once
+
+#ifndef SMAK_MOVEDTO_HPP
+#define SMAK_MOVEDTO_HPP
+
 #include <oatpp/core/base/Environment.hpp>
 #include <oatpp/core/Types.hpp>
 #include <oatpp/core/macro/codegen.hpp>
 #include <chess.hpp>
-#ifndef SMAK_MOVEDTO_HPP
-#define SMAK_MOVEDTO_HPP
 
 namespace smak { namespace models {
 
