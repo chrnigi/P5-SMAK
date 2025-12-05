@@ -119,7 +119,7 @@ public:
         chess_moves.reserve(move_dtos->size());
         
         auto int_to_square = [](int sq){
-            chess::Rank r = 8-(sq >> 3);
+            chess::Rank r = 7-(sq >> 3);
             chess::File f = sq & 7;
 
             return chess::Square(r, f);
