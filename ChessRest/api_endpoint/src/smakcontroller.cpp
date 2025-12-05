@@ -34,13 +34,15 @@ void run_server() {
 oatpp::Object<models::EvalDTO> evalToDto(Evaluation e) {
     auto out = oatpp::Object<models::EvalDTO>::createShared();
     out->pawn_eval  = e.m_eval;
-    int8_t b_from   = static_cast<int8_t>(e.getBestmove().from().index());
-    int8_t b_to     = static_cast<int8_t>(e.getBestmove().to().index()); 
-    out->bestmove   = (b_from << 8) | b_to;
+    // int8_t b_from   = static_cast<int8_t>(e.getBestmove().from().index());
+    // int8_t b_to     = static_cast<int8_t>(e.getBestmove().to().index()); 
+    // out->bestmove   = (b_from << 8) | b_to;
+    out->bestmove = chess::uci::moveToUci(e.getBestmove());
+    out->ponder = chess::uci::moveToUci(e.getPonder());
 
-    int8_t p_from   = static_cast<int8_t>(e.getPonder().from().index());
-    int8_t p_to     = static_cast<int8_t>(e.getPonder().to().index());
-    out->ponder     = (p_from << 8) | p_to;
+    // int8_t p_from   = static_cast<int8_t>(e.getPonder().from().index());
+    // int8_t p_to     = static_cast<int8_t>(e.getPonder().to().index());
+    // out->ponder     = (p_from << 8) | p_to;
 
     out->result     = static_cast<models::GameResultEnum>(e.res);
     out->reason     = static_cast<models::GameResultReasonEnum>(e.reason);    
