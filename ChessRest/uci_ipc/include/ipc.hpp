@@ -28,6 +28,8 @@ public:
     std::string bestmove_ponder;
     chess::Move m_bestmove;
     chess::Move m_ponder;
+    std::string bestmove_str;
+    std::string ponder_str;
     chess::Color m_color_to_move;
     bool m_mate = false;
     int m_matec = 0;

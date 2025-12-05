@@ -401,15 +401,21 @@ std::optional<Evaluation> EngineWhisperer::naive_eval_from_position(std::string_
     if (!bestmoveponder) {
         return eval_out;
     }
+    chess::Board b{fen};
     if (std::holds_alternative<MovePair>(bestmoveponder.value())) {
         eval_out.emplace();
         MovePair best_ponder = std::get<MovePair>(bestmoveponder.value());
         eval_out->setBestmove(best_ponder.first);
         eval_out->setPonder(best_ponder.second);
+        
+        eval_out->bestmove_str = chess::uci::moveToSan(b, best_ponder.first);
+        b.makeMove(best_ponder.first);
+        eval_out->ponder_str = chess::uci::moveToSan(b, best_ponder.second);
     } else if (std::holds_alternative<chess::Move>(bestmoveponder.value())) {
         eval_out.emplace();
         chess::Move best = std::get<chess::Move>(bestmoveponder.value());
         eval_out->setBestmove(best);
+        eval_out->bestmove_str = chess::uci::moveToSan(b, best);
     }
 
     auto eval = extractEvalFromRegex(*last_info_str);
@@ -547,7 +553,7 @@ size_t EngineWhisperer::validate_moves(const std::vector<chess::Move>& moves, ch
         const std::string move_as_uci = chess::uci::moveToUci(m);
 
         auto it = std::find(m_gen.begin(), m_gen.end(), m);
-        PLOG_DEBUG_IF(it != m_gen.end()) << fmt::format(FMT_COMPILE("Move {} is legal in current position {}"), move_as_uci, board.getFen());
+        PLOG_DEBUG_IF  (it != m_gen.end()) << fmt::format(FMT_COMPILE("Move {} is legal in current position {}"), move_as_uci, board.getFen());
         PLOG_WARNING_IF(it == m_gen.end()) << fmt::format(FMT_COMPILE("Move {} is not legal in current position {}. This error is NOT handled."), move_as_uci, board.getFen());
         if (it == m_gen.end()) {
             return idx;
