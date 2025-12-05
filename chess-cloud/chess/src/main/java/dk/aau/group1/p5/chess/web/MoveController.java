@@ -6,10 +6,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 
 import dk.aau.group1.p5.chess.model.Move;
 import dk.aau.group1.p5.chess.service.MoveService;
 
+@RestController
 public class MoveController {
     private final MoveService moveService;
 

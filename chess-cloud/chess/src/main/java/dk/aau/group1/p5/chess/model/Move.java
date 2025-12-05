@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
@@ -25,12 +27,15 @@ public class Move {
     private Integer ply_number;
 
     @Column(name = "move_type", nullable = false)
+    @Enumerated(EnumType.STRING)
     private MoveTypeEnum move_type;
 
     @Column(name = "piece_moved", nullable = false)
+    @Enumerated(EnumType.STRING)
     private PiecesEnum piece_moved;
 
     @Column(name = "piece_captured", nullable = false)
+    @Enumerated(EnumType.STRING)
     private PiecesEnum piece_captured;
 
     @Column(name = "from_square", nullable = false)
@@ -177,13 +182,13 @@ public class Move {
         this.to_square = to_square;
     }
 
-    public Game getGame() {
-        return game;
-    }
+    // public Game getGame() {
+    //     return game;
+    // }
 
-    public void setGame(Game game) {
-        this.game = game;
-    }
+    // public void setGame(Game game) {
+    //     this.game = game;
+    // }
 
 
 }

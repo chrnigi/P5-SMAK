@@ -27,7 +27,7 @@ public class GameController {
 
     @GetMapping("/games/{id}")
     public Game getGameById(@PathVariable Long id) {
-        return gameService.get(id).orElseThrow(() -> new RuntimeException() /* Change to custom exception */); 
+        return gameService.get(id).orElseThrow(() -> new GameNotFoundException(id)); 
     }
 
     @PostMapping("/games")
@@ -37,7 +37,8 @@ public class GameController {
 
     @PatchMapping("/games/{id}")
     public Game updateGame(@PathVariable Long id, @RequestBody Game game) {
-        game.setId(id);
-        return gameService.save(game);
+        Game g = getGameById(id);
+        g.setGamestate(game.getGamestate()); 
+        return gameService.save(g);
     } 
 }
