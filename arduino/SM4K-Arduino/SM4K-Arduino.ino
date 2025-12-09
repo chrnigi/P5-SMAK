@@ -3,8 +3,6 @@
 
 void(* resetFunc) (void) = 0;
 
-const bool heartbeat = false;
-
 const int SCAN_EVERY_MS = 10;    // scan every 10 ms
 const int HITS_NEEDED   = 40;    // how many repeated reads to accept a change
 
@@ -121,10 +119,5 @@ void loop() {
     } else {
       changeStreak[i] = 0;
     }
-  }
-
-  // Heartbeat about once per second (200 scans * 10 ms)
-  if (scans % 200 == 0 && heartbeat) {
-    Serial.println("Working");
   }
 }
