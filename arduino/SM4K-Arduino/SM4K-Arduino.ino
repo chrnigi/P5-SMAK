@@ -58,6 +58,7 @@ void command(String command){
   }
 }
 
+//Print output from the ESP8266
 void readESPserial(){
   if (Serial3.available()){
     Serial.print("Received string from ESP: ");
@@ -88,7 +89,6 @@ void loop() {
   command(commands);
   }
 
-  // Read serial
   readESPserial();
 
   if (now - lastScan < (unsigned long)SCAN_EVERY_MS) return;
@@ -122,8 +122,6 @@ void loop() {
       changeStreak[i] = 0;
     }
   }
-
-  
 
   // Heartbeat about once per second (200 scans * 10 ms)
   if (scans % 200 == 0 && heartbeat) {

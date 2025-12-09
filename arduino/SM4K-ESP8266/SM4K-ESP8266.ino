@@ -11,11 +11,7 @@
 #include <sstream>
 #include "pch.h"
 
-
-// pins Rx GPIO14 (D5) and Tx GPIO 12 (D6)
-//SoftwareSerial Serial(14, 12);  
 String serial;
-
 
 // SSID the ESP8266 connects to for internet access
 const char* ssid = "MSO ASUS Zenfone 10"; // WiFi network name
@@ -49,7 +45,7 @@ struct gameChange_struct{
   int pinChanged;
   bool state;
   int64_t GameID = 0;
-  String result = "inprogress";
+  String gamestate = "NOT_STARTED";
 } gameChange;
 
 bool readPinChange(String message){
@@ -78,7 +74,7 @@ void createNewGame(){
 
   http.addHeader("Content-Type", "application/json");
 
-  int httpResponseCode = http.POST("{\"result\":\"inprogress\"}");
+  int httpResponseCode = http.POST("{\"gamestate\":\"NOT_STARTED\"}");
 
   String payload = "{}"; 
 
@@ -102,7 +98,6 @@ void createNewGame(){
   gameChange.GameID = doc["id"];
 }
 
-
 void updateGame(){
   WiFiClient client;
   HTTPClient http;
@@ -113,8 +108,7 @@ void updateGame(){
   String payload;
   JsonDocument doc;
   doc["id"] = gameChange.GameID;
-  doc["result"] = gameChange.result;
-
+  doc["gamestate"] = gameChange.gamestate;
 
   serializeJson(doc, payload);
 
@@ -160,13 +154,8 @@ void wifiSetup(){
 
 //clear serial buffer
 void clearSerialInput() {
-  for (int i = 0; i < 1000; i++) {
   while (Serial.available() > 0) {  //wait for data at software serial
-    String trash;
-    trash = Serial.readStringUntil('\n');
-      delay(1);
-      }
-    delay(1);
+    Serial.readStringUntil('\n');
   }
 }
 void setup() {
@@ -175,14 +164,8 @@ void setup() {
   wifiSetup();
   //delay(500);
   Serial.println("\n################################################################################\n");
-  //init_starting_board();
+  init_starting_board();
 
-  //initialize test board with pawns in each corner
-  clean_state();
-  board[63] = p_WHITE_PAWN; 
-  board[56] = p_WHITE_PAWN;
-  board[0] =  p_BLACK_PAWN;
-  board[7] = p_BLACK_PAWN;
   std::string printBoard=print_board();
   Serial.println(printBoard.c_str());
   clearSerialInput();
@@ -198,27 +181,26 @@ void loop() {
       Serial.print(gameChange.pinChanged);
       Serial.print(" Is up: ");
       Serial.println(!gameChange.state);
-      Serial.println(returnState());
 
       // Control wifi status
-      if(WiFi.status()== WL_CONNECTED && returnPly()==1){ createNewGame();} 
-      else {Serial.println("Failed to send gamestate, wifi disconnected");}
-        pin_change(gameChange.pinChanged,!gameChange.state);
-        //if (!isGameInProgress()) updateGame();      Shouldnt be necessary anymore since its only done on error, which is handled by setErrorAndSend
+      if(WiFi.status()== !WL_CONNECTED){
+        Serial.println("Failed to send gamestate, wifi disconnected");
+        }
+      pin_change(gameChange.pinChanged,!gameChange.state);
+      Serial.print("Gamestate: ");
       Serial.println(returnState());
       std::string printBoard=print_board();
       Serial.println(printBoard.c_str());
-      
     }
+
+    //If "resetChess" is received from the Arduino, reset the chess state and board, and create a new game on server
     if (serial=="resetChess") {
       Serial.println("ESP: Resetting chess game!");
       clean_state();
-      board[63] = p_WHITE_ROOK; 
-      board[60] = p_WHITE_KING;
-      board[37] =  p_BLACK_PAWN;
-      board[39] = p_BLACK_PAWN;
+      init_starting_board();
+      createNewGame();
+
       Serial.println("ESP: Chess game has been reset!");
-      Serial.println(returnState());
     }
   }
 
@@ -233,17 +215,17 @@ void loop() {
   }
 }
 
-
 void sendMove(const int ply, const int from, const int to, 
 	const char piece, const char captured, 
 	const bool promotion, const bool en_passant, const bool kingside_castle, const bool queenside_castle)
 {
   WiFiClient client;
   HTTPClient http;
-  http.begin(client, endpoint("/moves/" + String(gameChange.GameID)));
+  http.begin(client, endpoint("/moves"));
 
   http.addHeader("Content-Type", "application/json");
   
+  //Create payload
   String payload;
   JsonDocument doc;
   doc["id"] = gameChange.GameID;
@@ -258,7 +240,11 @@ void sendMove(const int ply, const int from, const int to,
     doc["move_type"] = "normal";
   }
   doc["piece_moved"] = String(piece);
-  doc["piece_captured"] = String(captured);
+  if (captured == ' ') {
+    doc["piece_captured"] = "Z";
+  } else {
+    doc["piece_captured"] = String(captured);
+  } 
   doc["from_square"] = from;
   doc["to_square"] = to;
 
@@ -279,9 +265,10 @@ void sendMove(const int ply, const int from, const int to,
   http.end();
 }
 
-  static void setErrorAndSend()
+//If move is registered as an error, update the gamestate to ERROR and post to endpoint.
+static void setErrorAndSend()
 {
   state = states::error;
-	gameChange.result = "error";
+	gameChange.gamestate = "ERROR";
   updateGame();
 }
