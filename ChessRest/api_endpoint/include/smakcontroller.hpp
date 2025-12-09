@@ -147,10 +147,10 @@ public:
             size_t idx = eval_dtos->size();
             if (e) {
                 auto dto = evalToDto(e.value());
-                dto->ply = idx;
+                dto->ply = idx+1;
                 dto->id = id;
                 eval_dtos->push_back(dto);
-                if (chess_moves.size() < idx) {
+                if (chess_moves.size() > idx) {
                     eval_dtos->back()->move = chess::uci::moveToUci(chess_moves[idx]);
                 }
             } else {
