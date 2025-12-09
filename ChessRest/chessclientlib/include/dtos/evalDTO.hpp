@@ -53,6 +53,8 @@ class EvalDTO : public oatpp::DTO {
     }
     DTO_FIELD(String, ponder);
 
+    DTO_FIELD(String, move);
+
 };
 
 
