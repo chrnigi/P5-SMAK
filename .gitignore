@@ -57,3 +57,4 @@ cloud/ansible/.password
 /.vs/CMakeWorkspaceSettings.json
 /.vs/ProjectSettings.json
 /.vs/slnx.sqlite
+cloud/ansible/.password
