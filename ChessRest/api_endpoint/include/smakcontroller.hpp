@@ -95,7 +95,7 @@ public:
     }
 
 public:
-
+    ADD_CORS(getGameEval, "*", "GET", "DNT, User-Agent, X-Requested-With, If-Modified-Since, Cache-Control, Content-Type, Range", "1728000");
     ENDPOINT("GET", "/games/eval/{id}", getGameEval, PATH(Int64, id)) {
         EngineWhisperer ew("stockfish");
         using namespace smak;
