@@ -2,6 +2,7 @@ package dk.aau.group1.p5.chess.web;
 
 import java.util.List;
 
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import dk.aau.group1.p5.chess.model.Game;
 import dk.aau.group1.p5.chess.service.GameService;
 
+@CrossOrigin(origins = "*")
 @RestController
 public class GameController {
     private final GameService gameService;
