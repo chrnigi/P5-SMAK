@@ -1,0 +1,20 @@
+[
+    {
+        "id": 1,
+        "ply_number": 1,
+        "move_type": "normal",
+        "piece_moved": "P",
+        "piece_captured": "Z",
+        "from_square": "e2",
+        "to_square": "e4"
+    },
+    {
+        "id": 1,
+        "ply_number": 2,
+        "move_type": "normal",
+        "piece_moved": "P",
+        "piece_captured": "Z",
+        "from_square": "e7",
+        "to_square": "e5"
+    }
+]

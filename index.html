@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Smak</title>
+        <link rel="stylesheet" href="chessboardjs/css/chessboard-1.0.0.min.css">
+    </head>
+    <body>
+        <div>
+            <div style="float: left; width: 30%; position: relative; left: 30%;">
+                <div id="myBoard" style="width: 100%;"></div>
+                <div id="btns" style="width: 100%;">
+                    <button id="prevbtn" style="width: 25%; padding-right: 0; margin-right: 0%;">Previous move</button>
+                    <button id="nextbtn" style="width: 24.5%; padding-left: 0; margin-left: 0%; padding-right: 0% ; margin-right: 0%;">Next move</button>
+                    <button id="resetbtn" style="width: 25%; padding-left: 0; padding-right: 0%; margin-left: 24%;">Reset position</button>
+                </div>
+                <table id="evaltable" style="margin-top: 2em; position: relative;">
+                    <thead>
+                        <tr>
+                            <th scope="col">Ply</th>
+                            <th scope="col">Result</th>
+                            <th scope="col">Reason</th>
+                            <th scope="col">Forced checkmate</th>
+                            <th scope="col">Evaluation</th>
+                            <th scope="col">Best move</th>
+                            <th scope="col">Ponder</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td id="plycol"></td>
+                            <td id="rescol"></td>
+                            <td id="reascol"></td>
+                            <td id="fccol"></td>
+                            <td id="evcol"></td>
+                            <td id="bmcol"></td>
+                            <td id="pdcol"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div style="float: right; position: relative; right: 30%;">
+
+                <table id="movestable" style="position: relative; left: 0%; margin-left: 0px; width: 5em;">
+                    <thead style="width: 5em;">
+                        <th scope="col">#</th>
+                        <th scope="col" style="background-color: white;"></th>
+                        <th scope="col" style="background-color: black;"></th>
+                    </thead>
+                    <tbody>
+
+                    </tbody>
+                </table>
+                <div></div><input id="gameidinput" type="number" style="width: 5em; margin-top: 1em;" placeholder="Input game ID here"/></div>
+            </div>
+        </div>
+
+        <style>th, td {border: 1px solid black; padding: 8px 10px;}; </style>
+        <style>
+            table {
+                border-collapse: collapse; 
+                border: 2px solid black;
+            }
+        </style>
+
+
+        
+    <script src="geteval.js"></script>
+    <script src="node_modules/jquery/dist/jquery.min.js"></script>
+    <script src="chessboardjs/js/chessboard-1.0.0.js"></script>
+    <script>
+        var ply_counter = document.getElementById("plycol");
+        var board = Chessboard('myBoard', 'start');
+        var index = 0;
+        var positions = [];
+        $('#nextbtn').on('click', function() {
+            if (index >= move_array.length) {
+                return;
+            }
+            if(!(positions.length > index)) {
+                positions.push(board.fen())
+            }
+            
+            board.move(move_array[index]);
+            index++;
+            ply_counter.innerHTML = (index).toString();
+            updateEvalTbl(index);
+            colorMoveTable(index);
+        })
+
+        $('#prevbtn').on('click', function() {            
+            if (index <= 1) {
+                //colorMoveTable(index);
+                clearEvalTbl();
+                board.start();
+                if (index <= 0) {
+                    return;
+                }
+            }
+            index--
+            if (index > 0) {
+                colorMoveTable(index);
+            } else {
+                movestable.rows.item(1).cells.item(1).style.backgroundColor = "White";
+            }
+            ply_counter.innerHTML = index.toString();
+            //board.move(fools_mate[index])
+            board.position(positions[index]);
+            updateEvalTbl(index);
+        })
+
+        $('#resetbtn').on('click', function() {
+            positions = [];
+            evals = [];
+            index = 0;
+            ply_counter.innerHTML = "0";
+            board.start();
+            deleteMoves();
+            clearEvalTbl();
+        });
+
+        $('#gameidinput').on('change', function() {
+            positions = [];
+            evals = [];
+            index = 0;
+            ply_counter.innerHTML = "0";
+            board.start();
+            deleteMoves();
+            clearEvalTbl();
+            var entered_id = document.getElementById("gameidinput").value;
+            
+            getEval(entered_id)
+        });
+    </script>
+    </body>
+
+
+
+</html>
