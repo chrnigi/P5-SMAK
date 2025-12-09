@@ -127,6 +127,64 @@ void updateGame(){
   http.end();
 }
 
+void sendMove(const int ply, const int from, const int to, 
+	const char piece, const char captured, 
+	const bool promotion, const bool en_passant, const bool kingside_castle, const bool queenside_castle)
+{
+  WiFiClient client;
+  HTTPClient http;
+  http.begin(client, endpoint("/moves"));
+
+  http.addHeader("Content-Type", "application/json");
+  
+  //Create payload
+  String payload;
+  JsonDocument doc;
+  doc["id"] = gameChange.GameID;
+  doc["ply_number"] = ply;
+  if (en_passant) {
+    doc["move_type"] = "enpassant";
+  } else if (kingside_castle || queenside_castle) {
+    doc["move_type"] = "castling";
+  } else if (promotion) {
+    doc["move_type"] = "promotion";
+  } else {
+    doc["move_type"] = "normal";
+  }
+  doc["piece_moved"] = String(piece);
+  if (captured == ' ') {
+    doc["piece_captured"] = "Z";
+  } else {
+    doc["piece_captured"] = String(captured);
+  } 
+  doc["from_square"] = from;
+  doc["to_square"] = to;
+
+  serializeJson(doc, payload);
+
+  Serial.println("sendMove: " + endpoint() + "  " + payload);
+
+  int httpResponseCode = http.POST(payload);
+
+  if (httpResponseCode>0) {
+    Serial.print("HTTP Response code: ");
+    Serial.println(httpResponseCode);
+  }
+  else {
+    Serial.print("Error code: ");
+    Serial.println(httpResponseCode);
+  }
+  http.end();
+}
+
+//If move is registered as an error, update the gamestate to ERROR and post to endpoint.
+static void setErrorAndSend()
+{
+  state = states::error;
+	gameChange.gamestate = "ERROR";
+  updateGame();
+}
+
 //Start wifi setup
 void wifiSetup(){
   // Documentation: https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/generic-class.html
@@ -213,62 +271,4 @@ void loop() {
       Serial.println("WiFi disconnected");
     }
   }
-}
-
-void sendMove(const int ply, const int from, const int to, 
-	const char piece, const char captured, 
-	const bool promotion, const bool en_passant, const bool kingside_castle, const bool queenside_castle)
-{
-  WiFiClient client;
-  HTTPClient http;
-  http.begin(client, endpoint("/moves"));
-
-  http.addHeader("Content-Type", "application/json");
-  
-  //Create payload
-  String payload;
-  JsonDocument doc;
-  doc["id"] = gameChange.GameID;
-  doc["ply_number"] = ply;
-  if (en_passant) {
-    doc["move_type"] = "enpassant";
-  } else if (kingside_castle || queenside_castle) {
-    doc["move_type"] = "castling";
-  } else if (promotion) {
-    doc["move_type"] = "promotion";
-  } else {
-    doc["move_type"] = "normal";
-  }
-  doc["piece_moved"] = String(piece);
-  if (captured == ' ') {
-    doc["piece_captured"] = "Z";
-  } else {
-    doc["piece_captured"] = String(captured);
-  } 
-  doc["from_square"] = from;
-  doc["to_square"] = to;
-
-  serializeJson(doc, payload);
-
-  Serial.println("sendMove: " + endpoint() + "  " + payload);
-
-  int httpResponseCode = http.POST(payload);
-
-  if (httpResponseCode>0) {
-    Serial.print("HTTP Response code: ");
-    Serial.println(httpResponseCode);
-  }
-  else {
-    Serial.print("Error code: ");
-    Serial.println(httpResponseCode);
-  }
-  http.end();
-}
-
-//If move is registered as an error, update the gamestate to ERROR and post to endpoint.
-static void setErrorAndSend()
-{
-  state = states::error;
-	gameChange.gamestate = "ERROR";
-  updateGame();
 }
