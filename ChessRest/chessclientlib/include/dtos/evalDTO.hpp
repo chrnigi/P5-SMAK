@@ -53,7 +53,10 @@ class EvalDTO : public oatpp::DTO {
     }
     DTO_FIELD(String, ponder);
 
-    DTO_FIELD(String, move);
+    DTO_FIELD_INFO(move) {
+        info->required = false;
+    }
+    DTO_FIELD(String, move) ;
 
 };
 
