@@ -143,6 +143,12 @@ private:
     Evaluation m_eval;
 
     /**
+     * @brief Convert a chess::PieceType to chess::PieceGenType
+     * 
+     * @return chess::PieceGenType 
+     */
+    chess::PieceGenType piece_to_piecegen(chess::PieceType);
+    /**
      * @brief Issue the UCI command "isready" to the engine.
      * 
      * @return true if the engine responded with "readyok".

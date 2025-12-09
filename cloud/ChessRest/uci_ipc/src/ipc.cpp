@@ -96,23 +96,6 @@ bool EngineWhisperer::start_uci() {
     write_engine_with_timeout(UCIcommand::ucinewgame());
     write_engine_with_timeout(UCIcommand::position_startpos());
     
-    // using sq = chess::Square;
-    // std::vector<chess::Move> moves{chess::Move::make(sq::SQ_E2, sq::SQ_E4), chess::Move::make(sq::SQ_E7, sq::SQ_E5)};
-    // make_moves(moves);
-
-    // new_game();
-
-    // std::vector<chess::Move> fools_mate {
-    //     chess::Move::make(sq::SQ_F2, sq::SQ_F3), 
-    //     chess::Move::make(sq::SQ_E7, sq::SQ_E6),
-        
-    //     chess::Move::make(sq::SQ_G2, sq::SQ_G4),
-    //     chess::Move::make(sq::SQ_D8, sq::SQ_H4)
-    // };
-
-    // write_engine_with_timeout(UCIcommand::position_startpos());
-    // make_moves(fools_mate);
-
     return true;
 
 }
@@ -523,29 +506,7 @@ std::optional<std::variant<double, size_t>> EngineWhisperer::extractEvalFromRege
 size_t EngineWhisperer::validate_moves(const std::vector<chess::Move>& moves, chess::Board board) {
     size_t idx = 0;
     for (auto& m : moves) {
-        const chess::PieceGenType piecetype = [&]() {
-            chess::PieceType typ = board.at<chess::PieceType>(m.from());
-            // Ugly switch-case converts types.
-            switch (typ.internal()) {
-                using namespace chess;
-            case PieceType::PAWN:
-                return PieceGenType::PAWN;
-            case PieceType::KNIGHT:
-                return PieceGenType::KNIGHT;
-            case PieceType::BISHOP:
-                return PieceGenType::BISHOP;
-            case PieceType::ROOK:
-                return PieceGenType::ROOK;
-            case PieceType::QUEEN:
-                return PieceGenType::QUEEN;
-            case PieceType::KING:
-                return PieceGenType::KING;
-            case PieceType::NONE:
-            default:
-                return static_cast<PieceGenType>(63); // This searches for all move types. Case fallthrough to default is intentional.
-                // ideally we don't hit this, because this will generate a lot more unnessecary moves.
-            }
-        }();
+        const chess::PieceGenType piecetype = piece_to_piecegen(board.at<chess::PieceType>(m.from()));
         
         chess::Movelist m_gen;
         chess::movegen::legalmoves<chess::movegen::MoveGenType::ALL>(m_gen, board, piecetype);
@@ -566,4 +527,27 @@ size_t EngineWhisperer::validate_moves(const std::vector<chess::Move>& moves, ch
 
 Evaluation EngineWhisperer::getPositionEval() {
     return m_eval;
+}
+
+chess::PieceGenType EngineWhisperer::piece_to_piecegen(chess::PieceType typ) {
+    using namespace chess;
+    switch (typ.internal()) {
+        using pt = PieceType;
+    case pt::PAWN:
+        return PAWN;
+    case pt::KNIGHT:
+        return KNIGHT;
+    case pt::BISHOP:
+        return BISHOP;
+    case pt::ROOK:
+        return ROOK;
+    case pt::QUEEN:
+        return QUEEN;
+    case pt::KING:
+        return KING;
+    case pt::NONE:
+    default:
+        return static_cast<PieceGenType>(63); // This searches for all move types. Case fallthrough to default is intentional.
+        // ideally we don't hit this, because this will generate a lot more unnessecary moves.
+    }
 }

@@ -28,29 +28,7 @@ std::vector<std::optional<Evaluation>> EngineWhisperer::getEvalsFromGame(const s
     for (auto& m : moves) {
         Movelist legal;
         
-        const PieceGenType piecetype = [&]() {
-            PieceType typ = game_board.at<PieceType>(m.from());
-            // Ugly switch-case converts types.
-            switch (typ.internal()) {
-                using pt = PieceType;
-            case pt::PAWN:
-                return PAWN;
-            case pt::KNIGHT:
-                return KNIGHT;
-            case pt::BISHOP:
-                return BISHOP;
-            case pt::ROOK:
-                return ROOK;
-            case pt::QUEEN:
-                return QUEEN;
-            case pt::KING:
-                return KING;
-            case pt::NONE:
-            default:
-                return static_cast<PieceGenType>(63); // This searches for all move types. Case fallthrough to default is intentional.
-                // ideally we don't hit this, because this will generate a lot more unnessecary moves.
-            }
-        }();
+        const PieceGenType piecetype = piece_to_piecegen(game_board.at<PieceType>(m.from()));
 
         movegen::legalmoves<movegen::MoveGenType::ALL>(legal, game_board, piecetype);
         auto it = std::find(legal.begin(), legal.end(), m);
