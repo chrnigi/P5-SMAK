@@ -13,24 +13,18 @@
                     <button id="nextbtn" style="width: 24.5%; padding-left: 0; margin-left: 0%; padding-right: 0% ; margin-right: 0%;">Next move</button>
                     <button id="resetbtn" style="width: 25%; padding-left: 0; padding-right: 0%; margin-left: 24%;">Reset position</button>
                 </div>
-                <table id="evaltable" style="margin-top: 2em; position: relative;">
+                <table id="evaltable" style="margin-top: 2em; position: relative; table-layout: fixed;">
                     <thead>
                         <tr>
                             <th scope="col">Ply</th>
-                            <th scope="col">Result</th>
-                            <th scope="col">Reason</th>
-                            <th scope="col">Forced checkmate</th>
                             <th scope="col">Evaluation</th>
                             <th scope="col">Best move</th>
-                            <th scope="col">Ponder</th>
+                            <th scope="col">Best response</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
                             <td id="plycol"></td>
-                            <td id="rescol"></td>
-                            <td id="reascol"></td>
-                            <td id="fccol"></td>
                             <td id="evcol"></td>
                             <td id="bmcol"></td>
                             <td id="pdcol"></td>
@@ -40,7 +34,7 @@
             </div>
             <div style="float: right; position: relative; right: 30%;">
 
-                <table id="movestable" style="position: relative; left: 0%; margin-left: 0px; width: 5em;">
+                <table id="movestable" style="position: relative; left: 0%; margin-left: 0px; width: 10em; table-layout: fixed;">
                     <thead style="width: 5em;">
                         <th scope="col">#</th>
                         <th scope="col" style="background-color: white;"></th>

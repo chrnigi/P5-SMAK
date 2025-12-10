@@ -119,6 +119,9 @@ function getEval(id) {
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 4, , 5]);
+                    if (id <= 0) {
+                        throw new Error("0 or negative ID's are not allowed.");
+                    }
                     return [4 /*yield*/, fetch(url)];
                 case 2:
                     response = _a.sent();
@@ -171,21 +174,18 @@ function updateEvalTbl(plyno) {
         }
         for (var i = 0; i < cls.length; i++) {
             var cell = cls[i];
+            cell.style.textAlign = "center";
             switch (cell.id) {
                 case "plycol":
                     cell.innerHTML = a.ply.toString();
                     break;
-                case "rescol":
-                    cell.innerHTML = a.result.toString();
-                    break;
-                case "reascol":
-                    cell.innerHTML = a.reason.toString();
-                    break;
-                case "fccol":
-                    cell.innerHTML = a.forced_mate ? "true" : "false";
-                    break;
                 case "evcol":
-                    cell.innerHTML = a.pawn_eval.toString();
+                    if (evals[plyno - 1].forced_mate === true) {
+                        cell.innerHTML = "M*";
+                    }
+                    else {
+                        cell.innerHTML = a.pawn_eval.toLocaleString('en-us', { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+                    }
                     break;
                 case "bmcol":
                     cell.innerHTML = a.bestmove;

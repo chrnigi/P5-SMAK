@@ -115,10 +115,14 @@ function populateMovesTable(moves: Evaluation[]) {
 }
 
 
-async function getEval(id: Number) {
+async function getEval(id: number) {
     //const url: string = "http://p5webserv.head9x.dk:9090/games/eval/" + id;
     const url: string = "http://localhost:9090/games/eval/" + id;
+
     try {
+        if (id <= 0) {
+            throw new Error("0 or negative ID's are not allowed.");
+        }
         const response = await fetch(url);
         if (!response.ok) {
             throw new Error('Response did unnice thing: ${response.status}');
@@ -175,21 +179,18 @@ function updateEvalTbl(plyno: number) {
         for (let i = 0; i < cls.length; i++) {
             var cell = cls[i];
             
+            cell.style.textAlign = "center";
+
             switch (cell.id) {
                 case "plycol":
                     cell.innerHTML = a.ply.toString();
                     break;
-                case "rescol":
-                    cell.innerHTML = a.result.toString();
-                    break;
-                case "reascol":
-                    cell.innerHTML = a.reason.toString();
-                    break;
-                case "fccol":
-                    cell.innerHTML = a.forced_mate ? "true" : "false";
-                    break;
                 case "evcol":
-                    cell.innerHTML = a.pawn_eval.toString();
+                    if (evals[plyno-1].forced_mate === true) {
+                        cell.innerHTML = "M*";
+                    } else {
+                        cell.innerHTML = a.pawn_eval.toLocaleString('en-us', {maximumFractionDigits: 2, minimumFractionDigits: 2});
+                    }
                     break;
                 case "bmcol":
                     cell.innerHTML = a.bestmove;
