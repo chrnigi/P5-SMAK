@@ -36,9 +36,9 @@
                 <div class="movescontainer">
                     <table class="mtable" id="movestable" style="position: relative; width: 12em; table-layout: fixed;">
                         <thead style="width: 5em;">
-                            <th scope="col" style="max-width: 1em;">#</th>
-                            <th scope="col" style="background-color: white; max-width: min-content;"></th>
-                            <th scope="col" style="background-color: black; max-width: min-content;"></th>
+                            <th scope="col" style="max-width: 1em;"><button onclick="softReset()" class="reset">#</button></th>
+                            <th scope="col" style="background-color: white; max-width: min-content;"><button onclick="softReset()" class="reset"></button></th>
+                            <th scope="col" style="background-color: black; max-width: min-content;"><button onclick="softReset()" class="reset"></button></th>
                         </thead>
                         <tbody>
 
@@ -85,20 +85,31 @@
             position: sticky;
             left: 0;
         }
-
-        .mtable th,
-        .mtable td {
+        
+        .mtable td:first-child {
             text-align: center;
+        }
+
+        .mtable th {
+            height: 2.5em;
+            padding: 0;
+            text-align: center;
+        }
+        .mtable td {
+            height: 2.5em;
             padding: 0;
         }
 
         .no-data {
             text-align: center;
         }
-
+        .reset,
         .clickable {
+            padding {
+                top: 8px;
+                bottom: 8px;
+            }
             text-align: center;
-            font-size: medium;
             display: block;
             width: 100%;
             height: 100%;
@@ -219,6 +230,10 @@
                     $('#prevbtn').click();
                 }
             }
+        }
+
+        function softReset() {
+            jumpToMove(-1);
         }
     </script>
     </body>
