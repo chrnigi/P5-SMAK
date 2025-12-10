@@ -90,21 +90,27 @@ function deleteMoves() {
     }
 }
 function populateMovesTable(moves) {
-    var movestable = document.getElementById("movestable");
+    var omovestable = document.getElementById("movestable");
     var moveno = 0;
-    if (movestable instanceof HTMLTableElement) {
+    if (omovestable instanceof HTMLTableElement) {
         for (var i = 0; i < moves.length; i += 2) {
             moveno++;
+            var movestable = omovestable.tBodies.item(0);
             var move_w = moves[i].move;
             var newmove = movestable.insertRow();
             var numbercell = newmove.insertCell(0);
             var wcell = newmove.insertCell(1);
             var bcell = newmove.insertCell(2);
             numbercell.innerHTML = moveno.toString() + ".";
-            wcell.innerHTML = move_w;
+            //let btn_w = "<button class='clickable' style='outline: 0; background-color: transparent; border-color: transparent;'>" + move_w +"</button>"
+            var btn_w = "<button onclick='jumpToMove(" + i.toString() + ")' class='clickable'>" + move_w + "</button>";
+            wcell.innerHTML = btn_w;
+            wcell.setAttribute("data-cellid", i.toString());
             if (!(i + 1 >= moves.length)) {
                 var move_b = moves[i + 1].move;
-                bcell.innerHTML = move_b;
+                var btn_b = "<button onclick='jumpToMove(" + (i + 1) + ")'class='clickable'>" + move_b + "</input>";
+                bcell.innerHTML = btn_b;
+                bcell.setAttribute("data-cellid", (i + 1).toString());
             }
         }
     }

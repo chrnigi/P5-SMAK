@@ -92,23 +92,30 @@ function deleteMoves() {
 }
 
 function populateMovesTable(moves: Evaluation[]) {
-    var movestable = document.getElementById("movestable");
+    var omovestable = document.getElementById("movestable");
     var moveno = 0;
-    if (movestable instanceof HTMLTableElement) {
+    if (omovestable instanceof HTMLTableElement) {
         for (let i = 0; i < moves.length; i+=2) {
             moveno++;
+            let movestable = omovestable.tBodies.item(0);
             const move_w = moves[i].move;
-            let newmove = movestable.insertRow();
+            let newmove = movestable!.insertRow();
             let numbercell = newmove.insertCell(0);
             let wcell = newmove.insertCell(1);
             let bcell = newmove.insertCell(2);
-            
+           
             numbercell.innerHTML = moveno.toString() + ".";
-            wcell.innerHTML = move_w;
+            //let btn_w = "<button class='clickable' style='outline: 0; background-color: transparent; border-color: transparent;'>" + move_w +"</button>"
+            let btn_w = "<button onclick='jumpToMove(" + i.toString() + ")' class='clickable'>"+ move_w + "</button>"
+            wcell.innerHTML = btn_w;
+            wcell.setAttribute("data-cellid", i.toString());
 
             if (!(i+1 >= moves.length)) {
                 const move_b = moves[i+1].move;
-                bcell.innerHTML = move_b;
+                let btn_b = "<button onclick='jumpToMove(" + (i+1)+ ")'class='clickable'>" + move_b +"</input>"
+
+                bcell.innerHTML = btn_b;
+                bcell.setAttribute("data-cellid", (i+1).toString());
             }
         }
     }
