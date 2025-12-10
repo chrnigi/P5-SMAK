@@ -24,7 +24,7 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td id="plycol"></td>
+                            <td id="plycol">0</td>
                             <td id="evcol"></td>
                             <td id="bmcol"></td>
                             <td id="pdcol"></td>
@@ -32,30 +32,69 @@
                     </tbody>
                 </table>
             </div>
-            <div style="float: right; position: relative; right: 30%;">
+            <div style="float: right; position: relative; right: 29%; height: 30%; margin-left: 1em; padding-left: 1em;">
+                <div class="movescontainer">
+                    <table class="mtable" id="movestable" style="position: relative; width: 12em; table-layout: fixed;">
+                        <thead style="width: 5em;">
+                            <th scope="col" style="max-width: 1em;">#</th>
+                            <th scope="col" style="background-color: white; max-width: min-content;"></th>
+                            <th scope="col" style="background-color: black; max-width: min-content;"></th>
+                        </thead>
+                        <tbody>
 
-                <table id="movestable" style="position: relative; left: 0%; margin-left: 0px; width: 10em; table-layout: fixed;">
-                    <thead style="width: 5em;">
-                        <th scope="col">#</th>
-                        <th scope="col" style="background-color: white;"></th>
-                        <th scope="col" style="background-color: black;"></th>
-                    </thead>
-                    <tbody>
+                        </tbody>
+                    </table>
+                </div>
 
-                    </tbody>
-                </table>
-                <div></div><input id="gameidinput" type="number" style="width: 5em; margin-top: 1em;" placeholder="Input game ID here"/></div>
+                <form id="gameform" style="width:auto; ">
+                    <div>
+                        <input id="gameidinput" type="number" min="0" style="max-width: 5em; margin-top: 1em;" placeholder="Input game ID here"/>
+                    </div>
+                    <div style="position: relative; left: 0em">
+                        <input type="submit" width="10em" style="text-align: center;" value="Select ID">
+                    </div>                    
+                </form>
             </div>
         </div>
+    </div>
 
-        <style>th, td {border: 1px solid black; padding: 8px 10px;}; </style>
-        <style>
-            table {
-                border-collapse: collapse; 
-                border: 2px solid black;
-            }
-        </style>
+    <style>th, td {border: 1px solid black; padding: 8px 10px;}; </style>
+    <style>
+        table {
+            border-collapse: collapse; 
+            border: 2px solid black;
+        }
+    </style>
+    <style>
+        .movescontainer {
+            border: 1px solid black padding 8px 10px;
+            border-bottom: none;
+            overflow: auto;
+            height: 30%;
+        }
+        .mtable {
+            border-collapse: collapse;
+            width: 100%;
+            table-layout: fixed;
+        }
+        .mtable td:empty {
+            border-left: 0;
+            border-right: 0;
+        }
+        .mtable th:nth-child(1) {
+            position: sticky;
+            left: 0;
+        }
 
+        .mtable th,
+        .mtable td {
+            text-align: center;
+        }
+
+        .no-data {
+            text-align: center;
+        }
+    </style>
 
         
     <script src="geteval.js"></script>
@@ -67,6 +106,9 @@
         var index = 0;
         var positions = [];
         $('#nextbtn').on('click', function() {
+            if (move_array.length === 0) {
+                return;
+            }
             if (index >= move_array.length) {
                 return;
             }
@@ -82,9 +124,13 @@
         })
 
         $('#prevbtn').on('click', function() {            
+            if (move_array.length === 0) {
+                return;
+            }
             if (index <= 1) {
                 //colorMoveTable(index);
                 clearEvalTbl();
+                ply_counter.innerHTML = "0";
                 board.start();
                 if (index <= 0) {
                     return;
@@ -105,6 +151,7 @@
         $('#resetbtn').on('click', function() {
             positions = [];
             evals = [];
+            move_array = [];
             index = 0;
             ply_counter.innerHTML = "0";
             board.start();
@@ -112,7 +159,8 @@
             clearEvalTbl();
         });
 
-        $('#gameidinput').on('change', function() {
+        $('form').on('submit', function(event) {
+            event.preventDefault();
             positions = [];
             evals = [];
             index = 0;
@@ -120,9 +168,9 @@
             board.start();
             deleteMoves();
             clearEvalTbl();
-            var entered_id = document.getElementById("gameidinput").value;
-            
-            getEval(entered_id)
+            var formid = $("#gameidinput").first().val();
+            const id = Number.parseInt(formid);            
+            getEval(id)
         });
     </script>
     </body>
