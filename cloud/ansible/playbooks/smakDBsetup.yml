@@ -1,0 +1,22 @@
+- name: SmakDBsetup
+  hosts: all
+  become: true
+  become_user: root
+
+  vars_files:
+    - ./ansibleVault
+
+  tasks:
+    - name: Create a new database with name 'ttt'
+      community.mysql.mysql_db:
+        name: '{{ smakdb_name }}'
+        state: present
+        login_unix_socket: /run/mysqld/mysqld.sock
+
+    - name: Create database user for SMAK db
+      community.mysql.mysql_user:
+        name: '{{ smak_username }}'
+        password: '{{ smak_password }}'
+        priv: 'smak.*:ALL'
+        state: present
+        login_unix_socket: /run/mysqld/mysqld.sock

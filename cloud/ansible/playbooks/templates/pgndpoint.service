@@ -1,0 +1,12 @@
+[Unit]
+Description=SmakPGNDpoint
+After=network.target
+
+[Service]
+Restart=always
+Type=simple
+User=smak
+ExecStart=/opt/SMAK/cloud/ChessRest/build/api_endpoint/PGNdpoint
+
+[Install]
+WantedBy=multi-user.target

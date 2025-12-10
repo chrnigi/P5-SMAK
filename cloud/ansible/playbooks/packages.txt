@@ -16,3 +16,5 @@ packages:
   - unzip
   - doxygen
   - stockfish
+  - clang
+  - build-essential
