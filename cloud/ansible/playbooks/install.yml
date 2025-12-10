@@ -10,6 +10,7 @@
     docker_repo_uri: "https://download.docker.com/linux/debian"
     docker_keyring_path: "/etc/apt/keyrings/docker.asc"
     docker_sources_path: "/etc/apt/sources.list.d/docker.sources"
+    extra_path: "/opt/cmake-4.2.0-linux-x86_64/bin"
 
   tasks:
     - name: Ensure required dependencies for Docker repo are installed
@@ -51,3 +52,37 @@
       ansible.builtin.package:
         name: "{{ packages }}"
         state: present
+
+    - name: Install CMake 4.2
+      become: true
+      become_user: ansible
+      ansible.builtin.get_url:
+        url: https://github.com/Kitware/CMake/releases/download/v4.2.0/cmake-4.2.0-linux-x86_64.tar.gz
+        dest: /home/ansible/cmake.tar.gz
+        mode: '0440'
+
+    - name: Unpack CMake
+      become: true
+      become_user: root
+      ansible.builtin.unarchive:
+        src: /home/ansible/cmake.tar.gz
+        dest: /opt
+        mode: "0666"
+        remote_src: true
+
+    - name: Give insecure perms recursively to cmake (issue if compromised)
+      ansible.builtin.file:
+        path: "/opt/cmake-4.2.0-linux-x86_64"
+        owner: root
+        group: root
+        recurse: true
+        mode: '0777'
+
+    - name: Create a symbolic link
+      ansible.builtin.file:
+        src: "{{ extra_path }}/cmake"
+        dest: /usr/bin/cmake
+        owner: root
+        group: root
+        mode: "0777"
+        state: link

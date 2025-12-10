@@ -1,4 +1,4 @@
-- name: TTTDeploy
+- name: SMAKdeploy
   hosts: all
   become: true
   become_user: root
@@ -7,21 +7,21 @@
     - ./ansibleVault
 
   vars:
-    # --- customize these ---
     repo_url: "https://github.com/chrnigi/P5-SMAK.git"
-    repo_dest: "/opt/TTT"          # where the repo will live
-    app_subdir: "cloud/jpadb/Smak"                   # if mvnw is in a subdir, e.g. "server"; else ""
+    repo_dest: "/opt/SMAK"          # where the repo will live
+    app_subdir: "cloud/chess-cloud/chess"                   # if mvnw is in a subdir, e.g. "server"; else ""
     app_dir: "{{ repo_dest }}/{{ app_subdir }}"
-    screen_session: "TTT"
+    screen_session: "SMAK"
     # file you want to change INSIDE the repo
     file_to_modify: "{{ app_dir }}/src/main/resources/application.properties"
-    phpfiletomodify: "{{ repo_dest }}/cloud/php/index.php"
     # how to start your program after mvn package
-    start_command: "java -jar target/Smak-0.0.1-SNAPSHOT.jar"
-    # ------------------------
+    start_command: "java -jar target/chess-0.0.1-SNAPSHOT.jar"
+
+    app2_subdir: cloud/ChessRest
+    app2_dir: "{{ repo_dest }}/{{ app2_subdir }}"
 
   tasks:
-    - name: Mark /opt/TTT as safe git directory for root
+    - name: Mark /opt/SMAK as safe git directory for root
       community.general.git_config:
         name: safe.directory
         value: "{{ repo_dest }}"
@@ -40,7 +40,7 @@
       ansible.builtin.lineinfile:
         path: "{{ file_to_modify }}"
         regexp: '^spring.datasource.username='
-        line: 'spring.datasource.username={{ db_username }}'
+        line: 'spring.datasource.username={{ smak_username }}'
         create: true
         owner: root
         group: root
@@ -50,17 +50,7 @@
       ansible.builtin.lineinfile:
         path: "{{ file_to_modify }}"
         regexp: '^spring.datasource.password='
-        line: 'spring.datasource.password={{ db_password }}'
-        create: true
-        owner: root
-        group: root
-        mode: "0640"
-
-    - name: Ensure port 8081
-      ansible.builtin.lineinfile:
-        path: "{{ file_to_modify }}"
-        regexp: '^server.port='
-        line: 'server.port=8081'
+        line: 'spring.datasource.password={{ smak_password }}'
         create: true
         owner: root
         group: root
@@ -96,75 +86,58 @@
         group: smak
         recurse: true
 
-    - name: Copy ttt service to host
+    - name: Copy smakdb service to host
       become: true
       become_user: root
       ansible.builtin.copy:
-        src: ./templates/tttendpoint.service
-        dest: "/etc/systemd/system/tttendpoint.service"
+        src: ./templates/smakdbendpoint.service
+        dest: "/etc/systemd/system/smakdbendpoint.service"
         mode: "0777"
 
     - name: Enable TTT service
       become: true
       become_user: root
       ansible.builtin.systemd_service:
-        name: tttendpoint
+        name: smakdbendpoint
         enabled: yes
     
     - name: Start service tttendpoint
       ansible.builtin.systemd_service:
-        name: tttendpoint
+        name: smakdbendpoint
         daemon_reload: true
         state: restarted
 
+####################################
+####### REST ENDPOINT DEPLOY #######
+####################################
+    - name: Build SMAK REST endpoint
+      ansible.builtin.shell: |
+        mkdir -p build
+        cd build
+        cmake ..
+        cmake --build .
+      args:
+        chdir: "{{ app2_dir }}"
+      become: true
+      become_user: smak
 
-##########################
-####### PHP DEPLOY #######
-##########################
-    - name: Ensure dbname correct
-      ansible.builtin.lineinfile:
-        path: "{{ phpfiletomodify }}"
-        regexp: '^\$DB_NAME\s*='
-        line: "$DB_NAME = '{{ db_name }}';"
-        create: true
-        owner: root
-        group: root
-        mode: "0640"
-
-    - name: Ensure webui username correct
-      ansible.builtin.lineinfile:
-        path: "{{ phpfiletomodify }}"
-        regexp: '^\$DB_USER\s*='
-        line: "$DB_USER = '{{ webui_username }}';"
-        create: true
-        owner: root
-        group: root
-        mode: "0640"
-
-    - name: Ensure webui password correct
-      ansible.builtin.lineinfile:
-        path: "{{ phpfiletomodify }}"
-        regexp: '^\$DB_PASS\s*='
-        line: "$DB_PASS = '{{ webui_password }}';"
-        create: true
-        owner: root
-        group: root
-        mode: "0640"
-
-
-    - name: Ensure tictactoe web directory exists
-      ansible.builtin.file:
-        path: "/var/www/html/tictactoe"
-        state: directory
-        owner: root
-        group: root
-        mode: "0755"
-
-    - name: Deploy tictactoe index.php
+    - name: Copy smakPGNDpoint service to host
+      become: true
+      become_user: root
       ansible.builtin.copy:
-        src: "{{ phpfiletomodify }}"
-        dest: "/var/www/html/tictactoe/index.php"
-        owner: root
-        group: root
-        mode: "0644"
-        remote_src: true
+        src: ./templates/pgndpoint.service
+        dest: "/etc/systemd/system/pgndpoint.service"
+        mode: "0777"
+
+    - name: Enable TTT service
+      become: true
+      become_user: root
+      ansible.builtin.systemd_service:
+        name: pgndpoint
+        enabled: yes
+    
+    - name: Start service tttendpoint
+      ansible.builtin.systemd_service:
+        name: pgndpoint
+        daemon_reload: true
+        state: restarted

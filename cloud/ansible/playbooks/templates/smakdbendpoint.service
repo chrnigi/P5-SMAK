@@ -1,0 +1,12 @@
+[Unit]
+Description=SmakDBendpoint
+After=network.target
+
+[Service]
+Restart=always
+Type=simple
+User=smak
+ExecStart=java -jar /opt/SMAK/cloud/chess-cloud/chess/target/chess-0.0.1-SNAPSHOT.jar
+
+[Install]
+WantedBy=multi-user.target

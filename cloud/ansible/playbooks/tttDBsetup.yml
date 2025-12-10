@@ -4,7 +4,7 @@
   become_user: root
 
   vars_files:
-    - ./tictactoeVault
+    - ./ansibleVault
 
   tasks:
     - name: Create a new database with name 'ttt'

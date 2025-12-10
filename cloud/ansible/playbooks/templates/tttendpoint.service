@@ -1,0 +1,12 @@
+[Unit]
+Description=TTTDBendpoint
+After=network.target
+
+[Service]
+Restart=always
+Type=simple
+User=smak
+ExecStart=java -jar /opt/TTT/cloud/jpadb/Smak/target/Smak-0.0.1-SNAPSHOT.jar
+
+[Install]
+WantedBy=multi-user.target

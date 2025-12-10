@@ -3,7 +3,7 @@
   become: true
 
   vars_files:
-    - ./tictactoeVault
+    - ./ansibleVault
 
   vars:
     npm_app_dir: /opt/nginx-proxy-manager

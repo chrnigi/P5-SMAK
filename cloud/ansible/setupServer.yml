@@ -21,3 +21,11 @@
 - name: NPMdeploy
   import_playbook: playbooks/reverseproxySetup.yml
   tags: revproxy
+
+- name: SMAKDBsetup
+  import_playbook: playbooks/smakDBsetup.yml
+  tags: smakdbsetup
+
+- name: SMAKdeploy
+  import_playbook: playbooks/deploySMAK.yml
+  tags: smakdeploy

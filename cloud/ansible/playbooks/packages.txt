@@ -14,3 +14,7 @@ packages:
   - python3-pymysql
   - zip
   - unzip
+  - doxygen
+  - stockfish
+  - clang
+  - build-essential
