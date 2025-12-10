@@ -8,7 +8,7 @@ const char* ssid = "MSO ASUS Zenfone 10"; // WiFi network name
 const char* password = "spejdernet"; // WiFi network password
 bool connectedToWifi = false;
 
-String server = "130.225.39.244";
+String server = "p5webserv.head9x.dk";
 String port = "8080";
 String path = "/games";
 
