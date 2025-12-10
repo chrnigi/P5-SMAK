@@ -73,7 +73,7 @@ void loop() {
 
       // Control wifi status
       if(WiFi.status()== !WL_CONNECTED){
-        Serial.println("Failed to send state_string, wifi disconnected");
+        Serial.println("Failed to send gamestate, wifi disconnected");
         }
       pin_change(gameState.pinChanged,!gameState.is_up);
       Serial.print("Gamestate: ");
@@ -82,7 +82,7 @@ void loop() {
       Serial.println(printBoard.c_str());
     }
 
-    //If "resetChess" is received from the Arduino, reset the chess is_up and board, and create a new game on server
+    //If "resetChess" is received from the Arduino, reset the chess gamestate and board, and create a new game on server
     if (serial=="resetChess") {
       Serial.println("ESP: Resetting chess game!");
       clean_state();
