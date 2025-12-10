@@ -1,12 +1,3 @@
-//
-// pch.h
-// The file needs to be named pch.h for gtest' unit testing
-// The gtest include and redefinition of std::string = String, should be removed for the MCUs
-// The entry points for working with this module on the MCUs is be contained to:
-//	sendMove(...)
-//	setErrorAndSend()
-//
-
 #pragma once
 
 #include <vector>
