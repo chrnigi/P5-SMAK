@@ -1,6 +1,7 @@
 package dk.aau.group1.p5.chess.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
@@ -24,8 +25,11 @@ public class MoveService {
         return moveRepository.getByGameId(id);
     }
 
-    public Move saveMove(Move move) {
-        return moveRepository.save(move);
+    public Optional<Move> saveMove(Move move) {
+        if(moveRepository.checkGameId(move.getId()).isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(moveRepository.save(move));
     }
 
 }
