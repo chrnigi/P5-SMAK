@@ -156,7 +156,10 @@
       ansible.builtin.command: ./build.sh
       args:
         chdir: "{{ app3_dir }}"
-      ignore_errors: true
+      register: build_result
+      failed_when: >
+        build_result.rc != 0 and
+        "'tsc' not in build_result.stderr"
 
     - name: Copy smak weinterface to varwwwhtml
       become: true
