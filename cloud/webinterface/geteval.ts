@@ -123,8 +123,8 @@ function populateMovesTable(moves: Evaluation[]) {
 
 
 async function getEval(id: number) {
-    //const url: string = "http://p5webserv.head9x.dk:9090/games/eval/" + id;
-    const url: string = "http://localhost:9090/games/eval/" + id;
+    const url: string = "http://p5webserv.head9x.dk:9090/games/eval/" + id;
+    //const url: string = "http://localhost:9090/games/eval/" + id;
 
     try {
         if (id <= 0) {
