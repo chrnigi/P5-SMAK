@@ -1,0 +1,4 @@
+packages:
+    - nodejs
+    - node-typescript
+    - node-typescript-types

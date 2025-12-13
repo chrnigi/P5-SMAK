@@ -58,3 +58,8 @@ cloud/ansible/.password
 /.vs/ProjectSettings.json
 /.vs/slnx.sqlite
 cloud/ansible/.password
+node_modules/*
+chessboardjs/*
+img/*
+img
+*.zip

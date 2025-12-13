@@ -33,7 +33,7 @@ public class MoveController {
 
     @PostMapping("/moves")
     public Move addMove(@RequestBody Move move) {
-        return moveService.saveMove(move);
+        return moveService.saveMove(move).orElseThrow(() -> new GameNotFoundException(move.getId()));
     }
 
 
