@@ -1,7 +1,9 @@
+#include <istream>
 #include <models.hpp>
 #include <oatpp/core/Types.hpp>
 #include <chesslib.hpp>
 #include <chess.hpp>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -79,12 +81,8 @@ std::vector<std::string> GameOfFens::getAllPositions() {
 /* SmakPgnVisitor*/
 namespace smak::parsing {
 
-SmakPgnVisitor::SmakPgnVisitor(std::vector<chess::Move>& moves_vec) : _moves_out(moves_vec) {
-
-}
-
 void SmakPgnVisitor::startPgn() {
-
+    _board.setFen(chess::constants::STARTPOS);
 }
 
 void SmakPgnVisitor::header(std::string_view key, std::string_view value) {
@@ -92,22 +90,51 @@ void SmakPgnVisitor::header(std::string_view key, std::string_view value) {
 }
 
 void SmakPgnVisitor::startMoves() {
-
+    _moves_out.reserve(64); /* should be set around the avg. moves in a game */
 }
 
 void SmakPgnVisitor::move(std::string_view move, std::string_view comment) {
-
+    chess::Move mv = chess::uci::parseSan(_board, move);
+    _moves_out.push_back(mv);
 }
 
-void SmakPgnVisitor::endPgn() {
-
-}
+void SmakPgnVisitor::endPgn() {}
 
 }
 
 /* PgnParser */
-namespace smak::parser {
+namespace smak::parsing {
 
+PgnParser::PgnParser(std::istream& pgn_stream) : _stream(pgn_stream) {
+    if (_stream.good()) {
+        valid = true;
+    }
+}
+
+void PgnParser::parse() {
+    if (!valid) { 
+        return; 
+    }
+    chess::pgn::StreamParser sparser(_stream);
+    
+    try {
+        _err = sparser.readGames(svis);
+    } catch (chess::uci::SanParseError spe) {
+        valid = false;
+    }
+
+    if (_err) { 
+        valid = false;
+    }
+}
+
+std::optional<std::vector<chess::Move>> PgnParser::getMoves() {
+    if (!valid) {
+        return {};
+    }
+
+    return std::make_optional(moves);
+}
 
 
 }
