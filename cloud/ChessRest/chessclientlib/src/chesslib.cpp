@@ -3,9 +3,11 @@
 #include <chesslib.hpp>
 #include <chess.hpp>
 #include <string>
+#include <string_view>
 #include <vector>
 
 
+/* GameOfFens */
 namespace smak::parsing {
 
 GameOfFens::GameOfFens(oatpp::Vector<oatpp::Object<models::MoveDTO>>& moves) {
@@ -71,5 +73,41 @@ std::string GameOfFens::getPositionByPly(size_t ply_number) {
 std::vector<std::string> GameOfFens::getAllPositions() {
     return positions;
 }
+
+}
+
+/* SmakPgnVisitor*/
+namespace smak::parsing {
+
+SmakPgnVisitor::SmakPgnVisitor(std::vector<chess::Move>& moves_vec) : _moves_out(moves_vec) {
+
+}
+
+void SmakPgnVisitor::startPgn() {
+
+}
+
+void SmakPgnVisitor::header(std::string_view key, std::string_view value) {
+    /* too complicated for web interface, so ignored*/
+}
+
+void SmakPgnVisitor::startMoves() {
+
+}
+
+void SmakPgnVisitor::move(std::string_view move, std::string_view comment) {
+
+}
+
+void SmakPgnVisitor::endPgn() {
+
+}
+
+}
+
+/* PgnParser */
+namespace smak::parser {
+
+
 
 }
