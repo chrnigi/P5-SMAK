@@ -95,6 +95,7 @@ void SmakPgnVisitor::startMoves() {
 
 void SmakPgnVisitor::move(std::string_view move, std::string_view comment) {
     chess::Move mv = chess::uci::parseSan(_board, move);
+    _board.makeMove(mv);
     _moves_out.push_back(mv);
 }
 
@@ -119,7 +120,9 @@ void PgnParser::parse() {
     
     try {
         _err = sparser.readGames(svis);
+        valid = true;
     } catch (chess::uci::SanParseError spe) {
+        OATPP_LOGD(__PRETTY_FUNCTION__, "Parse Error: %s", spe.what());
         valid = false;
     }
 
@@ -130,10 +133,9 @@ void PgnParser::parse() {
 
 std::optional<std::vector<chess::Move>> PgnParser::getMoves() {
     if (!valid) {
-        return {};
+        return std::nullopt;
     }
-
-    return std::make_optional(moves);
+    return std::make_optional(svis.getMoves());
 }
 
 

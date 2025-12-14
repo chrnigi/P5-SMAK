@@ -32,11 +32,11 @@ public:
 
 class SmakPgnVisitor : public chess::pgn::Visitor {
 private:
-    std::vector<chess::Move>& _moves_out;
+    std::vector<chess::Move> _moves_out{};
     chess::Board _board;
 public:
     virtual ~SmakPgnVisitor() {}
-    SmakPgnVisitor(std::vector<chess::Move>& moves_vec) : _moves_out(moves_vec) {}
+    SmakPgnVisitor(){}
 
     void startPgn();
 
@@ -47,14 +47,15 @@ public:
     void move(std::string_view move, std::string_view comment);
 
     void endPgn();
+
+    std::vector<chess::Move> getMoves() { return _moves_out; }
 };
 
 class PgnParser {
 private:
     bool valid = false;
     chess::pgn::StreamParserError _err;
-    std::vector<chess::Move> moves {};
-    SmakPgnVisitor svis{moves};
+    SmakPgnVisitor svis;
     std::istream& _stream;
 public:
     PgnParser(std::istream& pgn_stream);
