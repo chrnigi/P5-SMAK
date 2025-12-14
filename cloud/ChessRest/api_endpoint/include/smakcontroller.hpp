@@ -59,8 +59,7 @@ public:
 
 public:
     ADD_CORS(getGameEval, "*", "GET",
-        "DNT, User-Agent, X-Requested-With, If-Modified-Since, "
-        "Cache-Control, Content-Type, Range",
+        "DNT, User-Agent, X-Requested-With, If-Modified-Since, Cache-Control, Content-Type, Range",
         "1728000");
     ENDPOINT("GET", "/games/eval/{id}", getGameEval, PATH(Int64, id)) {
         using namespace smak;
@@ -129,9 +128,9 @@ public:
             return createDtoResponse(Status::CODE_200, eval_dtos);
     }
 public:
-    // ENDPOINT_INFO(pgnEval) {
-    //   info->addConsumes<String>("application/text");
-    // }
+    ADD_CORS(pgnEval, "*", "GET",
+        "DNT, User-Agent, X-Requested-With, If-Modified-Since, Cache-Control, Content-Type, Range",
+        "1728000");
     ENDPOINT("POST", "/games/pgn", pgnEval, BODY_STRING(String, pgn)) {
         using namespace smak;
         using namespace chess;
