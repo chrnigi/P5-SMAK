@@ -128,15 +128,21 @@ public:
             return createDtoResponse(Status::CODE_200, eval_dtos);
     }
 public:
+    ENDPOINT_INFO(pgnEval) {
+        info->addConsumes<String>("application/x-chess-pgn");
+    }
     ADD_CORS(pgnEval, "*", "GET",
         "DNT, User-Agent, X-Requested-With, If-Modified-Since, Cache-Control, Content-Type, Range",
         "1728000");
-    ENDPOINT("POST", "/games/pgn", pgnEval, BODY_STRING(String, pgn)) {
+    ENDPOINT("POST", "/games/pgn", pgnEval, BODY_STRING(String, pgn), HEADER(String, contentType, "Content-Type")) {
         using namespace smak;
         using namespace chess;
-
-        std::string s("[Event \"smak\"]\n");
+        if (contentType->find("application/x-chess-pgn") == -1) {
+            return createResponse(Status::CODE_415, "Unsupported Content-Type.");
+        }
+        std::string s("[]\n");
         s.append( + pgn->c_str());
+        
         std::stringstream pgn_stream(s);
 
         smak::parsing::PgnParser parser(pgn_stream);
