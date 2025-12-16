@@ -173,7 +173,7 @@
             ply_counter.innerHTML = index.toString();
             //board.move(fools_mate[index])
             //board.position(positions[index]);
-            board.position(evals[index].fen)
+            board.position(evals[index-1].fen)
             updateEvalTbl(index);
         })
 
