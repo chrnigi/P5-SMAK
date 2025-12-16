@@ -86,3 +86,12 @@
         group: root
         mode: "0777"
         state: link
+
+    - name: Create a symbolic link for stockfish
+      ansible.builtin.file:
+        src: "/usr/games/stockfish"
+        dest: /usr/bin/stockfish
+        owner: root
+        group: root
+        mode: "0777"
+        state: link

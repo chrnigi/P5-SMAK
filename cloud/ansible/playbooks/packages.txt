@@ -18,6 +18,7 @@ packages:
   - stockfish
   - clang
   - build-essential
+  - ninja-build
   - nodejs
   - node-typescript
   - node-typescript-types
