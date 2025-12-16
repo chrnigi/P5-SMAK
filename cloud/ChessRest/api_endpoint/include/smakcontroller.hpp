@@ -30,21 +30,14 @@ oatpp::Object<models::EvalDTO> evalToDto(Evaluation e);
 
 class SmakController : public oatpp::web::server::api::ApiController {
 
-  std::shared_ptr<smak::client::SmakClient> cl;
+std::shared_ptr<smak::client::SmakClient> cl;
 
 public:
-  SmakController(OATPP_COMPONENT(std::shared_ptr<ObjectMapper>, objectMapper))
-      : oatpp::web::server::api::ApiController(objectMapper) {
-    auto connectionProvider =
-        oatpp::network::tcp::client::ConnectionProvider::createShared(
-            {"localhost", 8080});
-    auto requestExecutor =
-        oatpp::web::client::HttpRequestExecutor::createShared(
-            connectionProvider);
-    auto clientObjectMapper =
-        oatpp::parser::json::mapping::ObjectMapper::createShared();
-    cl = smak::client::SmakClient::createShared(requestExecutor,
-                                                clientObjectMapper);
+    SmakController(OATPP_COMPONENT(std::shared_ptr<ObjectMapper>, objectMapper)) : oatpp::web::server::api::ApiController(objectMapper) {
+        auto connectionProvider = oatpp::network::tcp::client::ConnectionProvider::createShared({"localhost", 8080});
+        auto requestExecutor = oatpp::web::client::HttpRequestExecutor::createShared(connectionProvider);
+        auto clientObjectMapper = oatpp::parser::json::mapping::ObjectMapper::createShared();
+        cl = smak::client::SmakClient::createShared(requestExecutor,clientObjectMapper);
   }
 
 public:
@@ -105,7 +98,25 @@ public:
       auto from = int_to_square(m_dto->from_square.getValue(0));
       auto to = int_to_square(m_dto->to_square.getValue(0));
 
-      chess_moves.push_back(chess::Move::make(from, to));
+      
+      chess_moves.push_back([&]{
+          switch (*m_dto->move_type) {
+          using namespace models;
+          case MoveType::PROMOTION:
+            return chess::Move::make<chess::Move::PROMOTION>(from, to);
+          case MoveType::ENPASSANT:
+            return chess::Move::make<chess::Move::ENPASSANT>(from, to);
+          case MoveType::CASTLING:
+            return chess::Move::make<chess::Move::CASTLING>(from, to, PieceType::QUEEN);
+          case MoveType::NORMAL:
+            return chess::Move::make<chess::Move::NORMAL>(from, to);
+          case MoveType::NULLMOVE:
+            return chess::Move::make<chess::Move::NULL_MOVE>(from, to);
+          default:
+            return chess::Move::make<chess::Move::NO_MOVE>(0,0);
+        }
+      }());
+
     }
 
     Evaluation eval;
