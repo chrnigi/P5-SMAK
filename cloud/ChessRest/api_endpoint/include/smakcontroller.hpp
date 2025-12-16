@@ -38,114 +38,104 @@ public:
         auto requestExecutor = oatpp::web::client::HttpRequestExecutor::createShared(connectionProvider);
         auto clientObjectMapper = oatpp::parser::json::mapping::ObjectMapper::createShared();
         cl = smak::client::SmakClient::createShared(requestExecutor,clientObjectMapper);
-  }
-
-public:
-  ENDPOINT("GET", "/games", root) { return createResponse(Status::CODE_501); }
-
-public:
-  ENDPOINT("GET", "/moves/{id}", movesByGameId, PATH(Int64, id)) {
-    OATPP_LOGD("/moves/{id}", " id=%li", id.getValue(0))
-    return createResponse(Status::CODE_501);
-  }
-
-public:
-  ENDPOINT("GET", "/moves/{id}/ply", moveByIdAndPly, PATH(Int64, id), QUERY(Int32, ply_number, "ply")) {
-    return createResponse(Status::CODE_501);
-  }
-
-public:
-  ADD_CORS(getGameEval, "*", "GET", "DNT, User-Agent, X-Requested-With, If-Modified-Since, Cache-Control, Content-Type, Range",
-           "1728000");
-  ENDPOINT("GET", "/games/eval/{id}", getGameEval, PATH(Int64, id)) {
-    EngineWhisperer ew("stockfish");
-    using namespace smak;
-    using namespace chess;
-
-    auto incoming_game = cl->getGameById(id);
-    auto dto = incoming_game->readBodyToDto<Object<models::GameDTO>>(
-        getDefaultObjectMapper());
-
-    if (incoming_game->getStatusCode() != Status::CODE_200.code) {
-      return createResponse(Status::CODE_503,
-                            "Unable to retrieve game from database.");
     }
 
-    auto incoming_moves = cl->getMovesByGameId(id);
-    auto move_dtos =
-        incoming_moves->readBodyToDto<oatpp::Vector<Object<models::MoveDTO>>>(
-            getDefaultObjectMapper());
+public:
+    ENDPOINT("GET", "/games", root) { return createResponse(Status::CODE_501); }
 
-    if (incoming_moves->getStatusCode() != Status::CODE_200.code) {
-      return createResponse(Status::CODE_503,
-                            "Unable to retrieve moves from database.");
+public:
+    ENDPOINT("GET", "/moves/{id}", movesByGameId, PATH(Int64, id)) {
+        OATPP_LOGD("/moves/{id}", " id=%li", id.getValue(0))
+        return createResponse(Status::CODE_501);
     }
 
-    std::vector<chess::Move> chess_moves{};
-    chess_moves.reserve(move_dtos->size());
+public:
+    ENDPOINT("GET", "/moves/{id}/ply", moveByIdAndPly, PATH(Int64, id), QUERY(Int32, ply_number, "ply")) {
+        return createResponse(Status::CODE_501);
+    }
 
-    auto int_to_square = [](int sq) {
-      chess::Rank r = 7 - (sq >> 3);
-      chess::File f = sq & 7;
+public:
+    ADD_CORS(getGameEval, "*", "GET", "DNT, User-Agent, X-Requested-With, If-Modified-Since, Cache-Control, Content-Type, Range", "1728000");
+    ENDPOINT("GET", "/games/eval/{id}", getGameEval, PATH(Int64, id)) {
+        EngineWhisperer ew("stockfish");
+        using namespace smak;
+        using namespace chess;
 
-      return chess::Square(r, f);
-    };
+        auto incoming_game = cl->getGameById(id);
+        auto dto = incoming_game->readBodyToDto<Object<models::GameDTO>>(getDefaultObjectMapper());
 
-    for (auto &m_dto : *move_dtos) {
-
-      auto from = int_to_square(m_dto->from_square.getValue(0));
-      auto to = int_to_square(m_dto->to_square.getValue(0));
-
-      
-      chess_moves.push_back([&]{
-          switch (*m_dto->move_type) {
-          using namespace models;
-          case MoveType::PROMOTION:
-            return chess::Move::make<chess::Move::PROMOTION>(from, to);
-          case MoveType::ENPASSANT:
-            return chess::Move::make<chess::Move::ENPASSANT>(from, to);
-          case MoveType::CASTLING:
-            return chess::Move::make<chess::Move::CASTLING>(from, to, PieceType::QUEEN);
-          case MoveType::NORMAL:
-            return chess::Move::make<chess::Move::NORMAL>(from, to);
-          case MoveType::NULLMOVE:
-            return chess::Move::make<chess::Move::NULL_MOVE>(from, to);
-          default:
-            return chess::Move::make<chess::Move::NO_MOVE>(0,0);
+        if (incoming_game->getStatusCode() != Status::CODE_200.code) {
+            return createResponse(Status::CODE_503, "Unable to retrieve game from database.");
         }
-      }());
 
-    }
+        auto incoming_moves = cl->getMovesByGameId(id);
+        auto move_dtos = incoming_moves->readBodyToDto<oatpp::Vector<Object<models::MoveDTO>>>(getDefaultObjectMapper());
 
-    Evaluation eval;
-    if (!ew.start_uci()) {
-      return createResponse(Status::CODE_503,
-                            "Engine could not start. Analysis unavailable.");
-    }
-
-    std::vector<std::optional<Evaluation>> evals =
-        ew.getEvalsFromGame(chess_moves);
-
-    auto eval_dtos = oatpp::Vector<Object<models::EvalDTO>>::createShared();
-    eval_dtos->reserve(chess_moves.size());
-
-    for (auto &e : evals) {
-      size_t idx = eval_dtos->size();
-      if (e) {
-        auto dto = evalToDto(e.value());
-        dto->ply = idx + 1;
-        dto->id = id;
-        eval_dtos->push_back(dto);
-        if (chess_moves.size() > idx) {
-          eval_dtos->back()->move = chess::uci::moveToUci(chess_moves[idx]);
+        if (incoming_moves->getStatusCode() != Status::CODE_200.code) {
+            return createResponse(Status::CODE_503, "Unable to retrieve moves from database.");
         }
-      } else {
-        eval_dtos->push_back({});
-      }
-    }
 
-    return createDtoResponse(Status::CODE_200, eval_dtos);
-  }
+        std::vector<chess::Move> chess_moves{};
+        chess_moves.reserve(move_dtos->size());
+
+        auto int_to_square = [](int sq) {
+            chess::Rank r = 7 - (sq >> 3);
+            chess::File f = sq & 7;
+
+            return chess::Square(r, f);
+        };
+
+        for (auto &m_dto : *move_dtos) {
+
+            auto from = int_to_square(m_dto->from_square.getValue(0));
+            auto to = int_to_square(m_dto->to_square.getValue(0));
+
+            chess_moves.push_back([&]{
+                switch (*m_dto->move_type) {
+                using namespace models;
+                case MoveType::PROMOTION:
+                    return chess::Move::make<chess::Move::PROMOTION>(from, to);
+                case MoveType::ENPASSANT:
+                    return chess::Move::make<chess::Move::ENPASSANT>(from, to);
+                case MoveType::CASTLING:
+                    return chess::Move::make<chess::Move::CASTLING>(from, to, PieceType::QUEEN);
+                case MoveType::NORMAL:
+                    return chess::Move::make<chess::Move::NORMAL>(from, to);
+                case MoveType::NULLMOVE:
+                    return chess::Move::make<chess::Move::NULL_MOVE>(from, to);
+                default:
+                    return chess::Move::make<chess::Move::NO_MOVE>(0,0);
+                }
+            }());
+        }
+
+        Evaluation eval;
+        if (!ew.start_uci()) {
+        return createResponse(Status::CODE_503, "Engine could not start. Analysis unavailable.");
+        }
+
+        std::vector<std::optional<Evaluation>> evals = ew.getEvalsFromGame(chess_moves);
+
+        auto eval_dtos = oatpp::Vector<Object<models::EvalDTO>>::createShared();
+        eval_dtos->reserve(chess_moves.size());
+
+        for (auto &e : evals) {
+            size_t idx = eval_dtos->size();
+            if (e) {
+                auto dto = evalToDto(e.value());
+                dto->ply = idx + 1;
+                dto->id = id;
+                eval_dtos->push_back(dto);
+                if (chess_moves.size() > idx) {
+                eval_dtos->back()->move = chess::uci::moveToUci(chess_moves[idx]);
+                }
+            } else {
+                eval_dtos->push_back({});
+            }
+        }
+
+        return createDtoResponse(Status::CODE_200, eval_dtos);
+    }
 };
 
 #include OATPP_CODEGEN_END(ApiController)
