@@ -511,6 +511,7 @@ static void pin_change(const uint8_t pin_number, const bool is_up = false)
 				state = white_castling_queenside_kingdown;
 			else {
 				state = white_move;
+				fsm.x = WHITE_KING_STARTINGSQUARE;
 				pin_change(pin_number, is_up);
 			}
 		}
@@ -664,6 +665,7 @@ static void pin_change(const uint8_t pin_number, const bool is_up = false)
 				state = black_castling_queenside_kingdown;
 			else {
 				state = black_move;
+				fsm.x = BLACK_KING_STARTINGSQUARE;
 				pin_change(pin_number, is_up);
 			}
 		}
