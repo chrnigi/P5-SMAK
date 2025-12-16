@@ -94,11 +94,11 @@ public:
                 switch (*m_dto->move_type) {
                 using namespace models;
                 case MoveType::PROMOTION:
-                    return chess::Move::make<chess::Move::PROMOTION>(from, to);
+                    return chess::Move::make<chess::Move::PROMOTION>(from, to, PieceType::QUEEN);
                 case MoveType::ENPASSANT:
                     return chess::Move::make<chess::Move::ENPASSANT>(from, to);
                 case MoveType::CASTLING:
-                    return chess::Move::make<chess::Move::CASTLING>(from, to, PieceType::QUEEN);
+                    return chess::Move::make<chess::Move::CASTLING>(from, to);
                 case MoveType::NORMAL:
                     return chess::Move::make<chess::Move::NORMAL>(from, to);
                 case MoveType::NULLMOVE:
