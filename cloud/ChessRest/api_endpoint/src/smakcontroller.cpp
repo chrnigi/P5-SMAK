@@ -47,6 +47,7 @@ oatpp::Object<models::EvalDTO> evalToDto(Evaluation e) {
     out->result     = static_cast<models::GameResultEnum>(e.res);
     out->reason     = static_cast<models::GameResultReasonEnum>(e.reason);    
     out->forced_mate = e.isMate();
+    out->fen = e.fen;
 
     return out;
 }
