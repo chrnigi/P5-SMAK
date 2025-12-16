@@ -4,10 +4,11 @@ interface Evaluation {
     result: string;
     reason: string;
     forced_mate: Boolean;
-    pawn_eval: number;
-    bestmove: string;
-    ponder: string;
-    move:   string;
+    pawn_eval:  number;
+    bestmove:   string;
+    ponder:     string;
+    move:       string;
+    fen:        string;
 };
 
 interface Move {
@@ -134,7 +135,7 @@ async function getEval(id: number) {
         if (!response.ok) {
             throw new Error('Response did unnice thing: ${response.status}');
         }
-
+        
         const result: Evaluation[] = await response.json();
         console.log(result);
 

@@ -57,7 +57,7 @@ std::vector<std::optional<Evaluation>> EngineWhisperer::getEvalsFromGame(const s
         if (game_board.sideToMove() == chess::Color::BLACK) {
             ev->m_eval = -(ev->m_eval);
         }
-
+        ev->fen = game_board.getFen();
         evals_out.push_back(ev);
 
         /* if game_board says we are done, we are done. */

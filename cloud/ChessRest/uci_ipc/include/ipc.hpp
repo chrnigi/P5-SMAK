@@ -30,6 +30,7 @@ public:
     chess::Move m_ponder;
     std::string bestmove_str;
     std::string ponder_str;
+    std::string fen;
     chess::Color m_color_to_move;
     bool m_mate = false;
     int m_matec = 0;
