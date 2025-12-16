@@ -136,7 +136,11 @@ void sendMove(const int ply, const int from, const int to,
       } else {
         doc["move_type"] = "normal";
       }
-      doc["piece_moved"] = String((char)toupper(piece));
+      if (promotion) {
+        doc["piece_moved"] = "P";
+      } else {
+        doc["piece_moved"] = String((char)toupper(piece));
+      }
       if (captured == ' ') {
         doc["piece_captured"] = "Z";
       } else {
@@ -154,13 +158,14 @@ void sendMove(const int ply, const int from, const int to,
       if (httpResponseCode>0) {
         Serial.print("HTTP Response code: ");
         Serial.println(httpResponseCode);
+      break;
       }
       else {
         Serial.print("Error code: ");
         Serial.println(httpResponseCode);
       }
       http.end();
-      break;
+
     }
     else {
       delay(200);
