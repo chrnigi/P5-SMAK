@@ -19,6 +19,8 @@
 
     app2_subdir: cloud/ChessRest
     app2_dir: "{{ repo_dest }}/{{ app2_subdir }}"
+    app3_subdir: cloud/webinterface
+    app3_dir: "{{ repo_dest }}/{{ app3_subdir }}"
 
   tasks:
     - name: Mark /opt/SMAK as safe git directory for root
@@ -94,14 +96,14 @@
         dest: "/etc/systemd/system/smakdbendpoint.service"
         mode: "0777"
 
-    - name: Enable TTT service
+    - name: Enable smakdbendpoint service
       become: true
       become_user: root
       ansible.builtin.systemd_service:
         name: smakdbendpoint
         enabled: yes
     
-    - name: Start service tttendpoint
+    - name: Start service smakdbendpoint
       ansible.builtin.systemd_service:
         name: smakdbendpoint
         daemon_reload: true
@@ -129,15 +131,41 @@
         dest: "/etc/systemd/system/pgndpoint.service"
         mode: "0777"
 
-    - name: Enable TTT service
+    - name: Enable PGNDpoint service
       become: true
       become_user: root
       ansible.builtin.systemd_service:
         name: pgndpoint
         enabled: yes
     
-    - name: Start service tttendpoint
+    - name: Start service PGNDpoint
       ansible.builtin.systemd_service:
         name: pgndpoint
         daemon_reload: true
         state: restarted
+
+####################################
+####### WEB INTERFACE DEPLOY #######
+####################################
+    - name: Ensure buildSH is executable
+      ansible.builtin.file:
+        path: "{{ app3_dir }}/build.sh"
+        mode: "0755"
+
+    - name: Run buildSH
+      ansible.builtin.command: ./build.sh
+      args:
+        chdir: "{{ app3_dir }}"
+      register: build_result
+      failed_when: >
+        build_result.rc != 0 and
+        "'tsc' not in build_result.stderr"
+
+    - name: Copy smak weinterface to varwwwhtml
+      become: true
+      become_user: root
+      ansible.builtin.copy:
+        src: "{{ app3_dir }}"
+        dest: "/var/www/html/"
+        mode: "0777"
+        remote_src: true
