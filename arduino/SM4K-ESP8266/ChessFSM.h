@@ -263,9 +263,9 @@ static void sendMove(const int ply, const int from, const int to,
 /// <param name="is_white">Whether this was white's move</param>
 static void sendCastleQueenside(const int ply, const int from, const int to, const bool is_white) {
 	if (is_white)
-		sendMove(ply, WHITE_KING_STARTINGSQUARE, WHITE_KING_QUEENSIDE_CASTLESQUARE, p_WHITE_KING, p_WHITE_ROOK, false, false, false, true);
+		sendMove(ply, WHITE_KING_STARTINGSQUARE, WHITE_ROOK_QUEENSIDE_STARTINGSQUARE, p_WHITE_KING, p_WHITE_ROOK, false, false, false, true);
 	else
-		sendMove(ply, BLACK_KING_STARTINGSQUARE, BLACK_KING_QUEENSIDE_CASTLESQUARE, p_BLACK_KING, p_BLACK_ROOK, false, false, false, true);
+		sendMove(ply, BLACK_KING_STARTINGSQUARE, BLACK_ROOK_QUEENSIDE_STARTINGSQUARE, p_BLACK_KING, p_BLACK_ROOK, false, false, false, true);
 }
 
 /// <summary>
@@ -275,9 +275,9 @@ static void sendCastleQueenside(const int ply, const int from, const int to, con
 /// <param name="is_white">Whether this was white's move</param>
 static void sendCastleKingside(const int ply, const bool is_white) {
 	if (is_white)
-		sendMove(ply, WHITE_KING_STARTINGSQUARE, WHITE_KING_KINGSIDE_CASTLESQUARE, p_WHITE_KING, p_WHITE_ROOK, false, false, true, false);
+		sendMove(ply, WHITE_KING_STARTINGSQUARE, WHITE_ROOK_KINGSIDE_STARTINGSQUARE, p_WHITE_KING, p_WHITE_ROOK, false, false, true, false);
 	else
-		sendMove(ply, BLACK_KING_STARTINGSQUARE, BLACK_KING_KINGSIDE_CASTLESQUARE, p_BLACK_KING, p_BLACK_ROOK, false, false, true, false);
+		sendMove(ply, BLACK_KING_STARTINGSQUARE, BLACK_ROOK_KINGSIDE_STARTINGSQUARE, p_BLACK_KING, p_BLACK_ROOK, false, false, true, false);
 }
 
 /// <summary>
