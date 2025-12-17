@@ -117,46 +117,59 @@ void sendMove(const int ply, const int from, const int to,
 {
   WiFiClient client;
   HTTPClient http;
-  http.begin(client, endpoint("/moves"));
+  http.setTimeout(15000);
+  for(int i = 0; i < 5; i++){
+    if (http.begin(client, endpoint("/moves"))) {
+      http.addHeader("Content-Type", "application/json");
+      
+      //Create payload
+      String payload;
+      JsonDocument doc;
+      doc["id"] = gameState.id;
+      doc["ply_number"] = ply;
+      if (en_passant) {
+        doc["move_type"] = "enpassant";
+      } else if (kingside_castle || queenside_castle) {
+        doc["move_type"] = "castling";
+      } else if (promotion) {
+        doc["move_type"] = "promotion";
+      } else {
+        doc["move_type"] = "normal";
+      }
+      if (promotion) {
+        doc["piece_moved"] = "P";
+      } else {
+        doc["piece_moved"] = String((char)toupper(piece));
+      }
+      if (captured == ' ') {
+        doc["piece_captured"] = "Z";
+      } else {
+        doc["piece_captured"] = String((char)toupper(captured));
+      } 
+      doc["from_square"] = from;
+      doc["to_square"] = to;
 
-  http.addHeader("Content-Type", "application/json");
-  
-  //Create payload
-  String payload;
-  JsonDocument doc;
-  doc["id"] = gameState.id;
-  doc["ply_number"] = ply;
-  if (en_passant) {
-    doc["move_type"] = "enpassant";
-  } else if (kingside_castle || queenside_castle) {
-    doc["move_type"] = "castling";
-  } else if (promotion) {
-    doc["move_type"] = "promotion";
-  } else {
-    doc["move_type"] = "normal";
+      serializeJson(doc, payload);
+
+      Serial.println("sendMove: " + endpoint() + "  " + payload);
+
+      int httpResponseCode = http.POST(payload);
+
+      if (httpResponseCode>0) {
+        Serial.print("HTTP Response code: ");
+        Serial.println(httpResponseCode);
+      break;
+      }
+      else {
+        Serial.print("Error code: ");
+        Serial.println(httpResponseCode);
+      }
+      http.end();
+
+    }
+    else {
+      delay(200);
+      Serial.println("Failed to initiate http connection");
+    }
   }
-  doc["piece_moved"] = String(piece);
-  if (captured == ' ') {
-    doc["piece_captured"] = "Z";
-  } else {
-    doc["piece_captured"] = String(captured);
-  } 
-  doc["from_square"] = from;
-  doc["to_square"] = to;
-
-  serializeJson(doc, payload);
-
-  Serial.println("sendMove: " + endpoint() + "  " + payload);
-
-  int httpResponseCode = http.POST(payload);
-
-  if (httpResponseCode>0) {
-    Serial.print("HTTP Response code: ");
-    Serial.println(httpResponseCode);
-  }
-  else {
-    Serial.print("Error code: ");
-    Serial.println(httpResponseCode);
-  }
-  http.end();
 }

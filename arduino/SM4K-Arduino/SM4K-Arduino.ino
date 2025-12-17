@@ -4,7 +4,7 @@
 void(* resetFunc) (void) = 0;
 
 const int SCAN_EVERY_MS = 10;    // scan every 10 ms
-const int HITS_NEEDED   = 40;    // how many repeated reads to accept a change
+const int HITS_NEEDED   = 15;    // how many repeated reads to accept a change
 
 const bool ACTIVE_LEVEL = LOW;   
 const bool USE_PULLUPS  = true;
@@ -15,14 +15,14 @@ String commands;
 
 // 64 DIGITAL INPUT PINS
 const int inputPins[64] = {
-  A0, A1, A2, A3, 21, 20 ,19 ,18,
-  A4, A5, A6, A7, 17, 16, 2, 3,
-  A8, A9, A10, A11, 4, 5, 6, 7,
-  A12, A13, A14, A15, 8, 9, 10, 11,
-  53, 51, 49, 47, 52, 50, 48, 46,
-  45, 43, 41, 39, 44, 42, 40, 38,
-  37, 35, 33, 31, 36, 34, 32, 30,
-  29, 27, 25, 23, 28, 26, 24, 22
+  53, 51, 49, 47, A0, A1, A2, A3,
+  45, 43, 41, 39, A4, A5, A6, A7,
+  37, 35, 33, 31, A8, A9, A10, A11,
+  29, 27, 25, 23, A12, A13, A14,A15, 
+  22, 24, 26, 28, 11, 10,  9,  8,
+  30, 32, 34, 36,  7,  6,  5,  4,
+  38, 40, 42, 44,  3,  2, 16, 17,
+  46, 48, 50, 52, 18, 19, 20, 21,
 };
 
 // Labels for printing (8x8 example)
