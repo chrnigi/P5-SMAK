@@ -58,7 +58,7 @@ void createNewGame(){
 
   http.addHeader("Content-Type", "application/json");
 
-  int httpResponseCode = http.POST("{\"gamestate\":\"NOT_STARTED\"}");
+  int httpResponseCode = http.POST("{\"gamestate\":\"WHITE_TO_MOVE\"}");
 
   String payload = "{}"; 
 
@@ -158,7 +158,7 @@ void sendMove(const int ply, const int from, const int to,
       if (httpResponseCode>0) {
         Serial.print("HTTP Response code: ");
         Serial.println(httpResponseCode);
-      break;
+        break;
       }
       else {
         Serial.print("Error code: ");
